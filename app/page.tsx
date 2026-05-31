@@ -133,11 +133,11 @@ export default function Home() {
           {/* TITLE */}
           <h1 className="text-6xl md:text-8xl font-bold tracking-tight leading-none max-w-6xl mx-auto">
 
-            Professional
+            Six Sigma Analysis Platform
             <br />
 
             <span className="text-gray-400">
-              Statistical Automation
+              for Excel
             </span>
 
           </h1>
@@ -145,9 +145,9 @@ export default function Home() {
           {/* SUBTITLE */}
           <p className="mt-10 text-xl md:text-2xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
 
-            Advanced Six Sigma reporting, process capability analysis,
-            SPC monitoring and statistical workflows directly integrated
-            into Excel.
+            Organize your entire DMAIC workflow inside Excel.
+            Generate capability studies, control charts,
+            hypothesis tests and quality reports in seconds.
 
           </p>
 
@@ -208,6 +208,99 @@ export default function Home() {
         </div>
 
       </section>
+
+      {/* WHY CHOOSE */}
+      <section className="px-6 py-24 bg-white">
+
+        <div className="max-w-7xl mx-auto">
+
+          <div className="text-center mb-20">
+
+            <h2 className="text-5xl md:text-6xl font-bold mb-6">
+              Why Quality Teams Choose
+              <br />
+              Six Sigma Macro Tools
+            </h2>
+
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Built specifically for Lean Six Sigma practitioners who work
+              in Excel every day.
+            </p>
+
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+
+            {/* DMAIC */}
+            <div className="bg-white border rounded-3xl p-10 shadow-sm hover:shadow-lg transition">
+
+              <div className="text-5xl mb-6">
+                🎯
+              </div>
+
+              <h3 className="text-2xl font-bold mb-4">
+                DMAIC Driven
+              </h3>
+
+              <p className="text-gray-600 text-lg leading-relaxed">
+                Tools organized around the Define, Measure, Analyze,
+                Improve and Control methodology instead of generic
+                statistical menus.
+              </p>
+
+            </div>
+
+            {/* EXCEL */}
+            <div className="bg-white border rounded-3xl p-10 shadow-sm hover:shadow-lg transition">
+
+              <div className="text-5xl mb-6">
+                📊
+              </div>
+
+              <h3 className="text-2xl font-bold mb-4">
+                Excel Native
+              </h3>
+
+              <p className="text-gray-600 text-lg leading-relaxed">
+                Perform advanced statistical analysis directly inside
+                Excel without importing or exporting data between
+                different applications.
+              </p>
+
+            </div>
+
+            {/* SPEED */}
+            <div className="bg-white border rounded-3xl p-10 shadow-sm hover:shadow-lg transition">
+
+              <div className="text-5xl mb-6">
+                ⚡
+              </div>
+
+              <h3 className="text-2xl font-bold mb-4">
+                Faster Workflow
+              </h3>
+
+              <p className="text-gray-600 text-lg leading-relaxed">
+                Access the most commonly used Six Sigma tools from a
+                dedicated ribbon designed for quality engineers and
+                process improvement teams.
+              </p>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+
+
+
+
+
+
 
       {/* SOFTWARE PREVIEW */}
       <section className="px-6 py-28 bg-gradient-to-b from-white to-gray-100">
