@@ -294,14 +294,6 @@ export default function Home() {
 
       </section>
 
-
-
-
-
-
-
-
-
       {/* SOFTWARE PREVIEW */}
       <section className="px-6 py-28 bg-gradient-to-b from-white to-gray-100">
 
@@ -463,6 +455,129 @@ export default function Home() {
                 </p>
 
               </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+      {/* DMAIC WORKFLOW */}
+      <section className="px-6 py-28 bg-white">
+
+        <div className="max-w-7xl mx-auto">
+
+          <div className="text-center mb-20">
+
+            <h2 className="text-5xl md:text-6xl font-bold mb-6">
+              Built Around DMAIC
+            </h2>
+
+            <p className="text-xl text-gray-600 max-w-4xl mx-auto">
+              Unlike traditional statistical software, tools are organized
+              according to the Lean Six Sigma methodology, making projects
+              easier to execute from Define through Control.
+            </p>
+
+          </div>
+
+          <div className="grid lg:grid-cols-5 gap-6">
+
+            {/* DEFINE */}
+            <div className="bg-gray-50 border rounded-3xl p-8">
+
+              <div className="text-sm font-semibold text-gray-500 mb-3">
+                PHASE 1
+              </div>
+
+              <h3 className="text-3xl font-bold mb-6">
+                Define
+              </h3>
+
+              <ul className="space-y-3 text-gray-600">
+                <li>• Pareto Chart</li>
+                <li>• Random Samples</li>
+              </ul>
+
+            </div>
+
+            {/* MEASURE */}
+            <div className="bg-gray-50 border rounded-3xl p-8">
+
+              <div className="text-sm font-semibold text-gray-500 mb-3">
+                PHASE 2
+              </div>
+
+              <h3 className="text-3xl font-bold mb-6">
+                Measure
+              </h3>
+
+              <ul className="space-y-3 text-gray-600">
+                <li>• Graphical Summary</li>
+                <li>• Normality Test</li>
+                <li>• Capability Analysis</li>
+                <li>• Gage R&R</li>
+                <li>• Attribute Agreement</li>
+                <li>• Histograms</li>
+              </ul>
+
+            </div>
+
+            {/* ANALYZE */}
+            <div className="bg-gray-50 border rounded-3xl p-8">
+
+              <div className="text-sm font-semibold text-gray-500 mb-3">
+                PHASE 3
+              </div>
+
+              <h3 className="text-3xl font-bold mb-6">
+                Analyze
+              </h3>
+
+              <ul className="space-y-3 text-gray-600">
+                <li>• Hypothesis Tests</li>
+                <li>• Multi-Vari Chart</li>
+                <li>• Root Cause Analysis</li>
+              </ul>
+
+            </div>
+
+            {/* IMPROVE */}
+            <div className="bg-gray-50 border rounded-3xl p-8">
+
+              <div className="text-sm font-semibold text-gray-500 mb-3">
+                PHASE 4
+              </div>
+
+              <h3 className="text-3xl font-bold mb-6">
+                Improve
+              </h3>
+
+              <ul className="space-y-3 text-gray-600">
+                <li>• DOE (Coming Soon)</li>
+                <li>• Optimization Tools</li>
+              </ul>
+
+            </div>
+
+            {/* CONTROL */}
+            <div className="bg-gray-50 border rounded-3xl p-8">
+
+              <div className="text-sm font-semibold text-gray-500 mb-3">
+                PHASE 5
+              </div>
+
+              <h3 className="text-3xl font-bold mb-6">
+                Control
+              </h3>
+
+              <ul className="space-y-3 text-gray-600">
+                <li>• I-MR Charts</li>
+                <li>• SPC Monitoring</li>
+                <li>• Control Plans</li>
+              </ul>
 
             </div>
 
