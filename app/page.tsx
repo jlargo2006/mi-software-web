@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 
 export default function Home() {
 
@@ -95,9 +96,11 @@ export default function Home() {
               Pricing
             </a>
 
-            <button className="border border-gray-300 hover:border-black px-5 py-2.5 rounded-2xl transition">
-              Login
-            </button>
+            <Link href="/login">
+              <button className="border border-gray-300 hover:border-black px-5 py-2.5 rounded-2xl transition">
+                Login
+              </button>
+            </Link>
 
             <button className="bg-black hover:bg-gray-800 text-white px-6 py-3 rounded-2xl font-semibold transition hover:scale-105">
               Try Free
