@@ -587,64 +587,106 @@ export default function Home() {
 
       </section>
 
-      {/* FEATURES */}
+      {/* COMPARISON */}
       <section
         id="features"
         className="px-6 py-28 bg-gray-50"
       >
 
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
 
-          <h2 className="text-5xl font-bold text-center mb-20">
-            Features
-          </h2>
+          <div className="text-center mb-20">
 
-          <div className="grid md:grid-cols-3 gap-8">
+            <h2 className="text-5xl font-bold mb-6">
+              Why Teams Prefer DMAIC Workflows
+            </h2>
 
-            <div className="bg-white p-10 rounded-3xl shadow-sm border">
+            <p className="text-xl text-gray-600 max-w-4xl mx-auto">
+              Six Sigma Macro Tools focuses on workflow efficiency and
+              Excel integration rather than forcing users to navigate
+              complex statistical software menus.
+            </p>
 
-              <h3 className="text-2xl font-bold mb-5">
-                Automation
-              </h3>
+          </div>
 
-              <p className="text-gray-600 text-lg leading-relaxed">
-                Reduce hours of manual Excel work with intelligent
-                Six Sigma macros.
-              </p>
+          <div className="overflow-x-auto">
 
-            </div>
+            <table className="w-full bg-white rounded-3xl overflow-hidden shadow-lg">
 
-            <div className="bg-white p-10 rounded-3xl shadow-sm border">
+              <thead>
 
-              <h3 className="text-2xl font-bold mb-5">
-                Statistical Analysis
-              </h3>
+                <tr className="border-b">
 
-              <p className="text-gray-600 text-lg leading-relaxed">
-                Generate charts, distributions and quality reports
-                instantly.
-              </p>
+                  <th className="text-left p-8 text-xl">
+                    Feature
+                  </th>
 
-            </div>
+                  <th className="p-8 text-xl">
+                    Six Sigma Macro Tools
+                  </th>
 
-            <div className="bg-white p-10 rounded-3xl shadow-sm border">
+                  <th className="p-8 text-xl">
+                    Traditional Statistical Software
+                  </th>
 
-              <h3 className="text-2xl font-bold mb-5">
-                Easy To Use
-              </h3>
+                </tr>
 
-              <p className="text-gray-600 text-lg leading-relaxed">
-                No programming skills required. Designed for Excel users.
-              </p>
+              </thead>
 
-            </div>
+              <tbody>
+
+                <tr className="border-b">
+                  <td className="p-6 font-medium">DMAIC Organization</td>
+                  <td className="p-6 text-center">✓</td>
+                  <td className="p-6 text-center">✗</td>
+                </tr>
+
+                <tr className="border-b">
+                  <td className="p-6 font-medium">Excel Native Workflow</td>
+                  <td className="p-6 text-center">✓</td>
+                  <td className="p-6 text-center">✗</td>
+                </tr>
+
+                <tr className="border-b">
+                  <td className="p-6 font-medium">Dedicated Six Sigma Ribbon</td>
+                  <td className="p-6 text-center">✓</td>
+                  <td className="p-6 text-center">✗</td>
+                </tr>
+
+                <tr className="border-b">
+                  <td className="p-6 font-medium">Capability Analysis</td>
+                  <td className="p-6 text-center">✓</td>
+                  <td className="p-6 text-center">✓</td>
+                </tr>
+
+                <tr className="border-b">
+                  <td className="p-6 font-medium">Control Charts</td>
+                  <td className="p-6 text-center">✓</td>
+                  <td className="p-6 text-center">✓</td>
+                </tr>
+
+                <tr className="border-b">
+                  <td className="p-6 font-medium">Hypothesis Testing</td>
+                  <td className="p-6 text-center">✓</td>
+                  <td className="p-6 text-center">✓</td>
+                </tr>
+
+                <tr>
+                  <td className="p-6 font-medium">DOE</td>
+                  <td className="p-6 text-center">Coming Soon</td>
+                  <td className="p-6 text-center">✓</td>
+                </tr>
+
+              </tbody>
+
+            </table>
 
           </div>
 
         </div>
 
       </section>
-
+      
       {/* VIDEOS */}
       <section
         id="videos"
