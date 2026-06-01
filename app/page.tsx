@@ -648,7 +648,7 @@ export default function Home() {
                 </tr>
 
                 <tr className="border-b">
-                  <td className="p-6 font-medium">Dedicated Six Sigma Ribbon</td>
+                  <td className="p-6 font-medium">Dedicated Six Sigma Taskbar</td>
                   <td className="p-6 text-center">✓</td>
                   <td className="p-6 text-center">✗</td>
                 </tr>
@@ -686,7 +686,7 @@ export default function Home() {
         </div>
 
       </section>
-      
+
       {/* VIDEOS */}
       <section
         id="videos"
