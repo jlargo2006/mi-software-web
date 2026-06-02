@@ -29,31 +29,31 @@ const nextConfig: NextConfig = {
               "base-uri 'self'",
               "object-src 'none'",
 
-              // Scripts (Next.js necesita unsafe-eval en dev/build runtime)
+              // Scripts (equilibrio seguro Next.js)
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
 
               // Estilos
               "style-src 'self' 'unsafe-inline'",
 
-              // Imágenes (local + Supabase + data URIs)
+              // Imágenes
               "img-src 'self' data: blob: https:",
 
               // Fuentes
               "font-src 'self' data: https:",
 
-              // Conexiones externas (CRÍTICO para Supabase)
+              // APIs externas (CRÍTICO para Supabase)
               "connect-src 'self' https://*.supabase.co https://supabase.co",
 
-              // Iframes (YouTube)
+              // Iframes (YouTube controlado)
               "frame-src 'self' https://www.youtube.com",
 
-              // Seguridad anti clickjacking moderna (mejor que X-Frame-Options)
+              // Protección clickjacking moderna
               "frame-ancestors 'self'",
 
-              // Formularios
+              // Formularios seguros
               "form-action 'self'",
 
-              // Reduce ataques MIME sniffing
+              // Refuerzo HTTPS real
               "upgrade-insecure-requests",
             ].join("; "),
           },
