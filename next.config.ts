@@ -24,8 +24,38 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Content-Security-Policy",
-            value:
-              "default-src 'self' https: data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https://*.supabase.co; frame-src 'self' https://www.youtube.com; frame-ancestors 'self';",
+            value: [
+              "default-src 'self'",
+              "base-uri 'self'",
+              "object-src 'none'",
+
+              // Scripts (Next.js necesita unsafe-eval en dev/build runtime)
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+
+              // Estilos
+              "style-src 'self' 'unsafe-inline'",
+
+              // Imágenes (local + Supabase + data URIs)
+              "img-src 'self' data: blob: https:",
+
+              // Fuentes
+              "font-src 'self' data: https:",
+
+              // Conexiones externas (CRÍTICO para Supabase)
+              "connect-src 'self' https://*.supabase.co https://supabase.co",
+
+              // Iframes (YouTube)
+              "frame-src 'self' https://www.youtube.com",
+
+              // Seguridad anti clickjacking moderna (mejor que X-Frame-Options)
+              "frame-ancestors 'self'",
+
+              // Formularios
+              "form-action 'self'",
+
+              // Reduce ataques MIME sniffing
+              "upgrade-insecure-requests",
+            ].join("; "),
           },
         ],
       },
