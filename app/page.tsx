@@ -939,17 +939,17 @@ export default function Home() {
 
           <div className="flex gap-8 text-gray-500">
 
-            <a href="#">
-              Privacy
-            </a>
+          <Link href="/privacy">
+            Privacy
+          </Link>
 
-            <a href="#">
-              Terms
-            </a>
+          <Link href="/terms">
+            Terms
+          </Link>
 
-            <a href="#">
-              Contact
-            </a>
+          <Link href="/contact">
+            Contact
+          </Link>
 
           </div>
 
