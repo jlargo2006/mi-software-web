@@ -1,63 +1,87 @@
+"use client"
+
+import { useState } from "react"
+
 export default function ContactPage() {
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setLoading(true)
+    setSuccess(false)
+
+    const form = e.currentTarget
+    const formData = new FormData(form)
+
+    const data = {
+      name: formData.get("name"),
+      email: formData.get("email"),
+      message: formData.get("message"),
+    }
+
+    const res = await fetch("/api/contact", {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+
+    setLoading(false)
+
+    if (res.ok) {
+      setSuccess(true)
+      form.reset()
+    }
+  }
+
   return (
-    <main className="max-w-4xl mx-auto px-6 py-16">
+    <main className="max-w-2xl mx-auto px-6 py-16">
 
       <h1 className="text-4xl font-bold mb-2">
         Contact
       </h1>
 
-      <p className="text-gray-500 mb-12">
-        Get in touch with the Six Sigma Macro Tools team.
+      <p className="text-gray-500 mb-10">
+        Send us a message and we will respond as soon as possible.
       </p>
 
-      <div className="bg-white border rounded-3xl p-8 shadow-sm">
+      <form onSubmit={handleSubmit} className="space-y-6">
 
-        <h2 className="text-2xl font-semibold mb-6">
-          Support
-        </h2>
+        <input
+          name="name"
+          placeholder="Your name"
+          className="w-full border p-4 rounded-xl"
+          required
+        />
 
-        <p className="text-gray-700 mb-4">
-          For questions, technical support, product feedback,
-          licensing inquiries, or business requests, please contact us:
-        </p>
+        <input
+          name="email"
+          placeholder="Your email"
+          type="email"
+          className="w-full border p-4 rounded-xl"
+          required
+        />
 
-        <div className="space-y-4">
+        <textarea
+          name="message"
+          placeholder="Your message"
+          className="w-full border p-4 rounded-xl h-40"
+          required
+        />
 
-          <div>
-            <div className="font-semibold">
-              Email
-            </div>
+        <button
+          disabled={loading}
+          className="bg-black text-white px-6 py-4 rounded-xl w-full"
+        >
+          {loading ? "Sending..." : "Send message"}
+        </button>
 
-            <div className="text-gray-700">
-              support@sixsigmamacrotools.com
-            </div>
-          </div>
+        {success && (
+          <p className="text-green-600 text-center">
+            Message sent successfully.
+          </p>
+        )}
 
-          <div>
-            <div className="font-semibold">
-              Website
-            </div>
-
-            <div className="text-gray-700">
-              www.sixsigmamacrotools.com
-            </div>
-          </div>
-
-        </div>
-
-      </div>
-
-      <section className="mt-12">
-
-        <h2 className="text-2xl font-semibold mb-4">
-          Business Hours
-        </h2>
-
-        <p className="text-gray-700">
-          We aim to respond to inquiries as quickly as possible.
-        </p>
-
-      </section>
+      </form>
 
     </main>
   )
