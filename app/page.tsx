@@ -943,14 +943,13 @@ export default function Home() {
               Privacy
             </Link>
 
-            <a href="#">
+            <Link href="/terms">
               Terms
-            </a>
+            </Link>
 
-            <a href="#">
+            <Link href="/contact">
               Contact
-            </a>
-
+            </Link>
           </div>
 
         </div>
