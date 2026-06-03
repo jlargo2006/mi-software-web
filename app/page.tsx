@@ -860,12 +860,12 @@ export default function Home() {
                   Try Free
                 </button>
 
-                <button className="border border-white/20 px-8 py-4 rounded-2xl text-lg hover:bg-white/10 transition">
-                  Contact Sales
-                </button>
-
+                <Link href="/contact">
+                  <button className="border border-white/20 px-8 py-4 rounded-2xl text-lg hover:bg-white/10 transition">
+                    Contact Sales
+                  </button>
+                </Link>
               </div>
-
             </div>
 
             {/* RIGHT */}
