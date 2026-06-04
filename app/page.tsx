@@ -948,7 +948,7 @@ export default function Home() {
             </Link>
 
             <Link href="/contact">
-              Contact
+              Contacto
             </Link>
           </div>
 
