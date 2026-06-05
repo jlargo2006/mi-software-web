@@ -1,11 +1,13 @@
 'use client'
 
 import { useState } from 'react'
+import { useAuth } from '@/lib/auth-provider'
 import Link from 'next/link'
 
 export default function Home() {
 
   const [activeTab, setActiveTab] = useState('define')
+  const { user } = useAuth()
 
   const videos = {
     define: [
@@ -42,8 +44,8 @@ export default function Home() {
     improve: [],
     control: [],
   }
-
-  return (
+  
+    return (
     <main className="min-h-screen bg-white text-black">
 
       {/* NAVBAR */}
@@ -96,11 +98,19 @@ export default function Home() {
               Pricing
             </a>
 
-            <Link href="/login">
-              <button className="border border-gray-300 hover:border-black px-5 py-2.5 rounded-2xl transition">
-                Login
-              </button>
-            </Link>
+            {user ? (
+              <Link href="/app">
+                <button className="border border-gray-300 hover:border-black px-5 py-2.5 rounded-2xl transition">
+                  Dashboard
+                </button>
+              </Link>
+            ) : (
+              <Link href="/login">
+                <button className="border border-gray-300 hover:border-black px-5 py-2.5 rounded-2xl transition">
+                  Login
+                </button>
+              </Link>
+            )}
 
             <button className="bg-black hover:bg-gray-800 text-white px-6 py-3 rounded-2xl font-semibold transition hover:scale-105">
               Try Free
