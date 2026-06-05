@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useAuth } from '@/lib/auth-provider'
 import { supabase } from '@/lib/supabase-browser'
+import Image from 'next/image'
 import Link from 'next/link'
 
 export default function Home() {
@@ -103,7 +104,7 @@ export default function Home() {
               <>
                 <span className="text-sm text-gray-600">{user.email}</span>
                 <button
-                  onClick={async () => { await supabase.signOut(); }}
+                  onClick={async () => { await supabase.auth.signOut(); }}
                   className="border border-gray-300 hover:border-black px-5 py-2.5 rounded-2xl transition text-sm"
                 >
                   Cerrar sesión
@@ -338,11 +339,13 @@ export default function Home() {
             {/* GRAPHICAL SUMMARY */}
             <div className="group bg-white rounded-3xl overflow-hidden border shadow-xl hover:shadow-2xl transition duration-300">
 
-              <img
-                src="/images/graphical-summary.png"
-                alt="Graphical Summary"
-                className="w-full transition duration-500 group-hover:scale-[1.01]"
-              />
+            <Image
+              src="/images/graphical-summary.png"
+              alt="Graphical Summary"
+              width={800}
+              height={500}
+              className="w-full transition duration-500 group-hover:scale-[1.01]"
+            />
 
               <div className="p-8">
 
@@ -362,9 +365,11 @@ export default function Home() {
             {/* CAPABILITY */}
             <div className="group bg-white rounded-3xl overflow-hidden border shadow-xl hover:shadow-2xl transition duration-300">
 
-              <img
+              <Image
                 src="/images/capability-test.png"
                 alt="Capability Analysis"
+                width={800}
+                height={500}
                 className="w-full transition duration-500 group-hover:scale-[1.01]"
               />
 
@@ -386,9 +391,11 @@ export default function Home() {
             {/* PARETO */}
             <div className="group bg-white rounded-3xl overflow-hidden border shadow-xl hover:shadow-2xl transition duration-300">
 
-              <img
+              <Image
                 src="/images/pareto.png"
                 alt="Pareto Analysis"
+                width={800}
+                height={500}
                 className="w-full transition duration-500 group-hover:scale-[1.01]"
               />
 
@@ -410,9 +417,11 @@ export default function Home() {
             {/* T TEST */}
             <div className="group bg-white rounded-3xl overflow-hidden border shadow-xl hover:shadow-2xl transition duration-300">
 
-              <img
+              <Image
                 src="/images/two-sample-t-test.png"
                 alt="Two Sample T-Test"
+                width={800}
+                height={500}
                 className="w-full transition duration-500 group-hover:scale-[1.01]"
               />
 
@@ -434,9 +443,11 @@ export default function Home() {
             {/* IMR */}
             <div className="group bg-white rounded-3xl overflow-hidden border shadow-xl hover:shadow-2xl transition duration-300">
 
-              <img
+              <Image
                 src="/images/imr.png"
                 alt="IMR Control Chart"
+                width={800}
+                height={500}
                 className="w-full transition duration-500 group-hover:scale-[1.01]"
               />
 
@@ -458,9 +469,11 @@ export default function Home() {
             {/* NORMALITY */}
             <div className="group bg-white rounded-3xl overflow-hidden border shadow-xl hover:shadow-2xl transition duration-300">
 
-              <img
+              <Image
                 src="/images/normality-test.png"
                 alt="Normality Test"
+                width={800}
+                height={500}
                 className="w-full transition duration-500 group-hover:scale-[1.01]"
               />
 
