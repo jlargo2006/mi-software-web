@@ -6,6 +6,45 @@ import { supabase } from '@/lib/supabase-browser'
 import Image from 'next/image'
 import Link from 'next/link'
 
+function YouTubeFacade({ id, title }: { id: string; title: string }) {
+  const [active, setActive] = useState(false)
+
+  if (active) {
+    return (
+      <iframe
+        className="w-full aspect-video"
+        src={`https://www.youtube.com/embed/${id}?autoplay=1`}
+        title={title}
+        allow="autoplay"
+        allowFullScreen
+      />
+    )
+  }
+
+  return (
+    <button
+      onClick={() => setActive(true)}
+      className="relative w-full aspect-video bg-black group"
+      aria-label={`Reproducir ${title}`}
+    >
+      <Image
+        src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`}
+        alt={title}
+        fill
+        className="object-cover opacity-80 group-hover:opacity-60 transition"
+      />
+      {/* Botón play */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center group-hover:scale-110 transition">
+          <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+        </div>
+      </div>
+    </button>
+  )
+}
+
 export default function Home() {
 
   const [activeTab, setActiveTab] = useState('define')
@@ -766,12 +805,7 @@ export default function Home() {
                   className="bg-white rounded-3xl overflow-hidden shadow-lg border"
                 >
 
-                  <iframe
-                    className="w-full aspect-video"
-                    src={`https://www.youtube.com/embed/${video.id}`}
-                    title={video.title}
-                    allowFullScreen
-                  />
+                  <YouTubeFacade id={video.id} title={video.title} />
 
                   <div className="p-6">
 
