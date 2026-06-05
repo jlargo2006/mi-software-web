@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useAuth } from '@/lib/auth-provider'
+import { supabase } from '@/lib/supabase-browser'
 import Link from 'next/link'
 
 export default function Home() {
@@ -99,22 +100,29 @@ export default function Home() {
             </a>
 
             {user ? (
-              <Link href="/app">
-                <button className="border border-gray-300 hover:border-black px-5 py-2.5 rounded-2xl transition">
-                  Dashboard
+              <>
+                <span className="text-sm text-gray-600">{user.email}</span>
+                <button
+                  onClick={async () => { await supabase.signOut(); }}
+                  className="border border-gray-300 hover:border-black px-5 py-2.5 rounded-2xl transition text-sm"
+                >
+                  Cerrar sesión
                 </button>
-              </Link>
+              </>
             ) : (
-              <Link href="/login">
-                <button className="border border-gray-300 hover:border-black px-5 py-2.5 rounded-2xl transition">
-                  Login
-                </button>
-              </Link>
+              <>
+                <Link href="/login">
+                  <button className="border border-gray-300 hover:border-black px-5 py-2.5 rounded-2xl transition text-sm">
+                    Login
+                  </button>
+                </Link>
+                <Link href="/login?mode=register">
+                  <button className="bg-black hover:bg-gray-800 text-white px-6 py-3 rounded-2xl font-semibold transition hover:scale-105 text-sm">
+                    Registrarse
+                  </button>
+                </Link>
+              </>
             )}
-
-            <button className="bg-black hover:bg-gray-800 text-white px-6 py-3 rounded-2xl font-semibold transition hover:scale-105">
-              Try Free
-            </button>
 
           </div>
 

@@ -4,9 +4,15 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase-browser'
 
+import { useSearchParams } from 'next/navigation'
+
+
 export default function LoginPage() {
   const router = useRouter()
-  const [mode, setMode] = useState<'login' | 'register'>('login')
+  const searchParams = useSearchParams()
+  const [mode, setMode] = useState<'login' | 'register'>(
+  searchParams.get('mode') === 'register' ? 'register' : 'login'
+  )
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -24,14 +30,14 @@ export default function LoginPage() {
       if (error) {
         setError(error.message)
       } else {
-        router.push('/app')
+        router.push('/')
       }
     } else {
       const { error } = await supabase.auth.signUp({ email, password })
       if (error) {
         setError(error.message)
       } else {
-        setMessage('Revisa tu email para confirmar la cuenta.')
+        setMessage('Revisa tu email y confirma tu cuenta para poder iniciar sesión.')
       }
     }
 
@@ -41,9 +47,22 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="bg-white p-8 rounded-2xl shadow-sm w-full max-w-sm">
-        <h1 className="text-2xl font-bold mb-6 text-center">
-          {mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}
-        </h1>
+
+        {/* TABS */}
+        <div className="flex mb-6 border rounded-xl overflow-hidden">
+          <button
+            onClick={() => { setMode('login'); setError(''); setMessage('') }}
+            className={`flex-1 py-2.5 text-sm font-medium transition ${mode === 'login' ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+          >
+            Iniciar sesión
+          </button>
+          <button
+            onClick={() => { setMode('register'); setError(''); setMessage('') }}
+            className={`flex-1 py-2.5 text-sm font-medium transition ${mode === 'register' ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+          >
+            Registrarse
+          </button>
+        </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input
@@ -75,15 +94,6 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-500 mt-6">
-          {mode === 'login' ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}{' '}
-          <button
-            onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); setMessage('') }}
-            className="underline text-black"
-          >
-            {mode === 'login' ? 'Regístrate' : 'Inicia sesión'}
-          </button>
-        </p>
       </div>
     </div>
   )
