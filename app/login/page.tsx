@@ -1,17 +1,14 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase-browser'
 
-import { useSearchParams } from 'next/navigation'
-
-
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [mode, setMode] = useState<'login' | 'register'>(
-  searchParams.get('mode') === 'register' ? 'register' : 'login'
+    searchParams.get('mode') === 'register' ? 'register' : 'login'
   )
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -45,56 +42,64 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white p-8 rounded-2xl shadow-sm w-full max-w-sm">
+    <div className="bg-white p-8 rounded-2xl shadow-sm w-full max-w-sm">
 
-        {/* TABS */}
-        <div className="flex mb-6 border rounded-xl overflow-hidden">
-          <button
-            onClick={() => { setMode('login'); setError(''); setMessage('') }}
-            className={`flex-1 py-2.5 text-sm font-medium transition ${mode === 'login' ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-50'}`}
-          >
-            Iniciar sesión
-          </button>
-          <button
-            onClick={() => { setMode('register'); setError(''); setMessage('') }}
-            className={`flex-1 py-2.5 text-sm font-medium transition ${mode === 'register' ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-50'}`}
-          >
-            Registrarse
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
-            className="border rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-black"
-          />
-          <input
-            type="password"
-            placeholder="Contraseña"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-            className="border rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-black"
-          />
-
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-          {message && <p className="text-green-600 text-sm">{message}</p>}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-black text-white py-2.5 rounded-xl text-sm font-medium disabled:opacity-50"
-          >
-            {loading ? 'Cargando...' : mode === 'login' ? 'Entrar' : 'Registrarse'}
-          </button>
-        </form>
-
+      {/* TABS */}
+      <div className="flex mb-6 border rounded-xl overflow-hidden">
+        <button
+          onClick={() => { setMode('login'); setError(''); setMessage('') }}
+          className={`flex-1 py-2.5 text-sm font-medium transition ${mode === 'login' ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+        >
+          Iniciar sesión
+        </button>
+        <button
+          onClick={() => { setMode('register'); setError(''); setMessage('') }}
+          className={`flex-1 py-2.5 text-sm font-medium transition ${mode === 'register' ? 'bg-black text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+        >
+          Registrarse
+        </button>
       </div>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          required
+          className="border rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-black"
+        />
+        <input
+          type="password"
+          placeholder="Contraseña"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          required
+          className="border rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-black"
+        />
+
+        {error && <p className="text-red-500 text-sm">{error}</p>}
+        {message && <p className="text-green-600 text-sm">{message}</p>}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="bg-black text-white py-2.5 rounded-xl text-sm font-medium disabled:opacity-50"
+        >
+          {loading ? 'Cargando...' : mode === 'login' ? 'Entrar' : 'Registrarse'}
+        </button>
+      </form>
+
+    </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <Suspense fallback={<div className="text-sm text-gray-500">Cargando...</div>}>
+        <LoginForm />
+      </Suspense>
     </div>
   )
 }
