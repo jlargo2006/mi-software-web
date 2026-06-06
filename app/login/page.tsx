@@ -3,6 +3,7 @@
 import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase-browser'
+import Link from 'next/link'
 
 function LoginForm() {
   const router = useRouter()
@@ -44,7 +45,6 @@ function LoginForm() {
   return (
     <div className="bg-white p-8 rounded-2xl shadow-sm w-full max-w-sm">
 
-      {/* TABS */}
       <div className="flex mb-6 border rounded-xl overflow-hidden">
         <button
           onClick={() => { setMode('login'); setError(''); setMessage('') }}
@@ -96,10 +96,30 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <Suspense fallback={<div className="text-sm text-gray-500">Cargando...</div>}>
-        <LoginForm />
-      </Suspense>
+    <div className="min-h-screen flex flex-col bg-gray-50">
+
+      {/* NAVBAR */}
+      <nav className="sticky top-0 z-50 backdrop-blur-xl bg-white/80 border-b border-gray-200">
+        <div className="max-w-7xl mx-auto flex items-center px-6 py-4">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-black text-white flex items-center justify-center font-bold text-lg">
+              6σ
+            </div>
+            <div>
+              <div className="font-bold text-lg leading-none">6 Sigma Macro Tools</div>
+              <div className="text-xs text-gray-500">Statistical Excel Automation</div>
+            </div>
+          </Link>
+        </div>
+      </nav>
+
+      {/* FORMULARIO */}
+      <div className="flex-1 flex items-center justify-center">
+        <Suspense fallback={<div className="text-sm text-gray-500">Cargando...</div>}>
+          <LoginForm />
+        </Suspense>
+      </div>
+
     </div>
   )
 }
