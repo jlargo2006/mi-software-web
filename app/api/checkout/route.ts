@@ -12,8 +12,8 @@ export async function POST() {
         quantity: 1,
       },
     ],
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/`,
+    success_url: 'https://mi-software-web.vercel.app/success?session_id={CHECKOUT_SESSION_ID}',
+    cancel_url: 'https://mi-software-web.vercel.app/',
   })
 
   return NextResponse.json({ url: session.url })
