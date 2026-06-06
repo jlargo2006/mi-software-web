@@ -50,6 +50,13 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState('define')
   const { user } = useAuth()
 
+
+  async function handleCheckout() {
+    const res = await fetch('/api/checkout', { method: 'POST' })
+    const { url } = await res.json()
+    window.location.href = url
+  }
+
   const videos = {
     define: [
       {
@@ -215,9 +222,12 @@ export default function Home() {
           {/* BUTTONS */}
           <div className="flex flex-wrap justify-center gap-5 mt-14">
 
-            <button className="bg-black text-white px-10 py-5 rounded-2xl text-lg font-semibold hover:scale-105 transition">
-              Try Free
-            </button>
+          <button
+            onClick={handleCheckout}
+            className="bg-black text-white px-10 py-5 rounded-2xl text-lg font-semibold hover:scale-105 transition"
+          >
+            Try Free
+          </button>
 
             <Link
               href="#videos"
