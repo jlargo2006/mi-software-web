@@ -879,8 +879,10 @@ export default function Home() {
               <li>✓ Email support</li>
             </ul>
 
-            <button className="bg-black text-white px-8 py-4 rounded-2xl text-lg font-semibold">
-              Try Free
+            <button
+              className="bg-black text-white px-10 py-5 rounded-2xl text-lg font-semibold hover:scale-105 transition"
+            >
+              Buy it
             </button>
 
           </div>
@@ -900,8 +902,12 @@ export default function Home() {
           Faster analysis. Better reporting. Smarter Excel automation.
         </p>
 
-        <button className="mt-12 bg-black text-white px-10 py-5 rounded-2xl text-xl font-semibold">
-          Try Free
+        <button
+          onClick={handleCheckout}
+          className="bg-black text-white px-10 py-5 rounded-2xl text-lg font-semibold hover:scale-105 transition"
+        >
+          Try it 
+          1€ = 1day
         </button>
 
       </section>
@@ -934,9 +940,13 @@ export default function Home() {
 
               <div className="flex flex-wrap gap-4">
 
-                <button className="bg-white text-black px-8 py-4 rounded-2xl text-lg font-semibold hover:scale-105 transition">
-                  Try Free
-                </button>
+              <button
+                onClick={handleCheckout}
+                className="bg-black text-white px-10 py-5 rounded-2xl text-lg font-semibold hover:scale-105 transition"
+              >
+                Try it 
+                1€ = 1day
+              </button>
 
                 <Link href="/contact">
                   <button className="border border-white/20 px-8 py-4 rounded-2xl text-lg hover:bg-white/10 transition">
