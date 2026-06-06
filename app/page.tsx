@@ -226,7 +226,8 @@ export default function Home() {
             onClick={handleCheckout}
             className="bg-black text-white px-10 py-5 rounded-2xl text-lg font-semibold hover:scale-105 transition"
           >
-            Try Free
+            Try it 
+            1€ = 1day
           </button>
 
             <Link
