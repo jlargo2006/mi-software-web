@@ -28,12 +28,12 @@ function YouTubeFacade({ id, title }: { id: string; title: string }) {
       aria-label={`Reproducir ${title}`}
     >
       <Image
-        src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`}
+        src={`/images/thumb-${id}.jpg`}
         alt={title}
         fill
+        priority
         className="object-cover opacity-80 group-hover:opacity-60 transition"
       />
-      {/* Botón play */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center group-hover:scale-110 transition">
           <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
