@@ -219,10 +219,12 @@ export default function Home() {
               Try Free
             </button>
 
-            <button className="border border-gray-300 hover:border-black px-10 py-5 rounded-2xl text-lg transition">
+            <Link
+              href="#videos"
+              className="border border-gray-300 hover:border-black px-10 py-5 rounded-2xl text-lg transition"
+            >
               View Training
-            </button>
-
+            </Link>
           </div>
 
           {/* METRICS */}
