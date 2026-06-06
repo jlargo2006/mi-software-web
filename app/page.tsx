@@ -869,7 +869,7 @@ export default function Home() {
             </h3>
 
             <p className="text-6xl font-bold mb-8">
-              $49
+              49 €
             </p>
 
             <ul className="space-y-4 text-lg text-gray-600 mb-10">
@@ -942,7 +942,7 @@ export default function Home() {
 
               <button
                 onClick={handleCheckout}
-                className="bg-black text-white px-10 py-5 rounded-2xl text-lg font-semibold hover:scale-105 transition"
+                className="border border-white/20 px-8 py-4 rounded-2xl text-lg hover:bg-white/10 transition"
               >
                 Try it 
                 1€ = 1day
