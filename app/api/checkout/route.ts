@@ -5,7 +5,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
 export async function POST() {
   const session = await stripe.checkout.sessions.create({
-    mode: 'subscription',
+    mode: 'payment',
     line_items: [
       {
         price: 'price_1TfMvpRu0NVWSHF7akW4XJ0Y',
