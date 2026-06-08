@@ -35,16 +35,17 @@ export async function POST(request: Request) {
     expiresAt.setDate(expiresAt.getDate() + 1) // 1 día por ahora
 
     if (email) {
-      // Buscar el user_id en Supabase por email
       const { data: users } = await supabase.auth.admin.listUsers()
       const user = users?.users.find(u => u.email === email)
 
-      await supabase.from('subscriptions').upsert({
+      const { error } = await supabase.from('subscriptions').upsert({
         user_id: user?.id ?? null,
         email,
         status: 'active',
         expires_at: expiresAt.toISOString(),
       }, { onConflict: 'email' })
+
+      console.log('Supabase upsert result:', error ? error : 'OK')
     }
   }
 
