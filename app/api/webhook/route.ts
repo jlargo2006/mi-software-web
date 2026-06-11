@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
+import { randomUUID } from 'crypto'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
@@ -32,17 +33,20 @@ export async function POST(request: Request) {
 
     const email = session.customer_details?.email
     const expiresAt = new Date()
-    expiresAt.setDate(expiresAt.getDate() + 1) // 1 día por ahora
+    expiresAt.setDate(expiresAt.getDate() + 1)
 
     if (email) {
       const { data: users } = await supabase.auth.admin.listUsers()
       const user = users?.users.find(u => u.email === email)
+
+      const license_key = randomUUID()
 
       const { error } = await supabase.from('subscriptions').upsert({
         user_id: user?.id ?? null,
         email,
         status: 'active',
         expires_at: expiresAt.toISOString(),
+        license_key,
       }, { onConflict: 'email' })
 
       console.log('Supabase upsert result:', error ? error : 'OK')
