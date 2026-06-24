@@ -35,9 +35,13 @@ function LoginForm() {
       const { data, error } = await supabase.auth.signUp({ email, password })
       if (error) {
         setError(error.message)
+      } else if (data.user && data.user.identities && data.user.identities.length === 0) {
+        // Mejora 1: email ya registrado (Supabase devuelve identities vacío)
+        setError('Este email ya está registrado. Inicia sesión o recupera tu contraseña.')
       } else {
-        setMessage('Si es un email nuevo, recibirás un correo de confirmación. Si ya tenías cuenta, inicia sesión o usa "He olvidado mi contraseña".')
+        setMessage('Revisa tu email y confirma tu cuenta para poder iniciar sesión.')
       }
+
     }
 
     setLoading(false)
