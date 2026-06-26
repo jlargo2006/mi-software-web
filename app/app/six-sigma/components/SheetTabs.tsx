@@ -50,7 +50,7 @@ export default function SheetTabs({
                   onDeleteSheet(name);
                 }}
                 className="ml-2 text-gray-400 hover:text-red-500"
-                title="Borrar hoja"
+                title="Delete sheet"
               >
                 ×
               </button>
@@ -60,7 +60,7 @@ export default function SheetTabs({
         <button
           onClick={onAddSheet}
           className="px-2 py-1 text-sm text-[#00674d] hover:bg-gray-200 rounded"
-          title="Añadir hoja"
+          title="Add sheet"
         >
           +
         </button>
@@ -68,10 +68,11 @@ export default function SheetTabs({
 
       {/* Acciones de filas/columnas */}
       <div className="flex items-center gap-1">
-        <button className={btn} onClick={onAddRow}>+ Fila</button>
-        <button className={btn} onClick={onDeleteRow}>− Fila</button>
+        <button className={btn} onClick={onAddRow}>+ Row</button>
+        <button className={btn} onClick={onDeleteRow}>− Row</button>
         <button className={btn} onClick={onAddColumn}>+ Col</button>
         <button className={btn} onClick={onDeleteColumn}>− Col</button>
+
       </div>
     </div>
   );
