@@ -96,13 +96,8 @@ export default function SixSigmaAnalyzer() {
 
             {/* SPLITTER (solo en vista dividida) */}
             {view === "split" && (
-              <Splitter
-                topPercent={topPercent}
-                onChange={setTopPercent}
-                containerRef={splitRef}
-              />
+              <Splitter onChange={setTopPercent} containerRef={splitRef} />
             )}
-
             {/* FRAME INFERIOR: grid */}
             {showBottom && (
               <div
