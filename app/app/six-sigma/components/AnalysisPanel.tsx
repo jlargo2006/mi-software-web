@@ -32,10 +32,14 @@ export default function AnalysisPanel({
   const [target, setTarget] = useState("");
   const [ran, setRan] = useState(false);
 
-  // Reset results when the tool changes
-  React.useEffect(() => {
+  // Reset results when the tool changes (React-recommended pattern:
+  // adjust state during render instead of using an effect)
+  const [prevTool, setPrevTool] = useState(tool);
+  if (tool !== prevTool) {
+    setPrevTool(tool);
     setRan(false);
-  }, [tool]);
+  }
+
 
   if (!tool) {
     return (
