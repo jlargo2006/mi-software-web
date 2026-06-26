@@ -49,10 +49,7 @@ export default function SixSigmaAnalyzer() {
   const handleExport = () => writeExcelFile(wb.data, wb.order);
 
   const saveStudy = (study: Omit<SavedStudy, "id">) => {
-    setStudies((prev) => [
-      { ...study, id: crypto.randomUUID() },
-      ...prev,
-    ]);
+    setStudies((prev) => [{ ...study, id: crypto.randomUUID() }, ...prev]);
   };
 
   const showTop = view === "split" || view === "graphics";
@@ -186,16 +183,6 @@ export default function SixSigmaAnalyzer() {
             )}
           </div>
 
-          {/* Sheet tabs (below the grid) */}
-          {showBottom && (
-            <SheetTabs
-              order={wb.order}
-              activeSheet={wb.activeSheet}
-              onSelect={wb.setActiveSheet}
-              onAddSheet={wb.addSheet}
-              onDeleteSheet={wb.deleteSheet}
-              onAddRow={wb.addRow}
-              onDeleteRow={wb.de
           {/* Sheet tabs (below the grid) */}
           {showBottom && (
             <SheetTabs
