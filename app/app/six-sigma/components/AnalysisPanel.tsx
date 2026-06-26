@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from "react";
 import type { SheetData } from "../lib/types";
 import { getColumns, getColumnValues } from "../lib/columns";
-import { capabilityStudy, normalityTest, mean, std } from "../lib/stats";
+import { capabilityStudy, normalityTest } from "../lib/stats";
 import ResultChart from "./ResultChart";
 import type { Data } from "plotly.js";
 
