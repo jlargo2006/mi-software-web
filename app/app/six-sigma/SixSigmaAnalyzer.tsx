@@ -8,7 +8,7 @@ import MenuBar from "./components/MenuBar";
 import DataGrid from "./components/DataGrid";
 import SheetTabs from "./components/SheetTabs";
 import Splitter from "./components/Splitter";
-import AnalysisPanel from "./components/AnalysisPanel";
+import AnalysisPanel, { AnalysisState, EMPTY_ANALYSIS } from "./components/AnalysisPanel";
 
 type ViewMode = "split" | "grid" | "graphics";
 
@@ -18,6 +18,7 @@ interface SavedStudy {
   name: string;
   params: Record<string, unknown>;
   results: Record<string, unknown>;
+  form: AnalysisState; // snapshot para rehidratar
 }
 
 interface SixSigmaAnalyzerProps {
@@ -31,8 +32,9 @@ export default function SixSigmaAnalyzer({
 }: SixSigmaAnalyzerProps) {
   const wb = useWorkbook();
   const [view, setView] = useState<ViewMode>("split");
-  const [topPercent, setTopPercent] = useState(45);
+  const [topPercent, setTopPercent] = useState(80);
   const [activeTool, setActiveTool] = useState<ToolId>(null);
+  const [analysis, setAnalysis] = useState<AnalysisState>(EMPTY_ANALYSIS);
   const [studies, setStudies] = useState<SavedStudy[]>([]);
   const splitRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -56,10 +58,14 @@ export default function SixSigmaAnalyzer({
     wb.resetWorkbook();
     setStudies([]);
     setActiveTool(null);
+    setAnalysis(EMPTY_ANALYSIS);
   };
 
-  const saveStudy = (study: Omit<SavedStudy, "id">) => {
-    setStudies((prev) => [{ ...study, id: crypto.randomUUID() }, ...prev]);
+  const saveStudy = (study: Omit<SavedStudy, "id" | "form">) => {
+    setStudies((prev) => [
+      { ...study, id: crypto.randomUUID(), form: analysis },
+      ...prev,
+    ]);
   };
 
   const showTop = view === "split" || view === "graphics";
@@ -88,6 +94,7 @@ export default function SixSigmaAnalyzer({
         onSignOut={onSignOut}
         onSelectTool={(tool) => {
           setActiveTool(tool);
+          setAnalysis((prev) => ({ ...prev, ran: false }));
           if (view === "grid") setView("split");
         }}
       />
@@ -121,6 +128,7 @@ export default function SixSigmaAnalyzer({
                 key={s.id}
                 onClick={() => {
                   setActiveTool(s.type);
+                  setAnalysis(s.form); // restaura columna, LSL/USL, target y ran
                   if (view === "grid") setView("split");
                 }}
                 className="w-full text-left text-sm px-2 py-1.5 rounded hover:bg-emerald-50 border border-transparent hover:border-[#00674d] text-gray-700"
@@ -142,6 +150,8 @@ export default function SixSigmaAnalyzer({
                 <AnalysisPanel
                   tool={activeTool}
                   sheet={wb.data[wb.activeSheet] ?? []}
+                  state={analysis}
+                  onStateChange={setAnalysis}
                   onSaveStudy={saveStudy}
                 />
               </div>
