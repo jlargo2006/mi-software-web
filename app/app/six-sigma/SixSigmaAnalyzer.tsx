@@ -31,7 +31,7 @@ export default function SixSigmaAnalyzer({
 }: SixSigmaAnalyzerProps) {
   const wb = useWorkbook();
   const [view, setView] = useState<ViewMode>("split");
-  const [topPercent, setTopPercent] = useState(45);
+  const [topPercent, setTopPercent] = useState(80);
   const [activeTool, setActiveTool] = useState<ToolId>(null);
   const [studies, setStudies] = useState<SavedStudy[]>([]);
   const splitRef = useRef<HTMLDivElement>(null);
