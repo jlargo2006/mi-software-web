@@ -3,22 +3,14 @@
 import React, { useRef, useState } from "react";
 import { useWorkbook } from "./hooks/useWorkbook";
 import { readExcelFile, writeExcelFile } from "./lib/excel";
-import TopBar from "./components/TopBar";
+import { ToolId } from "./lib/ribbon";
+import MenuBar from "./components/MenuBar";
 import DataGrid from "./components/DataGrid";
 import SheetTabs from "./components/SheetTabs";
 import Splitter from "./components/Splitter";
-import AnalysisPanel, { ToolId } from "./components/AnalysisPanel";
+import AnalysisPanel from "./components/AnalysisPanel";
 
 type ViewMode = "split" | "grid" | "graphics";
-
-// Each DMAIC phase exposes its available tools
-const PHASES: { name: string; tools: { id: ToolId; label: string }[] }[] = [
-  { name: "Define", tools: [] },
-  { name: "Measure", tools: [{ id: "capability", label: "Capability Study" }] },
-  { name: "Analyze", tools: [{ id: "normality", label: "Normality Test" }] },
-  { name: "Improve", tools: [] },
-  { name: "Control", tools: [] },
-];
 
 interface SavedStudy {
   id: string;
@@ -28,14 +20,22 @@ interface SavedStudy {
   results: Record<string, unknown>;
 }
 
-export default function SixSigmaAnalyzer() {
+interface SixSigmaAnalyzerProps {
+  userEmail?: string;
+  onSignOut: () => void;
+}
+
+export default function SixSigmaAnalyzer({
+  userEmail,
+  onSignOut,
+}: SixSigmaAnalyzerProps) {
   const wb = useWorkbook();
   const [view, setView] = useState<ViewMode>("split");
   const [topPercent, setTopPercent] = useState(45);
-  const [activePhase, setActivePhase] = useState("Measure");
   const [activeTool, setActiveTool] = useState<ToolId>(null);
   const [studies, setStudies] = useState<SavedStudy[]>([]);
   const splitRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImport = async (file: File) => {
     try {
@@ -48,14 +48,22 @@ export default function SixSigmaAnalyzer() {
 
   const handleExport = () => writeExcelFile(wb.data, wb.order);
 
+  const handleNew = () => {
+    const ok = window.confirm(
+      "Do you want to save your current work before clearing it?\n\nOK = save first, Cancel = discard."
+    );
+    if (ok) handleExport();
+    wb.resetWorkbook();
+    setStudies([]);
+    setActiveTool(null);
+  };
+
   const saveStudy = (study: Omit<SavedStudy, "id">) => {
     setStudies((prev) => [{ ...study, id: crypto.randomUUID() }, ...prev]);
   };
 
   const showTop = view === "split" || view === "graphics";
   const showBottom = view === "split" || view === "grid";
-
-  const phaseTools = PHASES.find((p) => p.name === activePhase)?.tools ?? [];
 
   const viewBtn = (mode: ViewMode, label: string) => (
     <button
@@ -72,50 +80,30 @@ export default function SixSigmaAnalyzer() {
 
   return (
     <div className="flex flex-col h-full w-full bg-white">
-      <TopBar onImport={handleImport} onExport={handleExport} />
+      <MenuBar
+        userEmail={userEmail}
+        onNew={handleNew}
+        onOpen={() => fileInputRef.current?.click()}
+        onSave={handleExport}
+        onSignOut={onSignOut}
+        onSelectTool={(tool) => {
+          setActiveTool(tool);
+          if (view === "grid") setView("split");
+        }}
+      />
 
-      {/* DMAIC phase bar */}
-      <div className="flex items-center gap-1 bg-gray-100 border-b border-gray-300 px-3 py-1.5 shrink-0">
-        {PHASES.map((p) => (
-          <button
-            key={p.name}
-            onClick={() => {
-              setActivePhase(p.name);
-              setActiveTool(null);
-            }}
-            className={`px-4 py-1 text-sm rounded font-medium ${
-              activePhase === p.name
-                ? "bg-[#00674d] text-white"
-                : "text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            {p.name}
-          </button>
-        ))}
-
-        {/* Tools for the active phase */}
-        {phaseTools.length > 0 && (
-          <>
-            <span className="mx-2 text-gray-300">|</span>
-            {phaseTools.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => {
-                  setActiveTool(t.id);
-                  if (view === "grid") setView("split");
-                }}
-                className={`px-3 py-1 text-sm rounded border ${
-                  activeTool === t.id
-                    ? "bg-emerald-100 border-[#00674d] text-[#00674d]"
-                    : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </>
-        )}
-      </div>
+      {/* Hidden file input for "Open Excel" */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".xlsx,.xls"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) handleImport(f);
+          e.target.value = "";
+        }}
+      />
 
       {/* Body: sidebar + central area */}
       <div className="flex flex-1 min-h-0">
@@ -146,7 +134,6 @@ export default function SixSigmaAnalyzer() {
         {/* Central area: two frames + splitter */}
         <div className="flex-1 flex flex-col min-w-0">
           <div ref={splitRef} className="flex-1 flex flex-col min-h-0">
-            {/* TOP FRAME: results / charts */}
             {showTop && (
               <div
                 className="overflow-auto bg-white border-b border-gray-200"
@@ -164,7 +151,6 @@ export default function SixSigmaAnalyzer() {
               <Splitter onChange={setTopPercent} containerRef={splitRef} />
             )}
 
-            {/* BOTTOM FRAME: grid */}
             {showBottom && (
               <div
                 className="overflow-hidden flex flex-col min-h-0"
@@ -183,7 +169,6 @@ export default function SixSigmaAnalyzer() {
             )}
           </div>
 
-          {/* Sheet tabs (below the grid) */}
           {showBottom && (
             <SheetTabs
               order={wb.order}
@@ -198,7 +183,6 @@ export default function SixSigmaAnalyzer() {
             />
           )}
 
-          {/* View mode buttons (bottom right) */}
           <div className="flex justify-end gap-2 bg-gray-100 border-t border-gray-300 px-3 py-1.5 shrink-0">
             {viewBtn("split", "⊞ Split")}
             {viewBtn("grid", "▦ Grid only")}
