@@ -20,15 +20,56 @@ function colLabel(i: number): string {
   return label;
 }
 
+const DEFAULT_COL_WIDTH = 64; // Minitab "8.00" ≈ 64px
+const MIN_COL_WIDTH = 32;
+
 export default function DataGrid({
   sheet,
   onCellChange,
   onPaste,
 }: DataGridProps) {
   const [active, setActive] = useState<{ r: number; c: number } | null>(null);
+  const [colWidths, setColWidths] = useState<Record<number, number>>({});
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Resize state (kept in a ref so mousemove doesn't re-render every frame)
+  const resizeRef = useRef<{ col: number; startX: number; startW: number } | null>(
+    null
+  );
+
   const numCols = sheet.reduce((max, row) => Math.max(max, row.length), 1);
+
+  const widthOf = (c: number) => colWidths[c] ?? DEFAULT_COL_WIDTH;
+
+  const startResize = (e: React.MouseEvent, col: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    resizeRef.current = { col, startX: e.clientX, startW: widthOf(col) };
+
+    const onMove = (ev: MouseEvent) => {
+      const st = resizeRef.current;
+      if (!st) return;
+      const delta = ev.clientX - st.startX;
+      const newW = Math.max(MIN_COL_WIDTH, st.startW + delta);
+      setColWidths((prev) => ({ ...prev, [st.col]: newW }));
+    };
+    const onUp = () => {
+      resizeRef.current = null;
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
+
+  // Doble clic en el borde -> volver al ancho por defecto
+  const resetWidth = (col: number) => {
+    setColWidths((prev) => {
+      const copy = { ...prev };
+      delete copy[col];
+      return copy;
+    });
+  };
 
   // Mover el foco con flechas / Enter / Tab
   const handleKeyDown = (
@@ -83,16 +124,24 @@ export default function DataGrid({
 
   return (
     <div ref={containerRef} className="overflow-auto h-full w-full">
-      <table className="border-collapse text-sm">
+      <table className="border-collapse text-sm table-fixed">
         <thead className="sticky top-0 z-10">
           <tr>
             <th className="sticky left-0 z-20 bg-gray-200 border border-gray-300 w-12 h-7" />
             {Array.from({ length: numCols }).map((_, c) => (
               <th
                 key={c}
-                className="bg-gray-200 border border-gray-300 px-2 h-7 min-w-[90px] font-semibold text-gray-700"
+                style={{ width: widthOf(c), minWidth: widthOf(c) }}
+                className="relative bg-gray-200 border border-gray-300 px-2 h-7 font-semibold text-gray-700 select-none"
               >
                 {colLabel(c)}
+                {/* Resize handle */}
+                <span
+                  onMouseDown={(e) => startResize(e, c)}
+                  onDoubleClick={() => resetWidth(c)}
+                  className="absolute top-0 right-0 h-full w-1.5 cursor-col-resize hover:bg-[#00674d]/40"
+                  title="Drag to resize · double-click to reset"
+                />
               </th>
             ))}
           </tr>
@@ -108,6 +157,7 @@ export default function DataGrid({
                 return (
                   <td
                     key={c}
+                    style={{ width: widthOf(c), minWidth: widthOf(c) }}
                     className={`border border-gray-300 p-0 ${
                       isActive ? "outline outline-2 outline-[#00674d]" : ""
                     }`}
