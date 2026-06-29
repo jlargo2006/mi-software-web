@@ -22,6 +22,7 @@ function colLabel(i: number): string {
 
 const DEFAULT_COL_WIDTH = 64; // Minitab "8.00" ≈ 64px
 const MIN_COL_WIDTH = 32;
+const MIN_COLS = 26; // al menos hasta la Z
 
 export default function DataGrid({
   sheet,
@@ -37,29 +38,45 @@ export default function DataGrid({
     null
   );
 
-  const numCols = sheet.reduce((max, row) => Math.max(max, row.length), 1);
+  const numCols = Math.max(
+    MIN_COLS,
+    sheet.reduce((max, row) => Math.max(max, row.length), 1)
+  );
 
   const widthOf = (c: number) => colWidths[c] ?? DEFAULT_COL_WIDTH;
 
-  const startResize = (e: React.MouseEvent, col: number) => {
-    e.preventDefault();
-    e.stopPropagation();
-    resizeRef.current = { col, startX: e.clientX, startW: widthOf(col) };
+  // Doble clic en el borde -> autofit:
+  // vuelve al ancho por defecto, salvo que algún texto sea más ancho
+  const resetWidth = (col: number) => {
+    // Medimos el texto más ancho de la columna con un canvas
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    let maxText = 0;
+    if (ctx) {
+      // misma fuente que las celdas (text-sm = 14px)
+      ctx.font =
+        '14px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
+      for (const row of sheet) {
+        const val = row[col];
+        if (val === undefined || val === null || val === "") continue;
+        const w = ctx.measureText(String(val)).width;
+        if (w > maxText) maxText = w;
+      }
+    }
+    // +16px de padding (px-2 a cada lado)
+    const contentWidth = Math.ceil(maxText) + 16;
 
-    const onMove = (ev: MouseEvent) => {
-      const st = resizeRef.current;
-      if (!st) return;
-      const delta = ev.clientX - st.startX;
-      const newW = Math.max(MIN_COL_WIDTH, st.startW + delta);
-      setColWidths((prev) => ({ ...prev, [st.col]: newW }));
-    };
-    const onUp = () => {
-      resizeRef.current = null;
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
+    setColWidths((prev) => {
+      const copy = { ...prev };
+      if (contentWidth <= DEFAULT_COL_WIDTH) {
+        // cabe en el ancho por defecto -> reset
+        delete copy[col];
+      } else {
+        // hay texto más ancho -> ajustamos a ese contenido
+        copy[col] = contentWidth;
+      }
+      return copy;
+    });
   };
 
   // Doble clic en el borde -> volver al ancho por defecto
