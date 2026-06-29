@@ -1,17 +1,35 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import type { SheetData } from "../lib/types";
+import type { ToolId } from "../lib/ribbon";
 import { getColumns, getColumnValues } from "../lib/columns";
 import { capabilityStudy, normalityTest } from "../lib/stats";
 import ResultChart from "./ResultChart";
 import type { Data } from "plotly.js";
 
-export type ToolId = "capability" | "normality" | null;
+// Estado del formulario/análisis: ahora vive en el padre
+export interface AnalysisState {
+  colIndex: number;
+  lsl: string;
+  usl: string;
+  target: string;
+  ran: boolean;
+}
+
+export const EMPTY_ANALYSIS: AnalysisState = {
+  colIndex: 0,
+  lsl: "",
+  usl: "",
+  target: "",
+  ran: false,
+};
 
 interface AnalysisPanelProps {
   tool: ToolId;
   sheet: SheetData;
+  state: AnalysisState;
+  onStateChange: (next: AnalysisState) => void;
   onSaveStudy: (study: {
     type: "capability" | "normality";
     name: string;
@@ -23,23 +41,14 @@ interface AnalysisPanelProps {
 export default function AnalysisPanel({
   tool,
   sheet,
+  state,
+  onStateChange,
   onSaveStudy,
 }: AnalysisPanelProps) {
   const columns = useMemo(() => getColumns(sheet), [sheet]);
-  const [colIndex, setColIndex] = useState(0);
-  const [lsl, setLsl] = useState("");
-  const [usl, setUsl] = useState("");
-  const [target, setTarget] = useState("");
-  const [ran, setRan] = useState(false);
 
-  // Reset results when the tool changes (React-recommended pattern:
-  // adjust state during render instead of using an effect)
-  const [prevTool, setPrevTool] = useState(tool);
-  if (tool !== prevTool) {
-    setPrevTool(tool);
-    setRan(false);
-  }
-
+  const set = (patch: Partial<AnalysisState>) =>
+    onStateChange({ ...state, ...patch });
 
   if (!tool) {
     return (
@@ -50,8 +59,8 @@ export default function AnalysisPanel({
     );
   }
 
-  const values = getColumnValues(sheet, colIndex);
-  const colName = columns[colIndex]?.name ?? "Column";
+  const values = getColumnValues(sheet, state.colIndex);
+  const colName = columns[state.colIndex]?.name ?? "Column";
 
   const parseNum = (s: string): number | null => {
     const n = parseFloat(s);
@@ -63,7 +72,7 @@ export default function AnalysisPanel({
       alert("The selected column needs at least 2 numeric values.");
       return;
     }
-    setRan(true);
+    set({ ran: true });
   };
 
   return (
@@ -78,11 +87,10 @@ export default function AnalysisPanel({
         <label className="flex flex-col text-xs text-gray-600">
           Data column
           <select
-            value={colIndex}
-            onChange={(e) => {
-              setColIndex(Number(e.target.value));
-              setRan(false);
-            }}
+            value={state.colIndex}
+            onChange={(e) =>
+              set({ colIndex: Number(e.target.value), ran: false })
+            }
             className="mt-1 border border-gray-300 rounded px-2 py-1 text-sm text-gray-800 min-w-[160px]"
           >
             {columns.map((c) => (
@@ -98,8 +106,8 @@ export default function AnalysisPanel({
             <label className="flex flex-col text-xs text-gray-600">
               LSL (Lower Spec)
               <input
-                value={lsl}
-                onChange={(e) => setLsl(e.target.value)}
+                value={state.lsl}
+                onChange={(e) => set({ lsl: e.target.value })}
                 className="mt-1 border border-gray-300 rounded px-2 py-1 text-sm w-28"
                 placeholder="optional"
               />
@@ -107,8 +115,8 @@ export default function AnalysisPanel({
             <label className="flex flex-col text-xs text-gray-600">
               USL (Upper Spec)
               <input
-                value={usl}
-                onChange={(e) => setUsl(e.target.value)}
+                value={state.usl}
+                onChange={(e) => set({ usl: e.target.value })}
                 className="mt-1 border border-gray-300 rounded px-2 py-1 text-sm w-28"
                 placeholder="optional"
               />
@@ -116,8 +124,8 @@ export default function AnalysisPanel({
             <label className="flex flex-col text-xs text-gray-600">
               Target
               <input
-                value={target}
-                onChange={(e) => setTarget(e.target.value)}
+                value={state.target}
+                onChange={(e) => set({ target: e.target.value })}
                 className="mt-1 border border-gray-300 rounded px-2 py-1 text-sm w-28"
                 placeholder="optional"
               />
@@ -134,17 +142,17 @@ export default function AnalysisPanel({
       </div>
 
       {/* Results */}
-      {ran && tool === "capability" && (
+      {state.ran && tool === "capability" && (
         <CapabilityResults
           values={values}
           colName={colName}
-          lsl={parseNum(lsl)}
-          usl={parseNum(usl)}
-          target={parseNum(target)}
+          lsl={parseNum(state.lsl)}
+          usl={parseNum(state.usl)}
+          target={parseNum(state.target)}
           onSave={onSaveStudy}
         />
       )}
-      {ran && tool === "normality" && (
+      {state.ran && tool === "normality" && (
         <NormalityResults
           values={values}
           colName={colName}
@@ -286,7 +294,7 @@ function NormalityResults({
             type: "normality",
             name: `Normality — ${colName}`,
             params: { colName },
-            results: { ...res, sortedData: undefined }, // avoid storing big arrays
+            results: { ...res, sortedData: undefined },
           })
         }
       />
