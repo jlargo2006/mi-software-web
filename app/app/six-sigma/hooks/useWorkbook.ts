@@ -23,6 +23,14 @@ export function useWorkbook() {
     },
     []
   );
+  
+  // Vaciar el libro entero (botón "New")
+  const resetWorkbook = useCallback(() => {
+    setData({ [DEFAULT_SHEET]: createEmptySheet() });
+    setOrder([DEFAULT_SHEET]);
+    setActiveSheet(DEFAULT_SHEET);
+  }, []);
+
 
   // Editar una celda concreta de la hoja activa
   const setCell = useCallback(
@@ -139,5 +147,6 @@ export function useWorkbook() {
     addSheet,
     deleteSheet,
     pasteData,
+    resetWorkbook,
   };
 }
