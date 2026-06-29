@@ -42,7 +42,7 @@ export default function DataGrid({
     MIN_COLS,
     sheet.reduce((max, row) => Math.max(max, row.length), 1)
   );
-
+  
   const widthOf = (c: number) => colWidths[c] ?? DEFAULT_COL_WIDTH;
 
   // Doble clic en el borde -> autofit:
@@ -75,15 +75,6 @@ export default function DataGrid({
         // hay texto más ancho -> ajustamos a ese contenido
         copy[col] = contentWidth;
       }
-      return copy;
-    });
-  };
-
-  // Doble clic en el borde -> volver al ancho por defecto
-  const resetWidth = (col: number) => {
-    setColWidths((prev) => {
-      const copy = { ...prev };
-      delete copy[col];
       return copy;
     });
   };
