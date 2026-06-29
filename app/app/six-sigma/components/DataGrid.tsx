@@ -42,8 +42,29 @@ export default function DataGrid({
     MIN_COLS,
     sheet.reduce((max, row) => Math.max(max, row.length), 1)
   );
-  
+
   const widthOf = (c: number) => colWidths[c] ?? DEFAULT_COL_WIDTH;
+
+  const startResize = (e: React.MouseEvent, col: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    resizeRef.current = { col, startX: e.clientX, startW: widthOf(col) };
+
+    const onMove = (ev: MouseEvent) => {
+      const st = resizeRef.current;
+      if (!st) return;
+      const delta = ev.clientX - st.startX;
+      const newW = Math.max(MIN_COL_WIDTH, st.startW + delta);
+      setColWidths((prev) => ({ ...prev, [st.col]: newW }));
+    };
+    const onUp = () => {
+      resizeRef.current = null;
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
 
   // Doble clic en el borde -> autofit:
   // vuelve al ancho por defecto, salvo que algún texto sea más ancho
