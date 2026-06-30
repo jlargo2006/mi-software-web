@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import type { SheetData } from "../lib/types";
 import type { ToolId } from "../lib/ribbon";
 import { getColumns, getColumnValues } from "../lib/columns";
 import { capabilityStudy, normalityTest } from "../lib/stats";
 import ResultChart from "./ResultChart";
 import type { Data } from "plotly.js";
+import ReportLayout from "./ReportLayout";
+import StatBlock, { fmt, fmtPPM, StatSection } from "./StatBlock";
+
 
 // Estado del formulario/análisis: ahora vive en el padre
 export interface AnalysisState {
@@ -14,6 +17,7 @@ export interface AnalysisState {
   lsl: string;
   usl: string;
   target: string;
+  subgroupSize: string; 
   ran: boolean;
 }
 
@@ -22,6 +26,7 @@ export const EMPTY_ANALYSIS: AnalysisState = {
   lsl: "",
   usl: "",
   target: "",
+  subgroupSize: "1", 
   ran: false,
 };
 
@@ -82,15 +87,13 @@ export default function AnalysisPanel({
         {tool === "capability" ? "Capability Study (Cp / Cpk)" : "Normality Test"}
       </h2>
 
-      {/* Form */}
+      {/* Form / controls */}
       <div className="flex flex-wrap items-end gap-3 mb-4 bg-gray-50 p-3 rounded border border-gray-200">
         <label className="flex flex-col text-xs text-gray-600">
           Data column
           <select
             value={state.colIndex}
-            onChange={(e) =>
-              set({ colIndex: Number(e.target.value), ran: false })
-            }
+            onChange={(e) => set({ colIndex: Number(e.target.value), ran: false })}
             className="mt-1 border border-gray-300 rounded px-2 py-1 text-sm text-gray-800 min-w-[160px]"
           >
             {columns.map((c) => (
@@ -100,38 +103,40 @@ export default function AnalysisPanel({
             ))}
           </select>
         </label>
-
-        {tool === "capability" && (
-          <>
-            <label className="flex flex-col text-xs text-gray-600">
-              LSL (Lower Spec)
-              <input
-                value={state.lsl}
-                onChange={(e) => set({ lsl: e.target.value })}
-                className="mt-1 border border-gray-300 rounded px-2 py-1 text-sm w-28"
-                placeholder="optional"
-              />
-            </label>
-            <label className="flex flex-col text-xs text-gray-600">
-              USL (Upper Spec)
-              <input
-                value={state.usl}
-                onChange={(e) => set({ usl: e.target.value })}
-                className="mt-1 border border-gray-300 rounded px-2 py-1 text-sm w-28"
-                placeholder="optional"
-              />
-            </label>
-            <label className="flex flex-col text-xs text-gray-600">
-              Target
-              <input
-                value={state.target}
-                onChange={(e) => set({ target: e.target.value })}
-                className="mt-1 border border-gray-300 rounded px-2 py-1 text-sm w-28"
-                placeholder="optional"
-              />
-            </label>
-          </>
+        {tool === "capability" ? (
+          <button
+            onClick={() => setDialogOpen(true)}
+            className="bg-[#00674d] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#00513d]"
+          >
+            ⚙ Set up & Run
+          </button>
+        ) : (
+          <button
+            onClick={runAnalysis}
+            className="bg-[#00674d] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#00513d]"
+          >
+            ▶ Run
+          </button>
         )}
+      </div>
+
+      {/* Capability setup dialog (pop-up) */}
+      {dialogOpen && tool === "capability" && (
+        <CapabilityDialog
+          state={state}
+          onCancel={() => setDialogOpen(false)}
+          onRun={(patch) => {
+            // validamos columna antes de correr
+            if (values.length < 2) {
+              alert("The selected column needs at least 2 numeric values.");
+              return;
+            }
+            set({ ...patch, ran: true });
+            setDialogOpen(false);
+          }}
+        />
+      )}
+
 
         <button
           onClick={runAnalysis}
