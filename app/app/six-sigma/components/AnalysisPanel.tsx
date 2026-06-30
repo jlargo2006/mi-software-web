@@ -332,15 +332,10 @@ function CapabilityResults({
           <div className="flex justify-center">
             <div
               className="border border-gray-200 rounded"
-              style={{
-                width: "50%",
-                aspectRatio: "4 / 3",
-              }}
+              style={{ width: "50%", aspectRatio: "4 / 3" }}
             >
               <ResultChart
                 data={[histogram, overallCurve, withinCurve]}
-                style={{ width: "100%", height: "100%" }}
-                useResizeHandler
                 layout={{
                   autosize: true,
                   title: { text: `Process Capability Report — ${colName}` },
@@ -370,6 +365,7 @@ function CapabilityResults({
             </div>
           </div>
         }
+
 
 
       />
