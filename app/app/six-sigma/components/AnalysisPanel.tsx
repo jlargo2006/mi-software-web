@@ -6,18 +6,17 @@ import type { ToolId } from "../lib/ribbon";
 import { getColumns, getColumnValues } from "../lib/columns";
 import { capabilityStudy, normalityTest } from "../lib/stats";
 import ResultChart from "./ResultChart";
-import type { Data } from "plotly.js";
 import ReportLayout from "./ReportLayout";
 import StatBlock, { fmt, fmtPPM, StatSection } from "./StatBlock";
+import type { Data } from "plotly.js";
 
-
-// Estado del formulario/análisis: ahora vive en el padre
+// Estado del formulario/análisis: vive en el padre
 export interface AnalysisState {
   colIndex: number;
   lsl: string;
   usl: string;
   target: string;
-  subgroupSize: string; 
+  subgroupSize: string;
   ran: boolean;
 }
 
@@ -26,7 +25,7 @@ export const EMPTY_ANALYSIS: AnalysisState = {
   lsl: "",
   usl: "",
   target: "",
-  subgroupSize: "1", 
+  subgroupSize: "1",
   ran: false,
 };
 
@@ -51,6 +50,7 @@ export default function AnalysisPanel({
   onSaveStudy,
 }: AnalysisPanelProps) {
   const columns = useMemo(() => getColumns(sheet), [sheet]);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const set = (patch: Partial<AnalysisState>) =>
     onStateChange({ ...state, ...patch });
@@ -93,7 +93,9 @@ export default function AnalysisPanel({
           Data column
           <select
             value={state.colIndex}
-            onChange={(e) => set({ colIndex: Number(e.target.value), ran: false })}
+            onChange={(e) =>
+              set({ colIndex: Number(e.target.value), ran: false })
+            }
             className="mt-1 border border-gray-300 rounded px-2 py-1 text-sm text-gray-800 min-w-[160px]"
           >
             {columns.map((c) => (
@@ -103,6 +105,7 @@ export default function AnalysisPanel({
             ))}
           </select>
         </label>
+
         {tool === "capability" ? (
           <button
             onClick={() => setDialogOpen(true)}
@@ -126,7 +129,6 @@ export default function AnalysisPanel({
           state={state}
           onCancel={() => setDialogOpen(false)}
           onRun={(patch) => {
-            // validamos columna antes de correr
             if (values.length < 2) {
               alert("The selected column needs at least 2 numeric values.");
               return;
@@ -137,15 +139,6 @@ export default function AnalysisPanel({
         />
       )}
 
-
-        <button
-          onClick={runAnalysis}
-          className="bg-[#00674d] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#00513d]"
-        >
-          ▶ Run
-        </button>
-      </div>
-
       {/* Results */}
       {state.ran && tool === "capability" && (
         <CapabilityResults
@@ -154,6 +147,10 @@ export default function AnalysisPanel({
           lsl={parseNum(state.lsl)}
           usl={parseNum(state.usl)}
           target={parseNum(state.target)}
+          subgroupSize={Math.max(
+            1,
+            Math.round(parseNum(state.subgroupSize) ?? 1)
+          )}
           onSave={onSaveStudy}
         />
       )}
@@ -175,6 +172,7 @@ function CapabilityResults({
   lsl,
   usl,
   target,
+  subgroupSize,
   onSave,
 }: {
   values: number[];
@@ -182,11 +180,12 @@ function CapabilityResults({
   lsl: number | null;
   usl: number | null;
   target: number | null;
+  subgroupSize: number;
   onSave: AnalysisPanelProps["onSaveStudy"];
 }) {
   const res = useMemo(
-    () => capabilityStudy(values, lsl, usl, target),
-    [values, lsl, usl, target]
+    () => capabilityStudy(values, lsl, usl, target, subgroupSize),
+    [values, lsl, usl, target, subgroupSize]
   );
 
   const histogram: Data = {
@@ -196,52 +195,116 @@ function CapabilityResults({
     name: colName,
   };
 
-  const shapes =
-    [
-      lsl !== null && { x: lsl, color: "#dc2626", label: "LSL" },
-      usl !== null && { x: usl, color: "#dc2626", label: "USL" },
-      target !== null && { x: target, color: "#2563eb", label: "Target" },
-    ].filter(Boolean) as { x: number; color: string; label: string }[];
+  const shapes = [
+    lsl !== null && { x: lsl, color: "#dc2626" },
+    usl !== null && { x: usl, color: "#dc2626" },
+    target !== null && { x: target, color: "#2563eb" },
+  ].filter(Boolean) as { x: number; color: string }[];
+
+  // --- Columna izquierda ---
+  const leftSections: StatSection[] = [
+    {
+      title: "Process Data",
+      rows: [
+        { label: "LSL", value: fmt(res.lsl) },
+        { label: "Target", value: fmt(res.target) },
+        { label: "USL", value: fmt(res.usl) },
+        { label: "Sample Mean", value: fmt(res.mean) },
+        { label: "Sample N", value: String(res.n) },
+        { label: "StDev(Overall)", value: fmt(res.stdOverall) },
+        { label: "StDev(Within)", value: fmt(res.stdWithin) },
+      ],
+    },
+    {
+      title: "Observed Performance",
+      rows: [
+        { label: "PPM < LSL", value: fmtPPM(res.ppmObsLSL) },
+        { label: "PPM > USL", value: fmtPPM(res.ppmObsUSL) },
+        { label: "PPM Total", value: fmtPPM(res.ppmObsTotal) },
+      ],
+    },
+    {
+      title: "Exp. Overall Performance",
+      rows: [
+        { label: "PPM < LSL", value: fmtPPM(res.ppmExpOverallLSL) },
+        { label: "PPM > USL", value: fmtPPM(res.ppmExpOverallUSL) },
+        { label: "PPM Total", value: fmtPPM(res.ppmExpOverallTotal) },
+      ],
+    },
+    {
+      title: "Exp. Within Performance",
+      rows: [
+        { label: "PPM < LSL", value: fmtPPM(res.ppmExpWithinLSL) },
+        { label: "PPM > USL", value: fmtPPM(res.ppmExpWithinUSL) },
+        { label: "PPM Total", value: fmtPPM(res.ppmExpWithinTotal) },
+      ],
+    },
+  ];
+
+  // --- Columna derecha ---
+  const rightSections: StatSection[] = [
+    {
+      title: "Overall Capability",
+      rows: [
+        { label: "Z.Bench", value: fmt(res.zBenchOverall) },
+        { label: "Z.LSL", value: fmt(res.zLSLOverall) },
+        { label: "Z.USL", value: fmt(res.zUSLOverall) },
+        { label: "Pp", value: fmt(res.pp, 2) },
+        { label: "PPL", value: fmt(res.ppl, 2) },
+        { label: "PPU", value: fmt(res.ppu, 2) },
+        { label: "Ppk", value: fmt(res.ppk, 2) },
+      ],
+    },
+    {
+      title: "Potential (Within) Capability",
+      rows: [
+        { label: "Z.Bench", value: fmt(res.zBenchWithin) },
+        { label: "Z.LSL", value: fmt(res.zLSLWithin) },
+        { label: "Z.USL", value: fmt(res.zUSLWithin) },
+        { label: "Cp", value: fmt(res.cp, 2) },
+        { label: "CPL", value: fmt(res.cpl, 2) },
+        { label: "CPU", value: fmt(res.cpu, 2) },
+        { label: "Cpk", value: fmt(res.cpk, 2) },
+      ],
+    },
+  ];
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-        <Stat label="N" value={res.n} />
-        <Stat label="Mean" value={res.mean.toFixed(4)} />
-        <Stat label="StDev" value={res.std.toFixed(4)} />
-        <Stat label="Cp" value={res.cp?.toFixed(3) ?? "—"} />
-        <Stat label="Cpk" value={res.cpk?.toFixed(3) ?? "—"} highlight />
-        <Stat label="Cpl" value={res.cpl?.toFixed(3) ?? "—"} />
-        <Stat label="Cpu" value={res.cpu?.toFixed(3) ?? "—"} />
-      </div>
-
-      <div className="h-72 border border-gray-200 rounded">
-        <ResultChart
-          data={[histogram]}
-          layout={{
-            title: { text: `Capability — ${colName}` },
-            xaxis: { title: { text: colName } },
-            yaxis: { title: { text: "Frequency" } },
-            shapes: shapes.map((s) => ({
-              type: "line",
-              x0: s.x,
-              x1: s.x,
-              yref: "paper",
-              y0: 0,
-              y1: 1,
-              line: { color: s.color, width: 2, dash: "dash" },
-            })),
-          }}
-        />
-      </div>
+      <ReportLayout
+        template="text-chart-text"
+        left={<StatBlock sections={leftSections} />}
+        right={<StatBlock sections={rightSections} />}
+        center={
+          <div className="h-72 border border-gray-200 rounded">
+            <ResultChart
+              data={[histogram]}
+              layout={{
+                title: { text: `Process Capability Report — ${colName}` },
+                xaxis: { title: { text: colName } },
+                yaxis: { title: { text: "Frequency" } },
+                shapes: shapes.map((s) => ({
+                  type: "line",
+                  x0: s.x,
+                  x1: s.x,
+                  yref: "paper",
+                  y0: 0,
+                  y1: 1,
+                  line: { color: s.color, width: 2, dash: "dash" },
+                })),
+              }}
+            />
+          </div>
+        }
+      />
 
       <SaveButton
         onSave={() =>
           onSave({
             type: "capability",
             name: `Capability — ${colName}`,
-            params: { colName, lsl, usl, target },
-            results: { ...res },
+            params: { colName, lsl, usl, target, subgroupSize },
+            results: { ...res, data: undefined },
           })
         }
       />
@@ -339,5 +402,91 @@ function SaveButton({ onSave }: { onSave: () => void }) {
     >
       💾 Save study
     </button>
+  );
+}
+
+/* ---------- Capability setup dialog ---------- */
+function CapabilityDialog({
+  state,
+  onCancel,
+  onRun,
+}: {
+  state: AnalysisState;
+  onCancel: () => void;
+  onRun: (patch: Partial<AnalysisState>) => void;
+}) {
+  const [lsl, setLsl] = useState(state.lsl);
+  const [usl, setUsl] = useState(state.usl);
+  const [target, setTarget] = useState(state.target);
+  const [subgroupSize, setSubgroupSize] = useState(state.subgroupSize || "1");
+
+  const field = "mt-1 border border-gray-300 rounded px-2 py-1 text-sm w-full";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-lg shadow-xl w-80 p-5">
+        <h3 className="text-base font-semibold text-[#00674d] mb-4">
+          Capability Study — Setup
+        </h3>
+
+        <div className="space-y-3">
+          <label className="flex flex-col text-xs text-gray-600">
+            LSL (Lower Spec)
+            <input
+              value={lsl}
+              onChange={(e) => setLsl(e.target.value)}
+              className={field}
+              placeholder="optional"
+            />
+          </label>
+          <label className="flex flex-col text-xs text-gray-600">
+            Target
+            <input
+              value={target}
+              onChange={(e) => setTarget(e.target.value)}
+              className={field}
+              placeholder="optional"
+            />
+          </label>
+          <label className="flex flex-col text-xs text-gray-600">
+            USL (Upper Spec)
+            <input
+              value={usl}
+              onChange={(e) => setUsl(e.target.value)}
+              className={field}
+              placeholder="optional"
+            />
+          </label>
+          <label className="flex flex-col text-xs text-gray-600">
+            Subgroup size
+            <input
+              type="number"
+              min={1}
+              value={subgroupSize}
+              onChange={(e) => setSubgroupSize(e.target.value)}
+              className={field}
+            />
+            <span className="mt-1 text-[11px] text-gray-400">
+              1 = moving range (MR/d₂). &gt;1 = pooled subgroups.
+            </span>
+          </label>
+        </div>
+
+        <div className="flex justify-end gap-2 mt-5">
+          <button
+            onClick={onCancel}
+            className="px-3 py-1.5 text-sm rounded border border-gray-300 text-gray-600 hover:bg-gray-100"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onRun({ lsl, usl, target, subgroupSize })}
+            className="px-4 py-1.5 text-sm rounded bg-[#00674d] text-white font-medium hover:bg-[#00513d]"
+          >
+            ▶ Run
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
