@@ -170,6 +170,7 @@ function CapabilityResults({
   lsl,
   usl,
   target,
+  subgroupSize,
   onSave,
 }: {
   values: number[];
@@ -177,72 +178,206 @@ function CapabilityResults({
   lsl: number | null;
   usl: number | null;
   target: number | null;
+  subgroupSize: number;
   onSave: AnalysisPanelProps["onSaveStudy"];
 }) {
   const res = useMemo(
-    () => capabilityStudy(values, lsl, usl, target),
-    [values, lsl, usl, target]
+    () => capabilityStudy(values, lsl, usl, target, subgroupSize),
+    [values, lsl, usl, target, subgroupSize]
   );
 
+  // --- Rango del eje X (datos + límites) ---
+  const xs = [...values, lsl, usl, target].filter(
+    (v): v is number => v !== null && v !== undefined
+  );
+  const xMin = Math.min(...xs);
+  const xMax = Math.max(...xs);
+  const pad = (xMax - xMin) * 0.1 || 1;
+  const lo = xMin - pad;
+  const hi = xMax + pad;
+
+  // --- Generador de curva normal (PDF) ---
+  const STEPS = 200;
+  const gaussian = (s: number): { x: number[]; y: number[] } => {
+    const x: number[] = [];
+    const y: number[] = [];
+    if (s <= 0) return { x, y };
+    const coef = 1 / (s * Math.sqrt(2 * Math.PI));
+    for (let i = 0; i <= STEPS; i++) {
+      const xi = lo + ((hi - lo) * i) / STEPS;
+      x.push(xi);
+      y.push(coef * Math.exp(-((xi - res.mean) ** 2) / (2 * s * s)));
+    }
+    return { x, y };
+  };
+
+  const overall = gaussian(res.stdOverall);
+  const within = gaussian(res.stdWithin);
+
+  // --- Histograma (densidad para que case con las curvas) ---
   const histogram: Data = {
     x: values,
     type: "histogram",
-    marker: { color: "#00674d" },
+    histnorm: "probability density",
+    marker: {
+      color: "#9fd5c4",
+      line: { color: "#000000", width: 1 }, // contorno negro (punto 5)
+    },
     name: colName,
+    opacity: 0.85,
   };
 
-  const shapes =
-    [
-      lsl !== null && { x: lsl, color: "#dc2626", label: "LSL" },
-      usl !== null && { x: usl, color: "#dc2626", label: "USL" },
-      target !== null && { x: target, color: "#2563eb", label: "Target" },
-    ].filter(Boolean) as { x: number; color: string; label: string }[];
+  // --- Curvas Overall (continua) y Within (discontinua) (punto 1) ---
+  const overallCurve: Data = {
+    x: overall.x,
+    y: overall.y,
+    type: "scatter",
+    mode: "lines",
+    name: "Overall",
+    line: { color: "#00674d", width: 2 },
+  };
+  const withinCurve: Data = {
+    x: within.x,
+    y: within.y,
+    type: "scatter",
+    mode: "lines",
+    name: "Within",
+    line: { color: "#dc2626", width: 2, dash: "dash" },
+  };
+
+  // --- Líneas verticales de límites ---
+  const specLines = [
+    lsl !== null && { x: lsl, color: "#111827", label: "LSL" },
+    usl !== null && { x: usl, color: "#111827", label: "USL" },
+    target !== null && { x: target, color: "#2563eb", label: "Target" },
+  ].filter(Boolean) as { x: number; color: string; label: string }[];
+
+  // Columna izquierda
+  const leftSections: StatSection[] = [
+    {
+      title: "Process Data",
+      rows: [
+        { label: "LSL", value: fmt(res.lsl) },
+        { label: "Target", value: fmt(res.target) },
+        { label: "USL", value: fmt(res.usl) },
+        { label: "Sample Mean", value: fmt(res.mean) },
+        { label: "Sample N", value: String(res.n) },
+        { label: "StDev(Overall)", value: fmt(res.stdOverall) },
+        { label: "StDev(Within)", value: fmt(res.stdWithin) },
+      ],
+    },
+    {
+      title: "Observed Performance",
+      rows: [
+        { label: "PPM < LSL", value: fmtPPM(res.ppmObsLSL) },
+        { label: "PPM > USL", value: fmtPPM(res.ppmObsUSL) },
+        { label: "PPM Total", value: fmtPPM(res.ppmObsTotal) },
+      ],
+    },
+    {
+      title: "Exp. Overall Performance",
+      rows: [
+        { label: "PPM < LSL", value: fmtPPM(res.ppmExpOverallLSL) },
+        { label: "PPM > USL", value: fmtPPM(res.ppmExpOverallUSL) },
+        { label: "PPM Total", value: fmtPPM(res.ppmExpOverallTotal) },
+      ],
+    },
+    {
+      title: "Exp. Within Performance",
+      rows: [
+        { label: "PPM < LSL", value: fmtPPM(res.ppmExpWithinLSL) },
+        { label: "PPM > USL", value: fmtPPM(res.ppmExpWithinUSL) },
+        { label: "PPM Total", value: fmtPPM(res.ppmExpWithinTotal) },
+      ],
+    },
+  ];
+
+  // Columna derecha
+  const rightSections: StatSection[] = [
+    {
+      title: "Overall Capability",
+      rows: [
+        { label: "Z.Bench", value: fmt(res.zBenchOverall) },
+        { label: "Z.LSL", value: fmt(res.zLSLOverall) },
+        { label: "Z.USL", value: fmt(res.zUSLOverall) },
+        { label: "Pp", value: fmt(res.pp, 2) },
+        { label: "PPL", value: fmt(res.ppl, 2) },
+        { label: "PPU", value: fmt(res.ppu, 2) },
+        { label: "Ppk", value: fmt(res.ppk, 2) },
+      ],
+    },
+    {
+      title: "Potential (Within) Capability",
+      rows: [
+        { label: "Z.Bench", value: fmt(res.zBenchWithin) },
+        { label: "Z.LSL", value: fmt(res.zLSLWithin) },
+        { label: "Z.USL", value: fmt(res.zUSLWithin) },
+        { label: "Cp", value: fmt(res.cp, 2) },
+        { label: "CPL", value: fmt(res.cpl, 2) },
+        { label: "CPU", value: fmt(res.cpu, 2) },
+        { label: "Cpk", value: fmt(res.cpk, 2) },
+      ],
+    },
+  ];
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-        <Stat label="N" value={res.n} />
-        <Stat label="Mean" value={res.mean.toFixed(4)} />
-        <Stat label="StDev" value={res.std.toFixed(4)} />
-        <Stat label="Cp" value={res.cp?.toFixed(3) ?? "—"} />
-        <Stat label="Cpk" value={res.cpk?.toFixed(3) ?? "—"} highlight />
-        <Stat label="Cpl" value={res.cpl?.toFixed(3) ?? "—"} />
-        <Stat label="Cpu" value={res.cpu?.toFixed(3) ?? "—"} />
-      </div>
-
-      <div className="h-72 border border-gray-200 rounded">
-        <ResultChart
-          data={[histogram]}
-          layout={{
-            title: { text: `Capability — ${colName}` },
-            xaxis: { title: { text: colName } },
-            yaxis: { title: { text: "Frequency" } },
-            shapes: shapes.map((s) => ({
-              type: "line",
-              x0: s.x,
-              x1: s.x,
-              yref: "paper",
-              y0: 0,
-              y1: 1,
-              line: { color: s.color, width: 2, dash: "dash" },
-            })),
-          }}
-        />
-      </div>
+      <ReportLayout
+        template="text-chart-text"
+        left={<StatBlock sections={leftSections} />}
+        right={<StatBlock sections={rightSections} />}
+        center={
+          // Proporción 3 ancho : 4 alto (punto 4)
+          <div
+            className="border border-gray-200 rounded w-full"
+            style={{ aspectRatio: "3 / 4" }}
+          >
+            <ResultChart
+              data={[histogram, overallCurve, withinCurve]}
+              layout={{
+                title: { text: `Process Capability Report — ${colName}` },
+                xaxis: { title: { text: colName }, range: [lo, hi] },
+                yaxis: { title: { text: "Density" } },
+                showlegend: true,
+                legend: { orientation: "h", y: -0.2 },
+                shapes: specLines.map((s) => ({
+                  type: "line",
+                  x0: s.x,
+                  x1: s.x,
+                  yref: "paper",
+                  y0: 0,
+                  y1: 1,
+                  line: { color: s.color, width: 2, dash: "dot" },
+                })),
+                // Etiquetas LSL/USL/Target encima de las líneas (punto 3)
+                annotations: specLines.map((s) => ({
+                  x: s.x,
+                  yref: "paper",
+                  y: 1.02,
+                  text: s.label,
+                  showarrow: false,
+                  font: { color: s.color, size: 11 },
+                })),
+              }}
+            />
+          </div>
+        }
+      />
 
       <SaveButton
         onSave={() =>
           onSave({
             type: "capability",
             name: `Capability — ${colName}`,
-            params: { colName, lsl, usl, target },
-            results: { ...res },
+            params: { colName, lsl, usl, target, subgroupSize },
+            results: { ...res, data: undefined },
           })
         }
       />
     </div>
   );
 }
+
 
 /* ---------- Normality results sub-component ---------- */
 function NormalityResults({
