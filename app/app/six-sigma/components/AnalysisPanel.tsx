@@ -329,41 +329,43 @@ function CapabilityResults({
         left={<StatBlock sections={leftSections} />}
         right={<StatBlock sections={rightSections} />}
         center={
-          // Proporción 3 ancho : 4 alto (punto 4)
-          <div
-            className="border border-gray-200 rounded w-full"
-            style={{ aspectRatio: "3 / 4" }}
-          >
-            <ResultChart
-              data={[histogram, overallCurve, withinCurve]}
-              layout={{
-                title: { text: `Process Capability Report — ${colName}` },
-                xaxis: { title: { text: colName }, range: [lo, hi] },
-                yaxis: { title: { text: "Density" } },
-                showlegend: true,
-                legend: { orientation: "h", y: -0.2 },
-                shapes: specLines.map((s) => ({
-                  type: "line",
-                  x0: s.x,
-                  x1: s.x,
-                  yref: "paper",
-                  y0: 0,
-                  y1: 1,
-                  line: { color: s.color, width: 2, dash: "dot" },
-                })),
-                // Etiquetas LSL/USL/Target encima de las líneas (punto 3)
-                annotations: specLines.map((s) => ({
-                  x: s.x,
-                  yref: "paper",
-                  y: 1.02,
-                  text: s.label,
-                  showarrow: false,
-                  font: { color: s.color, size: 11 },
-                })),
-              }}
-            />
+          // Proporción 3:4 pero a tamaño reducido (~50%) y centrado
+          <div className="flex justify-center">
+            <div
+              className="border border-gray-200 rounded"
+              style={{ width: "50%", aspectRatio: "3 / 4" }}
+            >
+              <ResultChart
+                data={[histogram, overallCurve, withinCurve]}
+                layout={{
+                  title: { text: `Process Capability Report — ${colName}` },
+                  xaxis: { title: { text: colName }, range: [lo, hi] },
+                  yaxis: { title: { text: "Density" } },
+                  showlegend: true,
+                  legend: { orientation: "v", x: 1.02, y: 1 }, // leyenda a la derecha
+                  shapes: specLines.map((s) => ({
+                    type: "line",
+                    x0: s.x,
+                    x1: s.x,
+                    yref: "paper",
+                    y0: 0,
+                    y1: 1,
+                    line: { color: s.color, width: 2, dash: "dot" },
+                  })),
+                  annotations: specLines.map((s) => ({
+                    x: s.x,
+                    yref: "paper",
+                    y: 1.02,
+                    text: s.label,
+                    showarrow: false,
+                    font: { color: s.color, size: 11 },
+                  })),
+                }}
+              />
+            </div>
           </div>
         }
+
       />
 
       <SaveButton
