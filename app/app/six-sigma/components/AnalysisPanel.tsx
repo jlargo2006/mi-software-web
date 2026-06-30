@@ -329,6 +329,7 @@ function CapabilityResults({
         left={<StatBlock sections={leftSections} />}
         right={<StatBlock sections={rightSections} />}
         center={
+
           <div className="flex justify-center">
             <div
               className="border border-gray-200 rounded"
@@ -365,7 +366,6 @@ function CapabilityResults({
             </div>
           </div>
         }
-
 
 
       />
