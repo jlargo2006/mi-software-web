@@ -35,17 +35,55 @@ export interface NormalityResult {
   sortedData: number[];
 }
 
-// Resultado de un estudio de capacidad
 export interface CapabilityResult {
   n: number;
   mean: number;
-  std: number;
+  std: number; // = StDev(Overall), compatibilidad
   lsl: number | null;
   usl: number | null;
   target: number | null;
+
+  // Compatibilidad (within-based)
   cp: number | null;
   cpk: number | null;
   cpl: number | null;
   cpu: number | null;
+
+  // --- NUEVO ---
+  subgroupSize: number;
+  stdOverall: number;
+  stdWithin: number;
+
+  // Observed performance (PPM)
+  ppmObsLSL: number | null;
+  ppmObsUSL: number | null;
+  ppmObsTotal: number;
+
+  // Expected Overall (PPM)
+  ppmExpOverallLSL: number | null;
+  ppmExpOverallUSL: number | null;
+  ppmExpOverallTotal: number;
+
+  // Expected Within (PPM)
+  ppmExpWithinLSL: number | null;
+  ppmExpWithinUSL: number | null;
+  ppmExpWithinTotal: number;
+
+  // Overall capability (usa stdOverall)
+  pp: number | null;
+  ppl: number | null;
+  ppu: number | null;
+  ppk: number | null;
+  zBenchOverall: number | null;
+  zLSLOverall: number | null;
+  zUSLOverall: number | null;
+
+  // Within capability (usa stdWithin) -> Cp/Cpk
+  zBenchWithin: number | null;
+  zLSLWithin: number | null;
+  zUSLWithin: number | null;
+
   data: number[];
 }
+
+

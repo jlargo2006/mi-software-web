@@ -1,19 +1,22 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import type { SheetData } from "../lib/types";
 import type { ToolId } from "../lib/ribbon";
 import { getColumns, getColumnValues } from "../lib/columns";
 import { capabilityStudy, normalityTest } from "../lib/stats";
 import ResultChart from "./ResultChart";
+import ReportLayout from "./ReportLayout";
+import StatBlock, { fmt, fmtPPM, StatSection } from "./StatBlock";
 import type { Data } from "plotly.js";
 
-// Estado del formulario/análisis: ahora vive en el padre
+// Estado del formulario/análisis: vive en el padre
 export interface AnalysisState {
   colIndex: number;
   lsl: string;
   usl: string;
   target: string;
+  subgroupSize: string;
   ran: boolean;
 }
 
@@ -22,6 +25,7 @@ export const EMPTY_ANALYSIS: AnalysisState = {
   lsl: "",
   usl: "",
   target: "",
+  subgroupSize: "1",
   ran: false,
 };
 
@@ -46,6 +50,7 @@ export default function AnalysisPanel({
   onSaveStudy,
 }: AnalysisPanelProps) {
   const columns = useMemo(() => getColumns(sheet), [sheet]);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const set = (patch: Partial<AnalysisState>) =>
     onStateChange({ ...state, ...patch });
@@ -82,7 +87,7 @@ export default function AnalysisPanel({
         {tool === "capability" ? "Capability Study (Cp / Cpk)" : "Normality Test"}
       </h2>
 
-      {/* Form */}
+      {/* Form / controls */}
       <div className="flex flex-wrap items-end gap-3 mb-4 bg-gray-50 p-3 rounded border border-gray-200">
         <label className="flex flex-col text-xs text-gray-600">
           Data column
@@ -101,45 +106,38 @@ export default function AnalysisPanel({
           </select>
         </label>
 
-        {tool === "capability" && (
-          <>
-            <label className="flex flex-col text-xs text-gray-600">
-              LSL (Lower Spec)
-              <input
-                value={state.lsl}
-                onChange={(e) => set({ lsl: e.target.value })}
-                className="mt-1 border border-gray-300 rounded px-2 py-1 text-sm w-28"
-                placeholder="optional"
-              />
-            </label>
-            <label className="flex flex-col text-xs text-gray-600">
-              USL (Upper Spec)
-              <input
-                value={state.usl}
-                onChange={(e) => set({ usl: e.target.value })}
-                className="mt-1 border border-gray-300 rounded px-2 py-1 text-sm w-28"
-                placeholder="optional"
-              />
-            </label>
-            <label className="flex flex-col text-xs text-gray-600">
-              Target
-              <input
-                value={state.target}
-                onChange={(e) => set({ target: e.target.value })}
-                className="mt-1 border border-gray-300 rounded px-2 py-1 text-sm w-28"
-                placeholder="optional"
-              />
-            </label>
-          </>
+        {tool === "capability" ? (
+          <button
+            onClick={() => setDialogOpen(true)}
+            className="bg-[#00674d] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#00513d]"
+          >
+            ⚙ Set up & Run
+          </button>
+        ) : (
+          <button
+            onClick={runAnalysis}
+            className="bg-[#00674d] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#00513d]"
+          >
+            ▶ Run
+          </button>
         )}
-
-        <button
-          onClick={runAnalysis}
-          className="bg-[#00674d] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#00513d]"
-        >
-          ▶ Run
-        </button>
       </div>
+
+      {/* Capability setup dialog (pop-up) */}
+      {dialogOpen && tool === "capability" && (
+        <CapabilityDialog
+          state={state}
+          onCancel={() => setDialogOpen(false)}
+          onRun={(patch) => {
+            if (values.length < 2) {
+              alert("The selected column needs at least 2 numeric values.");
+              return;
+            }
+            set({ ...patch, ran: true });
+            setDialogOpen(false);
+          }}
+        />
+      )}
 
       {/* Results */}
       {state.ran && tool === "capability" && (
@@ -149,6 +147,10 @@ export default function AnalysisPanel({
           lsl={parseNum(state.lsl)}
           usl={parseNum(state.usl)}
           target={parseNum(state.target)}
+          subgroupSize={Math.max(
+            1,
+            Math.round(parseNum(state.subgroupSize) ?? 1)
+          )}
           onSave={onSaveStudy}
         />
       )}
@@ -327,41 +329,45 @@ function CapabilityResults({
         left={<StatBlock sections={leftSections} />}
         right={<StatBlock sections={rightSections} />}
         center={
-          // Proporción 3 ancho : 4 alto (punto 4)
-          <div
-            className="border border-gray-200 rounded w-full"
-            style={{ aspectRatio: "3 / 4" }}
-          >
-            <ResultChart
-              data={[histogram, overallCurve, withinCurve]}
-              layout={{
-                title: { text: `Process Capability Report — ${colName}` },
-                xaxis: { title: { text: colName }, range: [lo, hi] },
-                yaxis: { title: { text: "Density" } },
-                showlegend: true,
-                legend: { orientation: "h", y: -0.2 },
-                shapes: specLines.map((s) => ({
-                  type: "line",
-                  x0: s.x,
-                  x1: s.x,
-                  yref: "paper",
-                  y0: 0,
-                  y1: 1,
-                  line: { color: s.color, width: 2, dash: "dot" },
-                })),
-                // Etiquetas LSL/USL/Target encima de las líneas (punto 3)
-                annotations: specLines.map((s) => ({
-                  x: s.x,
-                  yref: "paper",
-                  y: 1.02,
-                  text: s.label,
-                  showarrow: false,
-                  font: { color: s.color, size: 11 },
-                })),
-              }}
-            />
+
+          <div className="flex justify-center">
+            <div
+              className="border border-gray-200 rounded"
+              style={{ width: "70%", aspectRatio: "4 / 3" }}
+            >
+              <ResultChart
+                data={[histogram, overallCurve, withinCurve]}
+                layout={{
+                  autosize: true,
+                  title: { text: `Process Capability Report — ${colName}` },
+                  xaxis: { title: { text: colName }, range: [lo, hi] },
+                  yaxis: { title: { text: "Density" } },
+                  showlegend: true,
+                  legend: { orientation: "v", x: 1.02, y: 1 },
+                  shapes: specLines.map((s) => ({
+                    type: "line",
+                    x0: s.x,
+                    x1: s.x,
+                    yref: "paper",
+                    y0: 0,
+                    y1: 1,
+                    line: { color: s.color, width: 2, dash: "dot" },
+                  })),
+                  annotations: specLines.map((s) => ({
+                    x: s.x,
+                    yref: "paper",
+                    y: 1.02,
+                    text: s.label,
+                    showarrow: false,
+                    font: { color: s.color, size: 11 },
+                  })),
+                }}
+              />
+            </div>
           </div>
         }
+
+
       />
 
       <SaveButton
@@ -469,5 +475,91 @@ function SaveButton({ onSave }: { onSave: () => void }) {
     >
       💾 Save study
     </button>
+  );
+}
+
+/* ---------- Capability setup dialog ---------- */
+function CapabilityDialog({
+  state,
+  onCancel,
+  onRun,
+}: {
+  state: AnalysisState;
+  onCancel: () => void;
+  onRun: (patch: Partial<AnalysisState>) => void;
+}) {
+  const [lsl, setLsl] = useState(state.lsl);
+  const [usl, setUsl] = useState(state.usl);
+  const [target, setTarget] = useState(state.target);
+  const [subgroupSize, setSubgroupSize] = useState(state.subgroupSize || "1");
+
+  const field = "mt-1 border border-gray-300 rounded px-2 py-1 text-sm w-full";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-lg shadow-xl w-80 p-5">
+        <h3 className="text-base font-semibold text-[#00674d] mb-4">
+          Capability Study — Setup
+        </h3>
+
+        <div className="space-y-3">
+          <label className="flex flex-col text-xs text-gray-600">
+            LSL (Lower Spec)
+            <input
+              value={lsl}
+              onChange={(e) => setLsl(e.target.value)}
+              className={field}
+              placeholder="optional"
+            />
+          </label>
+          <label className="flex flex-col text-xs text-gray-600">
+            Target
+            <input
+              value={target}
+              onChange={(e) => setTarget(e.target.value)}
+              className={field}
+              placeholder="optional"
+            />
+          </label>
+          <label className="flex flex-col text-xs text-gray-600">
+            USL (Upper Spec)
+            <input
+              value={usl}
+              onChange={(e) => setUsl(e.target.value)}
+              className={field}
+              placeholder="optional"
+            />
+          </label>
+          <label className="flex flex-col text-xs text-gray-600">
+            Subgroup size
+            <input
+              type="number"
+              min={1}
+              value={subgroupSize}
+              onChange={(e) => setSubgroupSize(e.target.value)}
+              className={field}
+            />
+            <span className="mt-1 text-[11px] text-gray-400">
+              1 = moving range (MR/d₂). &gt;1 = pooled subgroups.
+            </span>
+          </label>
+        </div>
+
+        <div className="flex justify-end gap-2 mt-5">
+          <button
+            onClick={onCancel}
+            className="px-3 py-1.5 text-sm rounded border border-gray-300 text-gray-600 hover:bg-gray-100"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onRun({ lsl, usl, target, subgroupSize })}
+            className="px-4 py-1.5 text-sm rounded bg-[#00674d] text-white font-medium hover:bg-[#00513d]"
+          >
+            ▶ Run
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
