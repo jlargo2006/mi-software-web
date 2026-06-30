@@ -402,7 +402,7 @@ function NormalityResults({
     const n = sorted.length;
 
     // Percentiles del eje (0.1 a 99.1) para las marcas
-    const tickPercents = [0.1, 1, 5, 10, 20, 30, 50, 70, 80, 90, 95, 99, 99.1];
+    const tickPercents = [0.1, 1, 5, 10, 20, 30, 50, 70, 80, 90, 95, 99, 99.9];
     const tickVals = tickPercents.map((p) => normInv(p / 100)); // z-score
     const tickText = tickPercents.map((p) => String(p));
 
