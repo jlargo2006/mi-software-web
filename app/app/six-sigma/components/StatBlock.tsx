@@ -23,11 +23,13 @@ export function fmt(
     .replace(".", ",");
 }
 
-// Formatea PPM como entero con separador de miles
+// Formatea PPM con miles y 2 decimales (estilo ES)
 export function fmtPPM(v: number | null): string {
   if (v === null || v === undefined || Number.isNaN(v)) return "*";
-  return Math.round(v)
-    .toLocaleString("es-ES");
+  return v.toLocaleString("es-ES", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 export default function StatBlock({ sections }: { sections: StatSection[] }) {
