@@ -332,7 +332,7 @@ function CapabilityResults({
           <div className="flex justify-center">
             <div
               className="border border-gray-200 rounded"
-              style={{ width: "50%", aspectRatio: "4 / 3" }}
+              style={{ width: "70%", aspectRatio: "4 / 3" }}
             >
               <ResultChart
                 data={[histogram, overallCurve, withinCurve]}
