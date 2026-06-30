@@ -329,20 +329,25 @@ function CapabilityResults({
         left={<StatBlock sections={leftSections} />}
         right={<StatBlock sections={rightSections} />}
         center={
-          // Proporción 3:4 pero a tamaño reducido (~50%) y centrado
           <div className="flex justify-center">
             <div
               className="border border-gray-200 rounded"
-              style={{ width: "50%", aspectRatio: "3 / 4" }}
+              style={{
+                width: "50%",
+                aspectRatio: "4 / 3",
+              }}
             >
               <ResultChart
                 data={[histogram, overallCurve, withinCurve]}
+                style={{ width: "100%", height: "100%" }}
+                useResizeHandler
                 layout={{
+                  autosize: true,
                   title: { text: `Process Capability Report — ${colName}` },
                   xaxis: { title: { text: colName }, range: [lo, hi] },
                   yaxis: { title: { text: "Density" } },
                   showlegend: true,
-                  legend: { orientation: "v", x: 1.02, y: 1 }, // leyenda a la derecha
+                  legend: { orientation: "v", x: 1.02, y: 1 },
                   shapes: specLines.map((s) => ({
                     type: "line",
                     x0: s.x,
@@ -365,6 +370,7 @@ function CapabilityResults({
             </div>
           </div>
         }
+
 
       />
 
