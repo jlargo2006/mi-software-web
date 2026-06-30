@@ -4,7 +4,7 @@ import React, { useMemo, useState } from "react";
 import type { SheetData } from "../lib/types";
 import type { ToolId } from "../lib/ribbon";
 import { getColumns, getColumnValues } from "../lib/columns";
-import { capabilityStudy, normalityTest } from "../lib/stats";
+import { capabilityStudy, normalityTest, normInv} from "../lib/stats";
 import ResultChart from "./ResultChart";
 import ReportLayout from "./ReportLayout";
 import StatBlock, { fmt, fmtPPM, StatSection } from "./StatBlock";
@@ -384,7 +384,6 @@ function CapabilityResults({
   );
 }
 
-
 /* ---------- Normality results sub-component ---------- */
 function NormalityResults({
   values,
@@ -397,11 +396,51 @@ function NormalityResults({
 }) {
   const res = useMemo(() => normalityTest(values), [values]);
 
-  const histogram: Data = {
-    x: values,
-    type: "histogram",
-    marker: { color: "#00674d" },
-    name: colName,
+  // --- Probability plot data ---
+  const plot = useMemo(() => {
+    const sorted = [...values].sort((a, b) => a - b);
+    const n = sorted.length;
+
+    // Percentiles del eje (0.1 a 99.1) para las marcas
+    const tickPercents = [0.1, 1, 5, 10, 20, 30, 50, 70, 80, 90, 95, 99, 99.1];
+    const tickVals = tickPercents.map((p) => normInv(p / 100)); // z-score
+    const tickText = tickPercents.map((p) => String(p));
+
+    // Posiciones de trazado (median rank) → z-score (eje Y transformado)
+    const pointsX: number[] = [];
+    const pointsY: number[] = [];
+    sorted.forEach((x, i) => {
+      const p = (i + 1 - 0.3) / (n + 0.4); // median rank
+      pointsX.push(x);
+      pointsY.push(normInv(p));
+    });
+
+    // Recta normal: y = (x - mean) / std  (en z-score)
+    const xMin = sorted[0];
+    const xMax = sorted[n - 1];
+    const pad = (xMax - xMin) * 0.05 || 1;
+    const lineX = [xMin - pad, xMax + pad];
+    const lineY = lineX.map((x) => (x - res.mean) / res.std);
+
+    return { tickVals, tickText, pointsX, pointsY, lineX, lineY };
+  }, [values, res.mean, res.std]);
+
+  const pointsTrace: Data = {
+    x: plot.pointsX,
+    y: plot.pointsY,
+    type: "scatter",
+    mode: "markers",
+    name: "Data",
+    marker: { color: "#00674d", size: 6 },
+  };
+
+  const lineTrace: Data = {
+    x: plot.lineX,
+    y: plot.lineY,
+    type: "scatter",
+    mode: "lines",
+    name: "Normal fit",
+    line: { color: "#dc2626", width: 2 },
   };
 
   return (
@@ -418,15 +457,28 @@ function NormalityResults({
         />
       </div>
 
-      <div className="h-72 border border-gray-200 rounded">
-        <ResultChart
-          data={[histogram]}
-          layout={{
-            title: { text: `Normality — ${colName}` },
-            xaxis: { title: { text: colName } },
-            yaxis: { title: { text: "Frequency" } },
-          }}
-        />
+      <div className="flex justify-center">
+        <div
+          className="border border-gray-200 rounded"
+          style={{ width: "55%", aspectRatio: "4 / 3" }}
+        >
+          <ResultChart
+            data={[pointsTrace, lineTrace]}
+            layout={{
+              autosize: true,
+              title: { text: `Probability Plot — ${colName}` },
+              xaxis: { title: { text: colName } },
+              yaxis: {
+                title: { text: "Percent" },
+                tickvals: plot.tickVals,
+                ticktext: plot.tickText,
+                range: [normInv(0.001), normInv(0.991)],
+              },
+              showlegend: true,
+              legend: { orientation: "v", x: 1.02, y: 1 },
+            }}
+          />
+        </div>
       </div>
 
       <SaveButton
@@ -442,6 +494,7 @@ function NormalityResults({
     </div>
   );
 }
+
 
 /* ---------- Small reusable UI bits ---------- */
 function Stat({
