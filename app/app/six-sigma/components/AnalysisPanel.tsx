@@ -16,9 +16,16 @@ export interface AnalysisState {
   lsl: string;
   usl: string;
   target: string;
-  subgroupSize: string;
   ran: boolean;
 }
+
+export const EMPTY_ANALYSIS: AnalysisState = {
+  colIndex: 0,
+  lsl: "",
+  usl: "",
+  target: "",
+  ran: false,
+};
 
 // Snapshot congelado de los datos de un estudio guardado
 export interface StudySnapshot {
@@ -541,7 +548,7 @@ function NormalityResults({
 
 
 
-/* ---------- Small reusable UI bits ---------- */
+/* ---------- Small reusable UI bits ---------- */ 
 function Stat({
   label,
   value,
