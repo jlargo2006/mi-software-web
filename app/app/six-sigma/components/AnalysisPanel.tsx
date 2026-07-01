@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from "react";
 import type { SheetData } from "../lib/types";
 import type { ToolId } from "../lib/ribbon";
-import { getColumns, getColumnValues } from "../lib/columns";
+import { getColumns, getColumnValues, sameData } from "../lib/columns";
 import { capabilityStudy, normalityTest, normInv} from "../lib/stats";
 import ResultChart from "./ResultChart";
 import ReportLayout from "./ReportLayout";
