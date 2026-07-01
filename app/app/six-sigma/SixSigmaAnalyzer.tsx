@@ -3,6 +3,7 @@
 import React, { useRef, useState } from "react";
 import { useWorkbook } from "./hooks/useWorkbook";
 import { readExcelFile, writeExcelFile } from "./lib/excel";
+import { exportProject, importProject } from "./lib/project";
 import { ToolId } from "./lib/ribbon";
 import MenuBar from "./components/MenuBar";
 import DataGrid from "./components/DataGrid";
@@ -26,6 +27,15 @@ interface SixSigmaAnalyzerProps {
   onSignOut: () => void;
 }
 
+// Timestamp aaaa/mm/dd hh:mm:ss
+function timestamp(): string {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(
+    d.getHours()
+  )}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
 export default function SixSigmaAnalyzer({
   userEmail,
   onSignOut,
@@ -38,6 +48,7 @@ export default function SixSigmaAnalyzer({
   const [studies, setStudies] = useState<SavedStudy[]>([]);
   const splitRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const projectInputRef = useRef<HTMLInputElement>(null);
 
   const handleImport = async (file: File) => {
     try {
@@ -61,9 +72,32 @@ export default function SixSigmaAnalyzer({
     setAnalysis(EMPTY_ANALYSIS);
   };
 
+  // --- Proyecto: exportar / importar todo ---
+  const handleExportProject = () => {
+    exportProject(wb.data, wb.order, studies);
+  };
+
+  const handleImportProject = async (file: File) => {
+    try {
+      const project = await importProject(file);
+      wb.loadWorkbook(project.workbook.data, project.workbook.order);
+      setStudies((project.studies as SavedStudy[]) ?? []);
+      setActiveTool(null);
+      setAnalysis(EMPTY_ANALYSIS);
+      alert("Proyecto importado correctamente ✅");
+    } catch (err) {
+      alert((err as Error).message);
+    }
+  };
+
   const saveStudy = (study: Omit<SavedStudy, "id" | "form">) => {
     setStudies((prev) => [
-      { ...study, id: crypto.randomUUID(), form: analysis },
+      {
+        ...study,
+        name: `${timestamp()} — ${study.name}`, // 👈 timestamp delante
+        id: crypto.randomUUID(),
+        form: analysis,
+      },
       ...prev,
     ]);
   };
@@ -91,6 +125,8 @@ export default function SixSigmaAnalyzer({
         onNew={handleNew}
         onOpen={() => fileInputRef.current?.click()}
         onSave={handleExport}
+        onExportProject={handleExportProject}
+        onImportProject={() => projectInputRef.current?.click()}
         onSignOut={onSignOut}
         onSelectTool={(tool) => {
           setActiveTool(tool);
@@ -108,6 +144,19 @@ export default function SixSigmaAnalyzer({
         onChange={(e) => {
           const f = e.target.files?.[0];
           if (f) handleImport(f);
+          e.target.value = "";
+        }}
+      />
+
+      {/* Hidden file input for "Import project" */}
+      <input
+        ref={projectInputRef}
+        type="file"
+        accept=".sixsigma,application/json"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) handleImportProject(f);
           e.target.value = "";
         }}
       />
