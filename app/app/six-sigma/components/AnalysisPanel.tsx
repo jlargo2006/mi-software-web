@@ -185,7 +185,7 @@ export default function AnalysisPanel({
           lsl={parseNum(state.lsl)}
           usl={parseNum(state.usl)}
           target={parseNum(state.target)}
-          subgroupSize={state.subgroupSize}
+          subgroupSize={parseNum(state.subgroupSize) ?? 1}
           onSave={onSaveStudy}
         />
       )}
