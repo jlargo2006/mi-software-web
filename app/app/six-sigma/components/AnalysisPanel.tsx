@@ -396,33 +396,37 @@ function NormalityResults({
 }) {
   const res = useMemo(() => normalityTest(values), [values]);
 
-  // --- Probability plot data ---
   const plot = useMemo(() => {
     const sorted = [...values].sort((a, b) => a - b);
     const n = sorted.length;
 
-    // Percentiles del eje (0.1 a 99.1) para las marcas
-    const tickPercents = [0.1, 1, 5, 10, 20, 30, 50, 70, 80, 90, 95, 99, 99.9];
-    const tickVals = tickPercents.map((p) => normInv(p / 100)); // z-score
+    // (1) Percentiles de 0.1 a 99.9
+    const tickPercents = [
+      0.1, 1, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 99, 99.9,
+    ];
+    const tickVals = tickPercents.map((p) => normInv(p / 100));
     const tickText = tickPercents.map((p) => String(p));
 
-    // Posiciones de trazado (median rank) → z-score (eje Y transformado)
+    // Posiciones de trazado (median rank) → z-score
     const pointsX: number[] = [];
     const pointsY: number[] = [];
     sorted.forEach((x, i) => {
-      const p = (i + 1 - 0.3) / (n + 0.4); // median rank
+      const p = (i + 1 - 0.3) / (n + 0.4);
       pointsX.push(x);
       pointsY.push(normInv(p));
     });
 
-    // Recta normal: y = (x - mean) / std  (en z-score)
+    // (2) Ajuste eje X a los datos reales (con pequeño padding)
     const xMin = sorted[0];
     const xMax = sorted[n - 1];
-    const pad = (xMax - xMin) * 0.05 || 1;
-    const lineX = [xMin - pad, xMax + pad];
+    const pad = (xMax - xMin) * 0.03 || 1;
+    const xRange: [number, number] = [xMin - pad, xMax + pad];
+
+    // Recta normal en z-score
+    const lineX = [xRange[0], xRange[1]];
     const lineY = lineX.map((x) => (x - res.mean) / res.std);
 
-    return { tickVals, tickText, pointsX, pointsY, lineX, lineY };
+    return { tickVals, tickText, pointsX, pointsY, lineX, lineY, xRange };
   }, [values, res.mean, res.std]);
 
   const pointsTrace: Data = {
@@ -443,43 +447,68 @@ function NormalityResults({
     line: { color: "#dc2626", width: 2 },
   };
 
+  // (4) Líneas horizontales auxiliares en 40% y 60%
+  const auxPercents = [40, 60];
+  const auxShapes = auxPercents.map((p) => ({
+    type: "line" as const,
+    xref: "paper" as const,
+    x0: 0,
+    x1: 1,
+    y0: normInv(p / 100),
+    y1: normInv(p / 100),
+    line: { color: "#d1d5db", width: 1, dash: "dot" as const },
+  }));
+
+  // (3) Datos a la derecha
+  const rightSections: StatSection[] = [
+    {
+      title: "Statistics",
+      rows: [
+        { label: "Mean", value: fmt(res.mean, 4) },
+        { label: "StDev", value: fmt(res.std, 4) },
+        { label: "N", value: String(res.n) },
+        { label: "AD", value: fmt(res.adStatistic, 4) },
+        { label: "P-Value", value: fmt(res.pValue, 4) },
+        { label: "Normal?", value: res.isNormal ? "Yes (p>0.05)" : "No (p≤0.05)" },
+      ],
+    },
+  ];
+
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-        <Stat label="N" value={res.n} />
-        <Stat label="Mean" value={res.mean.toFixed(4)} />
-        <Stat label="StDev" value={res.std.toFixed(4)} />
-        <Stat label="AD" value={res.adStatistic.toFixed(4)} />
-        <Stat label="P-Value" value={res.pValue.toFixed(4)} highlight />
-        <Stat
-          label="Normal?"
-          value={res.isNormal ? "Yes (p>0.05)" : "No (p≤0.05)"}
-        />
-      </div>
-
-      <div className="flex justify-center">
-        <div
-          className="border border-gray-200 rounded"
-          style={{ width: "55%", aspectRatio: "4 / 3" }}
-        >
-          <ResultChart
-            data={[pointsTrace, lineTrace]}
-            layout={{
-              autosize: true,
-              title: { text: `Probability Plot — ${colName}` },
-              xaxis: { title: { text: colName } },
-              yaxis: {
-                title: { text: "Percent" },
-                tickvals: plot.tickVals,
-                ticktext: plot.tickText,
-                range: [normInv(0.001), normInv(0.991)],
-              },
-              showlegend: true,
-              legend: { orientation: "v", x: 1.02, y: 1 },
-            }}
-          />
-        </div>
-      </div>
+      <ReportLayout
+        template="chart-text"
+        right={<StatBlock sections={rightSections} />}
+        center={
+          <div className="flex justify-center">
+            <div
+              className="border border-gray-200 rounded"
+              style={{ width: "70%", aspectRatio: "4 / 3" }}
+            >
+              <ResultChart
+                data={[pointsTrace, lineTrace]}
+                layout={{
+                  autosize: true,
+                  title: { text: `Probability Plot — ${colName}` },
+                  xaxis: {
+                    title: { text: colName },
+                    range: plot.xRange, // (2)
+                  },
+                  yaxis: {
+                    title: { text: "Percent" },
+                    tickvals: plot.tickVals,
+                    ticktext: plot.tickText,
+                    range: [normInv(0.001), normInv(0.999)], // (1) 0.1 → 99.9
+                  },
+                  showlegend: true,
+                  legend: { orientation: "v", x: 1.02, y: 1 },
+                  shapes: auxShapes, // (4)
+                }}
+              />
+            </div>
+          </div>
+        }
+      />
 
       <SaveButton
         onSave={() =>
@@ -494,6 +523,7 @@ function NormalityResults({
     </div>
   );
 }
+
 
 
 /* ---------- Small reusable UI bits ---------- */
