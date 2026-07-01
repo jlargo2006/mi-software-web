@@ -8,6 +8,8 @@ interface MenuBarProps {
   onNew: () => void;
   onOpen: () => void;
   onSave: () => void;
+  onExportProject: () => void;
+  onImportProject: () => void;
   onSignOut: () => void;
   onSelectTool: (tool: ToolId) => void;
 }
@@ -17,6 +19,8 @@ export default function MenuBar({
   onNew,
   onOpen,
   onSave,
+  onExportProject,
+  onImportProject,
   onSignOut,
   onSelectTool,
 }: MenuBarProps) {
@@ -74,7 +78,7 @@ export default function MenuBar({
             File ▾
           </button>
           {fileOpen && (
-            <div className="absolute left-0 top-full mt-1 w-48 bg-white rounded shadow-lg border border-gray-200 py-1 z-50">
+            <div className="absolute left-0 top-full mt-1 w-56 bg-white rounded shadow-lg border border-gray-200 py-1 z-50">
               <button className={fileItem} onClick={() => { setFileOpen(false); onNew(); }}>
                 New
               </button>
@@ -84,7 +88,18 @@ export default function MenuBar({
               <button className={fileItem} onClick={() => { setFileOpen(false); onSave(); }}>
                 Save Excel
               </button>
+
               <div className="my-1 border-t border-gray-200" />
+
+              <button className={fileItem} onClick={() => { setFileOpen(false); onExportProject(); }}>
+                💾 Export project…
+              </button>
+              <button className={fileItem} onClick={() => { setFileOpen(false); onImportProject(); }}>
+                📂 Import project…
+              </button>
+
+              <div className="my-1 border-t border-gray-200" />
+
               <button
                 className={`${fileItem} text-red-600`}
                 onClick={() => { setFileOpen(false); onSignOut(); }}
@@ -176,4 +191,3 @@ export default function MenuBar({
     </div>
   );
 }
-
