@@ -64,7 +64,8 @@ export default function AnalysisPanel({
 }: AnalysisPanelProps) {
   const columns = useMemo(() => getColumns(sheet), [sheet]);
   const [dialogOpen, setDialogOpen] = useState(false);
-
+  const [subgroupSize, setSubgroupSize] = useState(1);
+  
   const set = (patch: Partial<AnalysisState>) =>
     onStateChange({ ...state, ...patch });
 
@@ -185,7 +186,7 @@ export default function AnalysisPanel({
           lsl={parseNum(state.lsl)}
           usl={parseNum(state.usl)}
           target={parseNum(state.target)}
-          subgroupSize={parseNum(state.subgroupSize) ?? 1}
+          subgroupSize={subgroupSize}
           onSave={onSaveStudy}
         />
       )}
