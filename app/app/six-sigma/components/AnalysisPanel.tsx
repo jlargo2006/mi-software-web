@@ -20,14 +20,12 @@ export interface AnalysisState {
   ran: boolean;
 }
 
-export const EMPTY_ANALYSIS: AnalysisState = {
-  colIndex: 0,
-  lsl: "",
-  usl: "",
-  target: "",
-  subgroupSize: "1",
-  ran: false,
-};
+// Snapshot congelado de los datos de un estudio guardado
+export interface StudySnapshot {
+  values: number[];
+  colName: string;
+  sheetName: string;
+}
 
 interface AnalysisPanelProps {
   tool: ToolId;
@@ -40,7 +38,12 @@ interface AnalysisPanelProps {
     params: Record<string, unknown>;
     results: Record<string, unknown>;
   }) => void;
+  // NUEVO: modo "viendo estudio guardado"
+  snapshot?: StudySnapshot | null;
+  liveValues?: number[] | null; // datos vivos de la columna/hoja original del estudio
+  onUpdateSnapshot?: (newValues: number[]) => void;
 }
+
 
 export default function AnalysisPanel({
   tool,
@@ -48,6 +51,9 @@ export default function AnalysisPanel({
   state,
   onStateChange,
   onSaveStudy,
+  snapshot = null,
+  liveValues = null,
+  onUpdateSnapshot,
 }: AnalysisPanelProps) {
   const columns = useMemo(() => getColumns(sheet), [sheet]);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -64,8 +70,18 @@ export default function AnalysisPanel({
     );
   }
 
-  const values = getColumnValues(sheet, state.colIndex);
-  const colName = columns[state.colIndex]?.name ?? "Column";
+  // Datos vivos de la hoja activa (para análisis nuevos)
+  const liveSheetValues = getColumnValues(sheet, state.colIndex);
+
+  // Si estamos viendo un estudio guardado, usamos su snapshot (datos congelados)
+  const values = snapshot ? snapshot.values : liveSheetValues;
+  const colName = snapshot
+    ? snapshot.colName
+    : columns[state.colIndex]?.name ?? "Column";
+
+  // ¿Los datos actuales difieren de los originales del estudio?
+  const dataDiffers =
+    !!snapshot && !!liveValues && !sameData(snapshot.values, liveValues);
 
   const parseNum = (s: string): number | null => {
     const n = parseFloat(s);
@@ -123,13 +139,28 @@ export default function AnalysisPanel({
         )}
       </div>
 
+      {/* Banner "datos diferentes a los originales" (estilo Minitab) */}
+      {state.ran && snapshot && dataDiffers && (
+        <div className="mb-4 flex items-center justify-between gap-3 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          <span>
+            ⚠️ Los datos actuales difieren de los originales de este estudio.
+          </span>
+          <button
+            onClick={() => liveValues && onUpdateSnapshot?.(liveValues)}
+            className="shrink-0 rounded bg-amber-500 px-3 py-1 text-xs font-medium text-white hover:bg-amber-600"
+          >
+            ¿Actualizar con los nuevos datos?
+          </button>
+        </div>
+      )}
+
       {/* Capability setup dialog (pop-up) */}
       {dialogOpen && tool === "capability" && (
         <CapabilityDialog
           state={state}
           onCancel={() => setDialogOpen(false)}
           onRun={(patch) => {
-            if (values.length < 2) {
+            if (liveSheetValues.length < 2) {
               alert("The selected column needs at least 2 numeric values.");
               return;
             }
@@ -147,13 +178,10 @@ export default function AnalysisPanel({
           lsl={parseNum(state.lsl)}
           usl={parseNum(state.usl)}
           target={parseNum(state.target)}
-          subgroupSize={Math.max(
-            1,
-            Math.round(parseNum(state.subgroupSize) ?? 1)
-          )}
           onSave={onSaveStudy}
         />
       )}
+
       {state.ran && tool === "normality" && (
         <NormalityResults
           values={values}
@@ -163,7 +191,7 @@ export default function AnalysisPanel({
       )}
     </div>
   );
-}
+}          
 
 /* ---------- Capability results sub-component ---------- */
 function CapabilityResults({
