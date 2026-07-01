@@ -447,18 +447,6 @@ function NormalityResults({
     line: { color: "#dc2626", width: 2 },
   };
 
-  // (4) Líneas horizontales auxiliares en 40% y 60%
-  const auxPercents = [40, 60];
-  const auxShapes = auxPercents.map((p) => ({
-    type: "line" as const,
-    xref: "paper" as const,
-    x0: 0,
-    x1: 1,
-    y0: normInv(p / 100),
-    y1: normInv(p / 100),
-    line: { color: "#d1d5db", width: 1, dash: "dot" as const },
-  }));
-
   // (3) Datos a la derecha
   const rightSections: StatSection[] = [
     {
@@ -502,7 +490,6 @@ function NormalityResults({
                   },
                   showlegend: true,
                   legend: { orientation: "v", x: 1.02, y: 1 },
-                  shapes: auxShapes, // (4)
                 }}
               />
             </div>
