@@ -613,4 +613,86 @@ function SaveButton({ onSave }: { onSave: () => void }) {
 }
 
 /* ---------- Capability setup dialog ---------- */
-function
+function CapabilityDialog({
+  state,
+  onCancel,
+  onRun,
+}: {
+  state: AnalysisState;
+  onCancel: () => void;
+  onRun: (patch: Partial<AnalysisState>) => void;
+}) {
+  const [lsl, setLsl] = useState(state.lsl);
+  const [usl, setUsl] = useState(state.usl);
+  const [target, setTarget] = useState(state.target);
+  const [subgroupSize, setSubgroupSize] = useState(state.subgroupSize || "1");
+
+  const field = "mt-1 border border-gray-300 rounded px-2 py-1 text-sm w-full";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-lg shadow-xl w-80 p-5">
+        <h3 className="text-base font-semibold text-[#00674d] mb-4">
+          Capability Study — Setup
+        </h3>
+
+        <div className="space-y-3">
+          <label className="block text-xs text-gray-600">
+            Lower Spec Limit (LSL)
+            <input
+              value={lsl}
+              onChange={(e) => setLsl(e.target.value)}
+              className={field}
+              placeholder="e.g. 9.5"
+            />
+          </label>
+
+          <label className="block text-xs text-gray-600">
+            Upper Spec Limit (USL)
+            <input
+              value={usl}
+              onChange={(e) => setUsl(e.target.value)}
+              className={field}
+              placeholder="e.g. 10.5"
+            />
+          </label>
+
+          <label className="block text-xs text-gray-600">
+            Target (optional)
+            <input
+              value={target}
+              onChange={(e) => setTarget(e.target.value)}
+              className={field}
+              placeholder="e.g. 10"
+            />
+          </label>
+
+          <label className="block text-xs text-gray-600">
+            Subgroup size
+            <input
+              value={subgroupSize}
+              onChange={(e) => setSubgroupSize(e.target.value)}
+              className={field}
+              placeholder="1"
+            />
+          </label>
+        </div>
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 rounded text-sm font-medium text-gray-600 hover:bg-gray-100"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onRun({ lsl, usl, target, subgroupSize })}
+            className="bg-[#00674d] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#00513d]"
+          >
+            ▶ Run
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}          
