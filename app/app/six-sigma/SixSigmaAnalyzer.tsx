@@ -5,6 +5,7 @@ import { useWorkbook } from "./hooks/useWorkbook";
 import { readExcelFile, writeExcelFile } from "./lib/excel";
 import { exportProject, importProject } from "./lib/project";
 import { ToolId } from "./lib/ribbon";
+import { getColumnValues } from "./lib/columns"; // 👈 NUEVO
 import MenuBar from "./components/MenuBar";
 import DataGrid from "./components/DataGrid";
 import SheetTabs from "./components/SheetTabs";
@@ -20,6 +21,12 @@ interface SavedStudy {
   params: Record<string, unknown>;
   results: Record<string, unknown>;
   form: AnalysisState; // snapshot para rehidratar
+  snapshot: {
+    // 👈 NUEVO: datos congelados del estudio
+    values: number[];
+    colName: string;
+    sheetName: string;
+  };
 }
 
 interface SixSigmaAnalyzerProps {
@@ -46,6 +53,7 @@ export default function SixSigmaAnalyzer({
   const [activeTool, setActiveTool] = useState<ToolId>(null);
   const [analysis, setAnalysis] = useState<AnalysisState>(EMPTY_ANALYSIS);
   const [studies, setStudies] = useState<SavedStudy[]>([]);
+  const [viewingId, setViewingId] = useState<string | null>(null); // 👈 NUEVO
   const splitRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const projectInputRef = useRef<HTMLInputElement>(null);
@@ -70,6 +78,7 @@ export default function SixSigmaAnalyzer({
     setStudies([]);
     setActiveTool(null);
     setAnalysis(EMPTY_ANALYSIS);
+    setViewingId(null); // 👈 NUEVO
   };
 
   // --- Proyecto: exportar / importar todo ---
@@ -84,19 +93,34 @@ export default function SixSigmaAnalyzer({
       setStudies((project.studies as SavedStudy[]) ?? []);
       setActiveTool(null);
       setAnalysis(EMPTY_ANALYSIS);
+      setViewingId(null); // 👈 NUEVO
       alert("Proyecto importado correctamente ✅");
     } catch (err) {
       alert((err as Error).message);
     }
   };
 
-  const saveStudy = (study: Omit<SavedStudy, "id" | "form">) => {
+  // 👇 saveStudy ahora congela el snapshot (añade sheetName de la hoja activa)
+  const saveStudy = (study: {
+    type: "capability" | "normality";
+    name: string;
+    params: Record<string, unknown>;
+    results: Record<string, unknown>;
+    snapshot?: { values: number[]; colName: string };
+  }) => {
     setStudies((prev) => [
       {
-        ...study,
-        name: `${timestamp()} — ${study.name}`, // 👈 timestamp delante
+        type: study.type,
+        params: study.params,
+        results: study.results,
+        name: `${timestamp()} — ${study.name}`, // timestamp delante
         id: crypto.randomUUID(),
         form: analysis,
+        snapshot: {
+          values: study.snapshot?.values ?? [],
+          colName: study.snapshot?.colName ?? "",
+          sheetName: wb.activeSheet, // 👈 hoja de origen
+        },
       },
       ...prev,
     ]);
@@ -118,6 +142,15 @@ export default function SixSigmaAnalyzer({
     </button>
   );
 
+  // 👇 Estudio que se está viendo (si lo hay) + datos vivos de su hoja/columna
+  const viewingStudy = studies.find((s) => s.id === viewingId) ?? null;
+  const liveValues = viewingStudy
+    ? getColumnValues(
+        wb.data[viewingStudy.snapshot.sheetName] ?? [],
+        viewingStudy.form.colIndex
+      )
+    : null;
+
   return (
     <div className="flex flex-col h-full w-full bg-white">
       <MenuBar
@@ -130,6 +163,7 @@ export default function SixSigmaAnalyzer({
         onSignOut={onSignOut}
         onSelectTool={(tool) => {
           setActiveTool(tool);
+          setViewingId(null); // 👈 nuevo análisis: salimos de modo "viewing"
           setAnalysis((prev) => ({ ...prev, ran: false }));
           if (view === "grid") setView("split");
         }}
@@ -178,6 +212,7 @@ export default function SixSigmaAnalyzer({
                 onClick={() => {
                   setActiveTool(s.type);
                   setAnalysis(s.form); // restaura columna, LSL/USL, target y ran
+                  setViewingId(s.id); // 👈 entramos en modo "viewing" de este estudio
                   if (view === "grid") setView("split");
                 }}
                 className="w-full text-left text-sm px-2 py-1.5 rounded hover:bg-emerald-50 border border-transparent hover:border-[#00674d] text-gray-700"
@@ -202,6 +237,21 @@ export default function SixSigmaAnalyzer({
                   state={analysis}
                   onStateChange={setAnalysis}
                   onSaveStudy={saveStudy}
+                  snapshot={viewingStudy ? viewingStudy.snapshot : null}
+                  liveValues={liveValues}
+                  onUpdateSnapshot={(newValues) => {
+                    if (!viewingStudy) return;
+                    setStudies((prev) =>
+                      prev.map((s) =>
+                        s.id === viewingStudy.id
+                          ? {
+                              ...s,
+                              snapshot: { ...s.snapshot, values: newValues },
+                            }
+                          : s
+                      )
+                    );
+                  }}
                 />
               </div>
             )}
