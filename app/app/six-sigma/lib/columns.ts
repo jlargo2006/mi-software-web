@@ -37,3 +37,12 @@ export function getColumnValues(sheet: SheetData, colIndex: number): number[] {
   const raw = sheet.slice(1).map((row) => row[colIndex] ?? "");
   return toNumericColumn(raw);
 }
+
+// Compara dos series numéricas (mismo orden y valores)
+export function sameData(a: number[], b: number[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (Math.abs(a[i] - b[i]) > 1e-9) return false;
+  }
+  return true;
+}

@@ -3,8 +3,8 @@
 import React, { useMemo, useState } from "react";
 import type { SheetData } from "../lib/types";
 import type { ToolId } from "../lib/ribbon";
-import { getColumns, getColumnValues } from "../lib/columns";
-import { capabilityStudy, normalityTest, normInv } from "../lib/stats";
+import { getColumns, getColumnValues, sameData } from "../lib/columns";
+import { capabilityStudy, normalityTest, normInv} from "../lib/stats";
 import ResultChart from "./ResultChart";
 import ReportLayout from "./ReportLayout";
 import StatBlock, { fmt, fmtPPM, StatSection } from "./StatBlock";
@@ -18,6 +18,8 @@ export interface AnalysisState {
   target: string;
   subgroupSize: string;
   ran: boolean;
+  runValues: number[];   // 👈 CAMBIO: datos congelados al pulsar Run
+  runColName: string;    // 👈 CAMBIO: nombre de columna congelado al pulsar Run
 }
 
 export const EMPTY_ANALYSIS: AnalysisState = {
@@ -27,7 +29,16 @@ export const EMPTY_ANALYSIS: AnalysisState = {
   target: "",
   subgroupSize: "1",
   ran: false,
+  runValues: [],   // 👈 CAMBIO
+  runColName: "",  // 👈 CAMBIO
 };
+
+// Snapshot congelado de los datos de un estudio guardado
+export interface StudySnapshot {
+  values: number[];
+  colName: string;
+  sheetName: string;
+}
 
 interface AnalysisPanelProps {
   tool: ToolId;
@@ -39,8 +50,14 @@ interface AnalysisPanelProps {
     name: string;
     params: Record<string, unknown>;
     results: Record<string, unknown>;
+    snapshot?: { values: number[]; colName: string };  //NuevoMio
   }) => void;
+  // NUEVO: modo "viendo estudio guardado"
+  snapshot?: StudySnapshot | null;
+  liveValues?: number[] | null; // datos vivos de la columna/hoja original del estudio
+  onUpdateSnapshot?: (newValues: number[]) => void;
 }
+
 
 export default function AnalysisPanel({
   tool,
@@ -48,6 +65,9 @@ export default function AnalysisPanel({
   state,
   onStateChange,
   onSaveStudy,
+  snapshot = null,
+  liveValues = null,
+  onUpdateSnapshot,
 }: AnalysisPanelProps) {
   const columns = useMemo(() => getColumns(sheet), [sheet]);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -64,8 +84,28 @@ export default function AnalysisPanel({
     );
   }
 
-  const values = getColumnValues(sheet, state.colIndex);
-  const colName = columns[state.colIndex]?.name ?? "Column";
+  // Datos vivos de la hoja activa (para análisis nuevos, ANTES del primer Run)
+  const liveSheetValues = getColumnValues(sheet, state.colIndex);
+
+  // Prioridad de datos a pintar:
+  //   1) snapshot de estudio guardado (datos congelados al guardar)
+  //   2) datos congelados en el último Run (state.runValues)
+  //   3) datos vivos de la hoja (solo antes del primer Run)
+  const values = snapshot                              // 👈 CAMBIO
+    ? snapshot.values
+    : state.ran
+    ? state.runValues
+    : liveSheetValues;
+
+  const colName = snapshot                             // 👈 CAMBIO
+    ? snapshot.colName
+    : state.ran
+    ? state.runColName
+    : columns[state.colIndex]?.name ?? "Column";
+
+  // ¿Los datos actuales difieren de los originales del estudio?
+  const dataDiffers =
+    !!snapshot && !!liveValues && !sameData(snapshot.values, liveValues);
 
   const parseNum = (s: string): number | null => {
     const n = parseFloat(s);
@@ -73,11 +113,15 @@ export default function AnalysisPanel({
   };
 
   const runAnalysis = () => {
-    if (values.length < 2) {
+    if (liveSheetValues.length < 2) {                  // 👈 CAMBIO: valida contra la hoja viva
       alert("The selected column needs at least 2 numeric values.");
       return;
     }
-    set({ ran: true });
+    set({                                              // 👈 CAMBIO: congela los datos al pulsar Run
+      ran: true,
+      runValues: liveSheetValues,
+      runColName: columns[state.colIndex]?.name ?? "Column",
+    });
   };
 
   return (
@@ -123,17 +167,37 @@ export default function AnalysisPanel({
         )}
       </div>
 
+      {/* Banner "datos diferentes a los originales" (estilo Minitab) */}
+      {state.ran && snapshot && dataDiffers && (
+        <div className="mb-4 flex items-center justify-between gap-3 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          <span>
+            ⚠️ Los datos actuales difieren de los originales de este estudio.
+          </span>
+          <button
+            onClick={() => liveValues && onUpdateSnapshot?.(liveValues)}
+            className="shrink-0 rounded bg-amber-500 px-3 py-1 text-xs font-medium text-white hover:bg-amber-600"
+          >
+            ¿Actualizar con los nuevos datos?
+          </button>
+        </div>
+      )}
+
       {/* Capability setup dialog (pop-up) */}
       {dialogOpen && tool === "capability" && (
         <CapabilityDialog
           state={state}
           onCancel={() => setDialogOpen(false)}
           onRun={(patch) => {
-            if (values.length < 2) {
+            if (liveSheetValues.length < 2) {
               alert("The selected column needs at least 2 numeric values.");
               return;
             }
-            set({ ...patch, ran: true });
+            set({                                        // 👈 CAMBIO: congela los datos al pulsar Run
+              ...patch,
+              ran: true,
+              runValues: liveSheetValues,
+              runColName: columns[state.colIndex]?.name ?? "Column",
+            });
             setDialogOpen(false);
           }}
         />
@@ -147,13 +211,11 @@ export default function AnalysisPanel({
           lsl={parseNum(state.lsl)}
           usl={parseNum(state.usl)}
           target={parseNum(state.target)}
-          subgroupSize={Math.max(
-            1,
-            Math.round(parseNum(state.subgroupSize) ?? 1)
-          )}
+          subgroupSize={parseInt(state.subgroupSize, 10) || 1}
           onSave={onSaveStudy}
         />
       )}
+
       {state.ran && tool === "normality" && (
         <NormalityResults
           values={values}
@@ -377,13 +439,13 @@ function CapabilityResults({
             name: `Capability — ${colName}`,
             params: { colName, lsl, usl, target, subgroupSize },
             results: { ...res, data: undefined },
+            snapshot: { values, colName }, // 👈 NuevoMio
           })
         }
       />
     </div>
   );
 }
-
 
 /* ---------- Normality results sub-component ---------- */
 function NormalityResults({
@@ -397,33 +459,37 @@ function NormalityResults({
 }) {
   const res = useMemo(() => normalityTest(values), [values]);
 
-  // --- Probability plot data ---
   const plot = useMemo(() => {
     const sorted = [...values].sort((a, b) => a - b);
     const n = sorted.length;
 
-    // Percentiles del eje (0.1 a 99.1) para las marcas
-    const tickPercents = [0.1, 1, 5, 10, 20, 30, 50, 70, 80, 90, 95, 99, 99.9];
-    const tickVals = tickPercents.map((p) => normInv(p / 100)); // z-score
+    // (1) Percentiles de 0.1 a 99.9
+    const tickPercents = [
+      0.1, 1, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 99, 99.9,
+    ];
+    const tickVals = tickPercents.map((p) => normInv(p / 100));
     const tickText = tickPercents.map((p) => String(p));
 
-    // Posiciones de trazado (median rank) → z-score (eje Y transformado)
+    // Posiciones de trazado (median rank) → z-score
     const pointsX: number[] = [];
     const pointsY: number[] = [];
     sorted.forEach((x, i) => {
-      const p = (i + 1 - 0.3) / (n + 0.4); // median rank
+      const p = (i + 1 - 0.3) / (n + 0.4);
       pointsX.push(x);
       pointsY.push(normInv(p));
     });
 
-    // Recta normal: y = (x - mean) / std  (en z-score)
+    // (2) Ajuste eje X a los datos reales (con pequeño padding)
     const xMin = sorted[0];
     const xMax = sorted[n - 1];
-    const pad = (xMax - xMin) * 0.05 || 1;
-    const lineX = [xMin - pad, xMax + pad];
+    const pad = (xMax - xMin) * 0.03 || 1;
+    const xRange: [number, number] = [xMin - pad, xMax + pad];
+
+    // Recta normal en z-score
+    const lineX = [xRange[0], xRange[1]];
     const lineY = lineX.map((x) => (x - res.mean) / res.std);
 
-    return { tickVals, tickText, pointsX, pointsY, lineX, lineY };
+    return { tickVals, tickText, pointsX, pointsY, lineX, lineY, xRange };
   }, [values, res.mean, res.std]);
 
   const pointsTrace: Data = {
@@ -444,43 +510,55 @@ function NormalityResults({
     line: { color: "#dc2626", width: 2 },
   };
 
+  // (3) Datos a la derecha
+  const rightSections: StatSection[] = [
+    {
+      title: "Statistics",
+      rows: [
+        { label: "Mean", value: fmt(res.mean, 4) },
+        { label: "StDev", value: fmt(res.std, 4) },
+        { label: "N", value: String(res.n) },
+        { label: "AD", value: fmt(res.adStatistic, 4) },
+        { label: "P-Value", value: fmt(res.pValue, 4) },
+        { label: "Normal?", value: res.isNormal ? "Yes (p>0.05)" : "No (p≤0.05)" },
+      ],
+    },
+  ];
+
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-        <Stat label="N" value={res.n} />
-        <Stat label="Mean" value={res.mean.toFixed(4)} />
-        <Stat label="StDev" value={res.std.toFixed(4)} />
-        <Stat label="AD" value={res.adStatistic.toFixed(4)} />
-        <Stat label="P-Value" value={res.pValue.toFixed(4)} highlight />
-        <Stat
-          label="Normal?"
-          value={res.isNormal ? "Yes (p>0.05)" : "No (p≤0.05)"}
-        />
-      </div>
-
-      <div className="flex justify-center">
-        <div
-          className="border border-gray-200 rounded"
-          style={{ width: "55%", aspectRatio: "4 / 3" }}
-        >
-          <ResultChart
-            data={[pointsTrace, lineTrace]}
-            layout={{
-              autosize: true,
-              title: { text: `Probability Plot — ${colName}` },
-              xaxis: { title: { text: colName } },
-              yaxis: {
-                title: { text: "Percent" },
-                tickvals: plot.tickVals,
-                ticktext: plot.tickText,
-                range: [normInv(0.001), normInv(0.991)],
-              },
-              showlegend: true,
-              legend: { orientation: "v", x: 1.02, y: 1 },
-            }}
-          />
-        </div>
-      </div>
+      <ReportLayout
+        template="chart-text"
+        right={<StatBlock sections={rightSections} />}
+        center={
+          <div className="flex justify-center">
+            <div
+              className="border border-gray-200 rounded"
+              style={{ width: "70%", aspectRatio: "4 / 3" }}
+            >
+              <ResultChart
+                data={[pointsTrace, lineTrace]}
+                layout={{
+                  autosize: true,
+                  title: { text: `Probability Plot — ${colName}` },
+                  xaxis: {
+                    title: { text: colName },
+                    range: plot.xRange, // (2)
+                  },
+                  yaxis: {
+                    title: { text: "Percent" },
+                    tickvals: plot.tickVals,
+                    ticktext: plot.tickText,
+                    range: [normInv(0.001), normInv(0.999)], // (1) 0.1 → 99.9
+                  },
+                  showlegend: true,
+                  legend: { orientation: "v", x: 1.02, y: 1 },
+                }}
+              />
+            </div>
+          </div>
+        }
+      />
 
       <SaveButton
         onSave={() =>
@@ -489,12 +567,14 @@ function NormalityResults({
             name: `Normality — ${colName}`,
             params: { colName },
             results: { ...res, sortedData: undefined },
+            snapshot: { values, colName }, // 👈 CAMBIO: faltaba el snapshot en Normality
           })
         }
       />
     </div>
   );
 }
+
 
 
 /* ---------- Small reusable UI bits ---------- */
@@ -557,58 +637,57 @@ function CapabilityDialog({
         </h3>
 
         <div className="space-y-3">
-          <label className="flex flex-col text-xs text-gray-600">
-            LSL (Lower Spec)
+          <label className="block text-xs text-gray-600">
+            Lower Spec Limit (LSL)
             <input
               value={lsl}
               onChange={(e) => setLsl(e.target.value)}
               className={field}
-              placeholder="optional"
+              placeholder="e.g. 9.5"
             />
           </label>
-          <label className="flex flex-col text-xs text-gray-600">
-            Target
-            <input
-              value={target}
-              onChange={(e) => setTarget(e.target.value)}
-              className={field}
-              placeholder="optional"
-            />
-          </label>
-          <label className="flex flex-col text-xs text-gray-600">
-            USL (Upper Spec)
+
+          <label className="block text-xs text-gray-600">
+            Upper Spec Limit (USL)
             <input
               value={usl}
               onChange={(e) => setUsl(e.target.value)}
               className={field}
-              placeholder="optional"
+              placeholder="e.g. 10.5"
             />
           </label>
-          <label className="flex flex-col text-xs text-gray-600">
+
+          <label className="block text-xs text-gray-600">
+            Target (optional)
+            <input
+              value={target}
+              onChange={(e) => setTarget(e.target.value)}
+              className={field}
+              placeholder="e.g. 10"
+            />
+          </label>
+
+          <label className="block text-xs text-gray-600">
             Subgroup size
             <input
-              type="number"
-              min={1}
               value={subgroupSize}
               onChange={(e) => setSubgroupSize(e.target.value)}
               className={field}
+              placeholder="1"
             />
-            <span className="mt-1 text-[11px] text-gray-400">
-              1 = moving range (MR/d₂). &gt;1 = pooled subgroups.
-            </span>
           </label>
         </div>
 
-        <div className="flex justify-end gap-2 mt-5">
+        <div className="mt-5 flex justify-end gap-2">
           <button
             onClick={onCancel}
-            className="px-3 py-1.5 text-sm rounded border border-gray-300 text-gray-600 hover:bg-gray-100"
+            className="px-4 py-2 rounded text-sm font-medium text-gray-600 hover:bg-gray-100"
           >
             Cancel
           </button>
           <button
             onClick={() => onRun({ lsl, usl, target, subgroupSize })}
-            className="px-4 py-1.5 text-sm rounded bg-[#00674d] text-white font-medium hover:bg-[#00513d]"
+            className="bg-[#00674d] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#00513d]"
           >
             ▶ Run
           </button>
@@ -616,4 +695,4 @@ function CapabilityDialog({
       </div>
     </div>
   );
-}
+}          
