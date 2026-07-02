@@ -18,6 +18,8 @@ export interface AnalysisState {
   target: string;
   subgroupSize: string;
   ran: boolean;
+  runValues: number[];   // 👈 CAMBIO: datos congelados al pulsar Run
+  runColName: string;    // 👈 CAMBIO: nombre de columna congelado al pulsar Run
 }
 
 export const EMPTY_ANALYSIS: AnalysisState = {
@@ -27,6 +29,8 @@ export const EMPTY_ANALYSIS: AnalysisState = {
   target: "",
   subgroupSize: "1",
   ran: false,
+  runValues: [],   // 👈 CAMBIO
+  runColName: "",  // 👈 CAMBIO
 };
 
 // Snapshot congelado de los datos de un estudio guardado
@@ -67,7 +71,7 @@ export default function AnalysisPanel({
 }: AnalysisPanelProps) {
   const columns = useMemo(() => getColumns(sheet), [sheet]);
   const [dialogOpen, setDialogOpen] = useState(false);
-  
+
   const set = (patch: Partial<AnalysisState>) =>
     onStateChange({ ...state, ...patch });
 
@@ -80,13 +84,23 @@ export default function AnalysisPanel({
     );
   }
 
-  // Datos vivos de la hoja activa (para análisis nuevos)
+  // Datos vivos de la hoja activa (para análisis nuevos, ANTES del primer Run)
   const liveSheetValues = getColumnValues(sheet, state.colIndex);
 
-  // Si estamos viendo un estudio guardado, usamos su snapshot (datos congelados)
-  const values = snapshot ? snapshot.values : liveSheetValues;
-  const colName = snapshot
+  // Prioridad de datos a pintar:
+  //   1) snapshot de estudio guardado (datos congelados al guardar)
+  //   2) datos congelados en el último Run (state.runValues)
+  //   3) datos vivos de la hoja (solo antes del primer Run)
+  const values = snapshot                              // 👈 CAMBIO
+    ? snapshot.values
+    : state.ran
+    ? state.runValues
+    : liveSheetValues;
+
+  const colName = snapshot                             // 👈 CAMBIO
     ? snapshot.colName
+    : state.ran
+    ? state.runColName
     : columns[state.colIndex]?.name ?? "Column";
 
   // ¿Los datos actuales difieren de los originales del estudio?
@@ -99,11 +113,15 @@ export default function AnalysisPanel({
   };
 
   const runAnalysis = () => {
-    if (values.length < 2) {
+    if (liveSheetValues.length < 2) {                  // 👈 CAMBIO: valida contra la hoja viva
       alert("The selected column needs at least 2 numeric values.");
       return;
     }
-    set({ ran: true });
+    set({                                              // 👈 CAMBIO: congela los datos al pulsar Run
+      ran: true,
+      runValues: liveSheetValues,
+      runColName: columns[state.colIndex]?.name ?? "Column",
+    });
   };
 
   return (
@@ -174,7 +192,12 @@ export default function AnalysisPanel({
               alert("The selected column needs at least 2 numeric values.");
               return;
             }
-            set({ ...patch, ran: true });
+            set({                                        // 👈 CAMBIO: congela los datos al pulsar Run
+              ...patch,
+              ran: true,
+              runValues: liveSheetValues,
+              runColName: columns[state.colIndex]?.name ?? "Column",
+            });
             setDialogOpen(false);
           }}
         />
@@ -202,7 +225,7 @@ export default function AnalysisPanel({
       )}
     </div>
   );
-}          
+}
 
 /* ---------- Capability results sub-component ---------- */
 function CapabilityResults({
@@ -544,7 +567,7 @@ function NormalityResults({
             name: `Normality — ${colName}`,
             params: { colName },
             results: { ...res, sortedData: undefined },
-            snapshot: { values, colName }, // 👈 AÑADIR ESTA LÍNEA
+            snapshot: { values, colName }, // 👈 CAMBIO: faltaba el snapshot en Normality
           })
         }
       />
@@ -554,7 +577,7 @@ function NormalityResults({
 
 
 
-/* ---------- Small reusable UI bits ---------- */ 
+/* ---------- Small reusable UI bits ---------- */
 function Stat({
   label,
   value,
@@ -590,87 +613,4 @@ function SaveButton({ onSave }: { onSave: () => void }) {
 }
 
 /* ---------- Capability setup dialog ---------- */
-function CapabilityDialog({
-  state,
-  onCancel,
-  onRun,
-}: {
-  state: AnalysisState;
-  onCancel: () => void;
-  onRun: (patch: Partial<AnalysisState>) => void;
-}) {
-  const [lsl, setLsl] = useState(state.lsl);
-  const [usl, setUsl] = useState(state.usl);
-  const [target, setTarget] = useState(state.target);
-  const [subgroupSize, setSubgroupSize] = useState(state.subgroupSize || "1");
-
-  const field = "mt-1 border border-gray-300 rounded px-2 py-1 text-sm w-full";
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-lg shadow-xl w-80 p-5">
-        <h3 className="text-base font-semibold text-[#00674d] mb-4">
-          Capability Study — Setup
-        </h3>
-
-        <div className="space-y-3">
-          <label className="flex flex-col text-xs text-gray-600">
-            LSL (Lower Spec)
-            <input
-              value={lsl}
-              onChange={(e) => setLsl(e.target.value)}
-              className={field}
-              placeholder="optional"
-            />
-          </label>
-          <label className="flex flex-col text-xs text-gray-600">
-            Target
-            <input
-              value={target}
-              onChange={(e) => setTarget(e.target.value)}
-              className={field}
-              placeholder="optional"
-            />
-          </label>
-          <label className="flex flex-col text-xs text-gray-600">
-            USL (Upper Spec)
-            <input
-              value={usl}
-              onChange={(e) => setUsl(e.target.value)}
-              className={field}
-              placeholder="optional"
-            />
-          </label>
-          <label className="flex flex-col text-xs text-gray-600">
-            Subgroup size
-            <input
-              type="number"
-              min={1}
-              value={subgroupSize}
-              onChange={(e) => setSubgroupSize(e.target.value)}
-              className={field}
-            />
-            <span className="mt-1 text-[11px] text-gray-400">
-              1 = moving range (MR/d₂). &gt;1 = pooled subgroups.
-            </span>
-          </label>
-        </div>
-
-        <div className="flex justify-end gap-2 mt-5">
-          <button
-            onClick={onCancel}
-            className="px-3 py-1.5 text-sm rounded border border-gray-300 text-gray-600 hover:bg-gray-100"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onRun({ lsl, usl, target, subgroupSize })}
-            className="px-4 py-1.5 text-sm rounded bg-[#00674d] text-white font-medium hover:bg-[#00513d]"
-          >
-            ▶ Run
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+function
