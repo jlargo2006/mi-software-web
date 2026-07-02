@@ -544,6 +544,7 @@ function NormalityResults({
             name: `Normality — ${colName}`,
             params: { colName },
             results: { ...res, sortedData: undefined },
+            snapshot: { values, colName }, // 👈 AÑADIR ESTA LÍNEA
           })
         }
       />
