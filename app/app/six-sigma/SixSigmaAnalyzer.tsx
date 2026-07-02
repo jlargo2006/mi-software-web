@@ -20,6 +20,11 @@ interface SavedStudy {
   params: Record<string, unknown>;
   results: Record<string, unknown>;
   form: AnalysisState; // snapshot para rehidratar
+  snapshot: {          // 👈 NUEVO: datos congelados
+    values: number[];
+    colName: string;
+    sheetName: string;
+  };
 }
 
 interface SixSigmaAnalyzerProps {
