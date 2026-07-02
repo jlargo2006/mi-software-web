@@ -46,6 +46,7 @@ interface AnalysisPanelProps {
     name: string;
     params: Record<string, unknown>;
     results: Record<string, unknown>;
+    snapshot?: { values: number[]; colName: string };  //NuevoMio
   }) => void;
   // NUEVO: modo "viendo estudio guardado"
   snapshot?: StudySnapshot | null;
@@ -415,6 +416,7 @@ function CapabilityResults({
             name: `Capability — ${colName}`,
             params: { colName, lsl, usl, target, subgroupSize },
             results: { ...res, data: undefined },
+            snapshot: { values, colName }, // 👈 NuevoMio
           })
         }
       />
