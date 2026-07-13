@@ -55,6 +55,8 @@ export default function SixSigmaAnalyzer({
   const [analysis, setAnalysis] = useState<AnalysisState>(EMPTY_ANALYSIS);
   const [studies, setStudies] = useState<SavedStudy[]>([]);
   const [viewingId, setViewingId] = useState<string | null>(null); // 👈 NUEVO
+  const [selRows, setSelRows] = useState<Set<number>>(new Set());
+  const [selCols, setSelCols] = useState<Set<number>>(new Set());
   const splitRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const projectInputRef = useRef<HTMLInputElement>(null);
@@ -270,12 +272,15 @@ export default function SixSigmaAnalyzer({
               >
                 <div className="flex-1 overflow-auto">
                   <DataGrid
-                    sheet={wb.data[wb.activeSheet] ?? EMPTY_SHEET}      // 👈 CAMBIO
+                    sheet={wb.data[wb.activeSheet] ?? EMPTY_SHEET}
                     onCellChange={wb.setCell}
-                    onHeaderChange={wb.setHeader}                       // 👈 NUEVO
+                    onHeaderChange={wb.setHeader}
                     onPaste={wb.pasteData}
-                    onDeleteRows={wb.deleteRowsAt}                      // 👈 NUEVO
-                    onDeleteColumns={wb.deleteColumnsAt}                // 👈 NUEVO
+                    onAddRow={wb.addRow}
+                    selRows={selRows}
+                    selCols={selCols}
+                    setSelRows={setSelRows}
+                    setSelCols={setSelCols}
                   />
                 </div>
               </div>
@@ -300,6 +305,27 @@ export default function SixSigmaAnalyzer({
             {viewBtn("split", "⊞ Split")}
             {viewBtn("grid", "▦ Grid only")}
             {viewBtn("graphics", "📊 Charts only")}
+            {(selRows.size > 0 || selCols.size > 0) && (
+              <>
+                <span className="mx-1 h-4 w-px bg-gray-300" /> {/* separador */}
+                <span className="text-xs text-gray-500">
+                  {selCols.size > 0
+                    ? `${selCols.size} col.`
+                    : `${selRows.size} fila(s)`}
+                </span>
+                <button
+                  onClick={() => {
+                    if (selCols.size > 0) wb.deleteColumnsAt([...selCols]);
+                    else wb.deleteRowsAt([...selRows]);
+                    setSelRows(new Set());
+                    setSelCols(new Set());
+                  }}
+                  className="rounded bg-red-500 px-2 py-0.5 text-xs text-white hover:bg-red-600"
+                >
+                  🗑 Borrar selección
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
