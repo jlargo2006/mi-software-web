@@ -57,7 +57,8 @@ export default function SixSigmaAnalyzer({
   const [viewingId, setViewingId] = useState<string | null>(null); // 👈 NUEVO
   const [selRows, setSelRows] = useState<Set<number>>(new Set());
   const [selCols, setSelCols] = useState<Set<number>>(new Set());
-  const splitRef = useRef<HTMLDivElement>(null);
+  const [warning, setWarning] = useState<string | null>(null); // 👈 NUEVO
+  const splitRef = useRef<HTMLDivElement>(null);  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const projectInputRef = useRef<HTMLInputElement>(null);
 
@@ -154,8 +155,45 @@ export default function SixSigmaAnalyzer({
       )
     : null;
 
+  // ---------- Insertar filas/columnas ---------- 👈 NUEVO (todo el bloque)
+  const GRID_COLS = 26;
+
+  const lastColumnsHaveData = (count: number): boolean => {
+    const sheet = wb.data[wb.activeSheet];
+    if (!sheet) return false;
+    for (let c = GRID_COLS - count; c < GRID_COLS; c++) {
+      if (String(sheet.headers[c] ?? "").trim() !== "") return true;
+      for (const row of sheet.rows) {
+        const v = row[c] ?? "";
+        if (v !== "" && String(v).trim() !== "") return true;
+      }
+    }
+    return false;
+  };
+
+  const handleInsertColumns = () => {
+    const count = selCols.size;
+    const start = Math.min(...selCols);
+    if (lastColumnsHaveData(count)) {
+      setWarning(
+        `No se pueden insertar ${count} columna(s): las últimas ${count} columna(s) ` +
+          `contienen datos que se perderían. Borra primero esos datos y vuelve a intentarlo.`
+      );
+      return;
+    }
+    wb.insertColumnsAt(start, count);
+    setSelCols(new Set());
+  };
+
+  const handleInsertRows = () => {
+    const count = selRows.size;
+    const start = Math.min(...selRows);
+    wb.insertRowsAt(start, count);
+    setSelRows(new Set());
+  };
+
   return (
-    <div className="flex flex-col h-full w-full bg-white">
+      <div className="flex flex-col h-full w-full bg-white">
       <MenuBar
         userEmail={userEmail}
         onNew={handleNew}
@@ -302,14 +340,31 @@ export default function SixSigmaAnalyzer({
           )}
 
           <div className="flex justify-end gap-2 bg-gray-100 border-t border-gray-300 px-3 py-1.5 shrink-0">
-            {(selRows.size > 0 || selCols.size > 0) && (
+             {(selRows.size > 0 || selCols.size > 0) && (
               <>
-                <span className="mx-1 h-4 w-px bg-gray-300" /> {/* separador */}
+                <span className="mx-1 h-4 w-px bg-gray-300" />
                 <span className="text-xs text-gray-500">
                   {selCols.size > 0
                     ? `${selCols.size} col.`
                     : `${selRows.size} fila(s)`}
                 </span>
+
+                {selCols.size > 0 ? (
+                  <button
+                    onClick={handleInsertColumns}
+                    className="rounded bg-[#00674d] px-2 py-0.5 text-xs text-white hover:bg-[#00513d]"
+                  >
+                    ➕ Insertar {selCols.size} columna{selCols.size > 1 ? "s" : ""}
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleInsertRows}
+                    className="rounded bg-[#00674d] px-2 py-0.5 text-xs text-white hover:bg-[#00513d]"
+                  >
+                    ➕ Insertar {selRows.size} fila{selRows.size > 1 ? "s" : ""}
+                  </button>
+                )}
+
                 <button
                   onClick={() => {
                     if (selCols.size > 0) wb.deleteColumnsAt([...selCols]);
@@ -321,15 +376,37 @@ export default function SixSigmaAnalyzer({
                 >
                   🗑 Borrar selección
                 </button>
-                <span className="mx-1 h-4 w-px bg-gray-300" /> {/* separador */}
+                <span className="mx-1 h-4 w-px bg-gray-300" />
               </>
             )}
+
             {viewBtn("split", "⊞ Split")}
             {viewBtn("grid", "▦ Grid only")}
             {viewBtn("graphics", "📊 Charts only")}
           </div>
         </div>
       </div>
+    
+      {/* Pop-up de aviso 👈 NUEVO */}
+      {warning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-md rounded-lg bg-white p-5 shadow-xl">
+            <div className="mb-2 flex items-center gap-2">
+              <span className="text-xl">⚠️</span>
+              <h3 className="font-semibold text-gray-800">No se puede insertar</h3>
+            </div>
+            <p className="mb-4 text-sm text-gray-600">{warning}</p>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setWarning(null)}
+                className="rounded bg-[#00674d] px-4 py-1.5 text-sm text-white hover:bg-[#00513d]"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
