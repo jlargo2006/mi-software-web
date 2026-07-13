@@ -46,8 +46,7 @@ export default function DataGrid({
 }: DataGridProps) {
   const [active, setActive] = useState<{ r: number; c: number } | null>(null);
   const [colWidths, setColWidths] = useState<Record<number, number>>({});
-  const [pendingFocus, setPendingFocus] = useState<{ r: number; c: number } | null>(null);
-
+  
   const resizeRef = useRef<{ col: number; startX: number; startW: number } | null>(null);
   const dragRef = useRef<{ mode: DragMode; anchor: number } | null>(null);
 
@@ -69,14 +68,20 @@ export default function DataGrid({
     }
   };
 
-  // Enfoca una celda que quizá aún no existía (tras crear fila)
-  useEffect(() => {
-    if (pendingFocus) {
-      focusCell(pendingFocus.r, pendingFocus.c);
-      setPendingFocus(null);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingFocus, numRows]);
+  // Enfoca una celda que quizá aún no está en el DOM (tras crear fila).
+  // Reintenta en los siguientes frames sin usar estado ni efectos.
+  const focusCellWhenReady = (r: number, c: number, tries = 5) => {
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`dg-cell-${r}-${c}`) as HTMLInputElement | null;
+      if (el) {
+        el.focus();
+        el.select();
+      } else if (tries > 0) {
+        focusCellWhenReady(r, c, tries - 1);
+      }
+    });
+  };
+
 
   // ---------- Selección helpers ----------
   const clearSelection = () => {
@@ -204,7 +209,7 @@ export default function DataGrid({
         e.preventDefault();
         if (r + 1 >= numRows) {
           onAddRow();
-          setPendingFocus({ r: r + 1, c });
+          focusCellWhenReady(r + 1, c); // 👈 antes: setPendingFocus({ r: r + 1, c })
         } else focusCell(r + 1, c);
         break;
       case "ArrowUp":
@@ -240,7 +245,7 @@ export default function DataGrid({
       e.preventDefault();
       if (numRows === 0) {
         onAddRow();
-        setPendingFocus({ r: 0, c });
+        focusCellWhenReady(0, c); // 👈 antes: setPendingFocus({ r: 0, c })
       } else focusCell(0, c);
     }
   };
