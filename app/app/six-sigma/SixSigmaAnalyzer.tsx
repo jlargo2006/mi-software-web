@@ -48,6 +48,7 @@ export default function SixSigmaAnalyzer({
   onSignOut,
 }: SixSigmaAnalyzerProps) {
   const wb = useWorkbook();
+  const EMPTY_SHEET = { headers: [], rows: [] }; // 👈 NUEVO: fallback Opción A
   const [view, setView] = useState<ViewMode>("split");
   const [topPercent, setTopPercent] = useState(80);
   const [activeTool, setActiveTool] = useState<ToolId>(null);
@@ -146,7 +147,7 @@ export default function SixSigmaAnalyzer({
   const viewingStudy = studies.find((s) => s.id === viewingId) ?? null;
   const liveValues = viewingStudy
     ? getColumnValues(
-        wb.data[viewingStudy.snapshot.sheetName] ?? [],
+        wb.data[viewingStudy.snapshot.sheetName] ?? EMPTY_SHEET, // 👈 CAMBIO
         viewingStudy.form.colIndex
       )
     : null;
@@ -233,7 +234,7 @@ export default function SixSigmaAnalyzer({
               >
                 <AnalysisPanel
                   tool={activeTool}
-                  sheet={wb.data[wb.activeSheet] ?? []}
+                  sheet={wb.data[wb.activeSheet] ?? EMPTY_SHEET} // 👈 CAMBIO
                   state={analysis}
                   onStateChange={setAnalysis}
                   onSaveStudy={saveStudy}
@@ -269,9 +270,12 @@ export default function SixSigmaAnalyzer({
               >
                 <div className="flex-1 overflow-auto">
                   <DataGrid
-                    sheet={wb.data[wb.activeSheet] ?? []}
+                    sheet={wb.data[wb.activeSheet] ?? EMPTY_SHEET}      // 👈 CAMBIO
                     onCellChange={wb.setCell}
+                    onHeaderChange={wb.setHeader}                       // 👈 NUEVO
                     onPaste={wb.pasteData}
+                    onDeleteRows={wb.deleteRowsAt}                      // 👈 NUEVO
+                    onDeleteColumns={wb.deleteColumnsAt}                // 👈 NUEVO
                   />
                 </div>
               </div>
