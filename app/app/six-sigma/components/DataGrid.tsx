@@ -2,14 +2,17 @@
 
 import React, { useState, useRef } from "react";
 import type { SheetData, Cell } from "../lib/types";
+import { parseCellValue } from "../lib/excel";
 
 interface DataGridProps {
   sheet: SheetData;
   onCellChange: (row: number, col: number, value: Cell) => void;
+  onHeaderChange: (col: number, value: string) => void;
   onPaste: (startRow: number, startCol: number, matrix: Cell[][]) => void;
+  onDeleteRows: (rows: number[]) => void;
+  onDeleteColumns: (cols: number[]) => void;
 }
 
-// Convierte índice de columna a letra (0->A, 1->B, ... 26->AA)
 function colLabel(i: number): string {
   let label = "";
   let n = i;
@@ -20,194 +23,25 @@ function colLabel(i: number): string {
   return label;
 }
 
-const DEFAULT_COL_WIDTH = 64; // Minitab "8.00" ≈ 64px
+const DEFAULT_COL_WIDTH = 64;
 const MIN_COL_WIDTH = 32;
-const MIN_COLS = 26; // al menos hasta la Z
+const MIN_COLS = 26;
+
+type DragMode = "col" | "row" | null;
 
 export default function DataGrid({
   sheet,
   onCellChange,
+  onHeaderChange,
   onPaste,
+  onDeleteRows,
+  onDeleteColumns,
 }: DataGridProps) {
   const [active, setActive] = useState<{ r: number; c: number } | null>(null);
   const [colWidths, setColWidths] = useState<Record<number, number>>({});
+  const [selCols, setSelCols] = useState<Set<number>>(new Set());
+  const [selRows, setSelRows] = useState<Set<number>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Resize state (kept in a ref so mousemove doesn't re-render every frame)
-  const resizeRef = useRef<{ col: number; startX: number; startW: number } | null>(
-    null
-  );
-
-  const numCols = Math.max(
-    MIN_COLS,
-    sheet.reduce((max, row) => Math.max(max, row.length), 1)
-  );
-
-  const widthOf = (c: number) => colWidths[c] ?? DEFAULT_COL_WIDTH;
-
-  const startResize = (e: React.MouseEvent, col: number) => {
-    e.preventDefault();
-    e.stopPropagation();
-    resizeRef.current = { col, startX: e.clientX, startW: widthOf(col) };
-
-    const onMove = (ev: MouseEvent) => {
-      const st = resizeRef.current;
-      if (!st) return;
-      const delta = ev.clientX - st.startX;
-      const newW = Math.max(MIN_COL_WIDTH, st.startW + delta);
-      setColWidths((prev) => ({ ...prev, [st.col]: newW }));
-    };
-    const onUp = () => {
-      resizeRef.current = null;
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-  };
-
-  // Doble clic en el borde -> autofit:
-  // vuelve al ancho por defecto, salvo que algún texto sea más ancho
-  const resetWidth = (col: number) => {
-    // Medimos el texto más ancho de la columna con un canvas
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    let maxText = 0;
-    if (ctx) {
-      // misma fuente que las celdas (text-sm = 14px)
-      ctx.font =
-        '14px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
-      for (const row of sheet) {
-        const val = row[col];
-        if (val === undefined || val === null || val === "") continue;
-        const w = ctx.measureText(String(val)).width;
-        if (w > maxText) maxText = w;
-      }
-    }
-    // +16px de padding (px-2 a cada lado)
-    const contentWidth = Math.ceil(maxText) + 16;
-
-    setColWidths((prev) => {
-      const copy = { ...prev };
-      if (contentWidth <= DEFAULT_COL_WIDTH) {
-        // cabe en el ancho por defecto -> reset
-        delete copy[col];
-      } else {
-        // hay texto más ancho -> ajustamos a ese contenido
-        copy[col] = contentWidth;
-      }
-      return copy;
-    });
-  };
-
-  // Mover el foco con flechas / Enter / Tab
-  const handleKeyDown = (
-    e: React.KeyboardEvent<HTMLInputElement>,
-    r: number,
-    c: number
-  ) => {
-    let nr = r;
-    let nc = c;
-    if (e.key === "ArrowUp") nr = Math.max(0, r - 1);
-    else if (e.key === "ArrowDown" || e.key === "Enter")
-      nr = Math.min(sheet.length - 1, r + 1);
-    else if (e.key === "ArrowLeft" && e.currentTarget.selectionStart === 0)
-      nc = Math.max(0, c - 1);
-    else if (e.key === "ArrowRight") nc = Math.min(numCols - 1, c + 1);
-    else if (e.key === "Tab") {
-      e.preventDefault();
-      nc = e.shiftKey ? Math.max(0, c - 1) : Math.min(numCols - 1, c + 1);
-    } else return;
-
-    if (nr !== r || nc !== c) {
-      e.preventDefault();
-      const sel = `input[data-r="${nr}"][data-c="${nc}"]`;
-      const el = containerRef.current?.querySelector<HTMLInputElement>(sel);
-      el?.focus();
-      el?.select();
-      setActive({ r: nr, c: nc });
-    }
-  };
-
-  // Pegar varias celdas (TSV del portapapeles)
-  const handlePaste = (
-    e: React.ClipboardEvent<HTMLInputElement>,
-    r: number,
-    c: number
-  ) => {
-    const text = e.clipboardData.getData("text");
-    if (!text.includes("\t") && !text.includes("\n")) return; // celda simple
-    e.preventDefault();
-    const matrix: Cell[][] = text
-      .replace(/\r/g, "")
-      .split("\n")
-      .filter((line, i, arr) => !(i === arr.length - 1 && line === ""))
-      .map((line) =>
-        line.split("\t").map((v) => {
-          const num = parseFloat(v);
-          return v !== "" && !Number.isNaN(num) && String(num) === v ? num : v;
-        })
-      );
-    onPaste(r, c, matrix);
-  };
-
-  return (
-    <div ref={containerRef} className="overflow-auto h-full w-full">
-      <table className="border-collapse text-sm table-fixed">
-        <thead className="sticky top-0 z-10">
-          <tr>
-            <th className="sticky left-0 z-20 bg-gray-200 border border-gray-300 w-12 h-7" />
-            {Array.from({ length: numCols }).map((_, c) => (
-              <th
-                key={c}
-                style={{ width: widthOf(c), minWidth: widthOf(c) }}
-                className="relative bg-gray-200 border border-gray-300 px-2 h-7 font-semibold text-gray-700 select-none"
-              >
-                {colLabel(c)}
-                {/* Resize handle */}
-                <span
-                  onMouseDown={(e) => startResize(e, c)}
-                  onDoubleClick={() => resetWidth(c)}
-                  className="absolute top-0 right-0 h-full w-1.5 cursor-col-resize hover:bg-[#00674d]/40"
-                  title="Drag to resize · double-click to reset"
-                />
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {sheet.map((row, r) => (
-            <tr key={r}>
-              <td className="sticky left-0 z-10 bg-gray-200 border border-gray-300 text-center text-gray-600 font-semibold w-12">
-                {r + 1}
-              </td>
-              {Array.from({ length: numCols }).map((_, c) => {
-                const isActive = active?.r === r && active?.c === c;
-                return (
-                  <td
-                    key={c}
-                    style={{ width: widthOf(c), minWidth: widthOf(c) }}
-                    className={`border border-gray-300 p-0 ${
-                      isActive ? "outline outline-2 outline-[#00674d]" : ""
-                    }`}
-                  >
-                    <input
-                      data-r={r}
-                      data-c={c}
-                      className="w-full h-7 px-2 outline-none bg-transparent focus:bg-emerald-50"
-                      value={row[c] ?? ""}
-                      onChange={(e) => onCellChange(r, c, e.target.value)}
-                      onFocus={() => setActive({ r, c })}
-                      onKeyDown={(e) => handleKeyDown(e, r, c)}
-                      onPaste={(e) => handlePaste(e, r, c)}
-                    />
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
+  const resizeRef = useRef<{ col: number; startX: number; startW: number } | null>(null);
+  const dragRef = useRef<{ mode: DragMode; anchor: number } | null>(
