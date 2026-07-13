@@ -302,9 +302,6 @@ export default function SixSigmaAnalyzer({
           )}
 
           <div className="flex justify-end gap-2 bg-gray-100 border-t border-gray-300 px-3 py-1.5 shrink-0">
-            {viewBtn("split", "⊞ Split")}
-            {viewBtn("grid", "▦ Grid only")}
-            {viewBtn("graphics", "📊 Charts only")}
             {(selRows.size > 0 || selCols.size > 0) && (
               <>
                 <span className="mx-1 h-4 w-px bg-gray-300" /> {/* separador */}
@@ -324,8 +321,12 @@ export default function SixSigmaAnalyzer({
                 >
                   🗑 Borrar selección
                 </button>
+                <span className="mx-1 h-4 w-px bg-gray-300" /> {/* separador */}
               </>
             )}
+            {viewBtn("split", "⊞ Split")}
+            {viewBtn("grid", "▦ Grid only")}
+            {viewBtn("graphics", "📊 Charts only")}
           </div>
         </div>
       </div>
