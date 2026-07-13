@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import type { WorkbookData, SheetData, Cell } from "../lib/types";
+import type { WorkbookData, Cell } from "../lib/types";
 import { createEmptySheet, parseCellValue } from "../lib/excel";
 
 const DEFAULT_SHEET = "Sheet1";
