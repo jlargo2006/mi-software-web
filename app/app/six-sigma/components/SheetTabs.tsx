@@ -65,15 +65,6 @@ export default function SheetTabs({
           +
         </button>
       </div>
-
-      {/* Acciones de filas/columnas */}
-      <div className="flex items-center gap-1">
-        <button className={btn} onClick={onAddRow}>+ Row</button>
-        <button className={btn} onClick={onDeleteRow}>− Row</button>
-        <button className={btn} onClick={onAddColumn}>+ Col</button>
-        <button className={btn} onClick={onDeleteColumn}>− Col</button>
-
-      </div>
     </div>
   );
 }
