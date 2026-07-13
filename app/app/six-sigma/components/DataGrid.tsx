@@ -168,12 +168,7 @@ export default function DataGrid({
     if (selectingRef.current && anchorRef.current) {
       endRef.current = { r, c };
       applyRange();
-      // Si el rango abarca más de una celda, saca el foco del input
-      // para que Supr borre todo el rango (y no solo el texto de una celda).
-      const a = anchorRef.current;
-      if (a.r !== r || a.c !== c) {
-        (document.activeElement as HTMLElement | null)?.blur();
-      }
+
     }
   };
 
