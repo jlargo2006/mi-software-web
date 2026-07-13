@@ -168,6 +168,12 @@ export default function DataGrid({
     if (selectingRef.current && anchorRef.current) {
       endRef.current = { r, c };
       applyRange();
+      // Si el rango abarca más de una celda, saca el foco del input
+      // para que Supr borre todo el rango (y no solo el texto de una celda).
+      const a = anchorRef.current;
+      if (a.r !== r || a.c !== c) {
+        (document.activeElement as HTMLElement | null)?.blur();
+      }
     }
   };
 
@@ -236,6 +242,51 @@ export default function DataGrid({
     }
   };
 
+  // ---------- Borrar contenido (Supr / Delete) ----------
+  const clearSelectedContent = () => {
+    // Prioridad: rango de celdas > columnas > filas
+    if (range) {
+      for (let r = range.r1; r <= range.r2; r++) {
+        for (let c = range.c1; c <= range.c2; c++) {
+          onCellChange(r, c, "");
+        }
+      }
+      return true;
+    }
+    if (selCols.size > 0) {
+      for (const c of selCols) {
+        for (let r = 0; r < numRows; r++) onCellChange(r, c, "");
+      }
+      return true;
+    }
+    if (selRows.size > 0) {
+      for (const r of selRows) {
+        for (let c = 0; c < numCols; c++) onCellChange(r, c, "");
+      }
+      return true;
+    }
+    return false;
+  };
+
+  // Captura Supr/Delete a nivel de contenedor cuando hay selección múltiple.
+  const handleGridKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== "Delete") return;
+    // Solo actuamos si hay rango / columnas / filas seleccionadas.
+    // (Si estás editando una sola celda, dejamos el Delete nativo del input.)
+    if (range || selCols.size > 0 || selRows.size > 0) {
+      // Evita borrar cuando el foco está dentro de una celda sin rango real
+      const activeEl = document.activeElement as HTMLElement | null;
+      const editingSingle =
+        activeEl?.tagName === "INPUT" && !range && selCols.size === 0 && selRows.size === 0;
+      if (editingSingle) return;
+      e.preventDefault();
+      clearSelectedContent();
+    }
+  };
+
+
+
+  
   // ---------- Redimensionar columnas ----------
   const startResize = (col: number, e: React.MouseEvent) => {
     e.preventDefault();
@@ -370,7 +421,7 @@ export default function DataGrid({
   const displayCell = (v: Cell): string => (v === "" ? "" : String(v));
 
   return (
-    <div className="overflow-auto h-full" onCopy={handleGridCopy}>
+    <div className="overflow-auto h-full" onCopy={handleGridCopy} onKeyDown={handleGridKeyDown} tabIndex={0}>
       <table className="border-collapse select-none" style={{ tableLayout: "fixed" }}>
         <thead>
           {/* Letras de columna (A..Z) */}
