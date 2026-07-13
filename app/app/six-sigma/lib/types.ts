@@ -3,8 +3,11 @@
 // Una celda puede ser texto o número
 export type Cell = string | number;
 
-// Una hoja es una matriz 2D de celdas
-export type SheetData = Cell[][];
+// Opción A: la hoja separa la fila de títulos (headers) de las filas de datos (rows)
+export interface SheetData {
+  headers: string[]; // títulos de columna (fila coloreada, estilo Minitab)
+  rows: Cell[][];    // SOLO filas de datos → la numeración 1,2,3… son estas
+}
 
 // El "libro" completo: varias hojas indexadas por nombre
 export type WorkbookData = Record<string, SheetData>;
