@@ -17,12 +17,18 @@ function colLetter(i: number): string {
   return label;
 }
 
-// List all columns of a sheet, using row 0 as headers
+// Nº de columnas de la hoja (máximo entre headers y filas de datos)
+function sheetColCount(sheet: SheetData): number {
+  const fromRows = sheet.rows.reduce((max, row) => Math.max(max, row.length), 0);
+  return Math.max(sheet.headers.length, fromRows);
+}
+
+// List all columns of a sheet, using the headers row as titles
 export function getColumns(sheet: SheetData): ColumnInfo[] {
-  const numCols = sheet.reduce((max, row) => Math.max(max, row.length), 0);
+  const numCols = sheetColCount(sheet);
   const cols: ColumnInfo[] = [];
   for (let i = 0; i < numCols; i++) {
-    const header = String(sheet[0]?.[i] ?? "").trim();
+    const header = String(sheet.headers[i] ?? "").trim();
     cols.push({
       index: i,
       letter: colLetter(i),
@@ -32,9 +38,9 @@ export function getColumns(sheet: SheetData): ColumnInfo[] {
   return cols;
 }
 
-// Get numeric values of a column, skipping the header row
+// Get numeric values of a column (rows already exclude the header)
 export function getColumnValues(sheet: SheetData, colIndex: number): number[] {
-  const raw = sheet.slice(1).map((row) => row[colIndex] ?? "");
+  const raw = sheet.rows.map((row) => row[colIndex] ?? "");
   return toNumericColumn(raw);
 }
 
