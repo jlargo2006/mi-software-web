@@ -6,11 +6,11 @@ import { supabase } from '@/lib/supabase-browser'
 import Image from 'next/image'
 import Link from 'next/link'
 
-// 🎨 Paleta Ford (cámbiala aquí si quieres)
+// 🎨 Brand palette (Ford)
 const BRAND = '#00674d'
 const BRAND_DARK = '#00513d'
 const BRAND_SOFT = '#e6f2ee'
-const PRODUCT_NAME = '6 Sigma Studio' // 👈 cambia el nombre aquí
+const PRODUCT_NAME = 'Six Sigma Studio'
 
 function YouTubeFacade({ id, title }: { id: string; title: string }) {
   const [active, setActive] = useState(false)
@@ -31,13 +31,12 @@ function YouTubeFacade({ id, title }: { id: string; title: string }) {
     <button
       onClick={() => setActive(true)}
       className="relative w-full aspect-video bg-black group"
-      aria-label={`Reproducir ${title}`}
+      aria-label={`Play ${title}`}
     >
       <Image
-        src={`/images/thumb-${id}.jpg`}
+        src={`https://img.youtube.com/vi/${id}/hqdefault.jpg`}
         alt={title}
         fill
-        priority
         className="object-cover opacity-80 group-hover:opacity-60 transition"
       />
       <div className="absolute inset-0 flex items-center justify-center">
@@ -57,14 +56,14 @@ export default function Home() {
 
   const videos = {
     define: [
-      { title: 'Pareto', id: 'VPOqSBL3gEo' },
-      { title: 'Muestreo aleatorio', id: 'P_tvEONoUZU' },
+      { title: 'Pareto Chart', id: 'VPOqSBL3gEo' },
+      { title: 'Random Sampling', id: 'P_tvEONoUZU' },
     ],
     measure: [
-      { title: 'Diagrama causa-efecto', id: 'WVz2maqfN4A' },
-      { title: 'Estadística descriptiva', id: 'UtP2feF1VYQ' },
-      { title: 'Test de normalidad', id: 'O3k0PPV4jn4' },
-      { title: 'Resumen gráfico', id: 'SG9-DV3ie8I' },
+      { title: 'Cause & Effect Diagram', id: 'WVz2maqfN4A' },
+      { title: 'Descriptive Statistics', id: 'UtP2feF1VYQ' },
+      { title: 'Normality Test', id: 'O3k0PPV4jn4' },
+      { title: 'Graphical Summary', id: 'SG9-DV3ie8I' },
     ],
     analyze: [],
     improve: [],
@@ -85,16 +84,14 @@ export default function Home() {
             </div>
             <div>
               <div className="font-bold text-lg leading-none">{PRODUCT_NAME}</div>
-              <div className="text-xs text-gray-500">Análisis Six Sigma de principio a fin</div>
+              <div className="text-xs text-gray-500">End-to-end Six Sigma analysis</div>
             </div>
           </div>
 
           <div className="hidden md:flex items-center gap-8 text-sm font-medium">
-            <a href="#features" className="hover:text-[color:var(--brand)] transition" style={{ ['--brand' as string]: BRAND }}>
-              Funciones
-            </a>
-            <a href="#videos" className="hover:opacity-70 transition">Vídeos</a>
-            <a href="#pricing" className="hover:opacity-70 transition">Precios</a>
+            <a href="#features" className="hover:opacity-70 transition">Features</a>
+            <a href="#videos" className="hover:opacity-70 transition">Videos</a>
+            <a href="#pricing" className="hover:opacity-70 transition">Pricing</a>
 
             {user ? (
               <>
@@ -104,21 +101,21 @@ export default function Home() {
                     className="text-white px-5 py-2.5 rounded-2xl transition text-sm font-semibold"
                     style={{ backgroundColor: BRAND }}
                   >
-                    Ir a la app
+                    Go to app
                   </button>
                 </Link>
                 <button
                   onClick={async () => { await supabase.auth.signOut() }}
                   className="border border-gray-300 hover:border-gray-900 px-5 py-2.5 rounded-2xl transition text-sm"
                 >
-                  Cerrar sesión
+                  Sign out
                 </button>
               </>
             ) : (
               <>
                 <Link href="/login">
                   <button className="border border-gray-300 hover:border-gray-900 px-5 py-2.5 rounded-2xl transition text-sm">
-                    Iniciar sesión
+                    Sign in
                   </button>
                 </Link>
                 <Link href="/login?mode=register">
@@ -126,7 +123,7 @@ export default function Home() {
                     className="text-white px-6 py-3 rounded-2xl font-semibold transition hover:scale-105 text-sm"
                     style={{ backgroundColor: BRAND }}
                   >
-                    Prueba gratis 7 días
+                    Start free 7-day trial
                   </button>
                 </Link>
               </>
@@ -150,20 +147,20 @@ export default function Home() {
           >
             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: BRAND }} />
             <span className="text-sm font-medium" style={{ color: BRAND_DARK }}>
-              Plataforma Six Sigma completa
+              The complete Six Sigma platform
             </span>
           </div>
 
           <h1 className="text-6xl md:text-8xl font-bold tracking-tight leading-none max-w-6xl mx-auto">
-            Tus estudios Six Sigma
+            Run your Six Sigma studies
             <br />
-            <span style={{ color: BRAND }}>de principio a fin</span>
+            <span style={{ color: BRAND }}>from start to finish</span>
           </h1>
 
           <p className="mt-10 text-xl md:text-2xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-            Todo el ciclo DMAIC en un único software: capability, cartas de control,
-            tests de hipótesis y análisis de normalidad. Sin instalaciones, sin licencias caras
-            y con toda la potencia estadística que necesitas.
+            The full DMAIC cycle in a single tool: capability, control charts,
+            hypothesis testing and normality analysis. No installations, no expensive
+            licenses, and all the statistical power you need.
           </p>
 
           <div className="flex flex-wrap justify-center gap-5 mt-14">
@@ -172,25 +169,25 @@ export default function Home() {
                 className="text-white px-10 py-5 rounded-2xl text-lg font-semibold hover:scale-105 transition"
                 style={{ backgroundColor: BRAND }}
               >
-                Empieza tu prueba gratis de 7 días
+                Start your free 7-day trial
               </button>
             </Link>
             <Link
               href="#videos"
               className="border border-gray-300 hover:border-gray-900 px-10 py-5 rounded-2xl text-lg transition"
             >
-              Ver demostraciones
+              Watch demos
             </Link>
           </div>
           <p className="mt-5 text-sm text-gray-500">
-            Sin tarjeta de crédito · Acceso completo durante 7 días
+            No credit card required · Full access for 7 days
           </p>
 
           <div className="grid md:grid-cols-3 gap-6 mt-24 max-w-5xl mx-auto">
             {[
-              ['50+', 'Herramientas estadísticas'],
-              ['DMAIC', 'Flujo Six Sigma completo'],
-              ['Cloud', 'Sin instalar nada'],
+              ['50+', 'Statistical tools'],
+              ['DMAIC', 'Complete Six Sigma workflow'],
+              ['Cloud', 'Nothing to install'],
             ].map(([big, small]) => (
               <div key={big} className="bg-white border shadow-sm rounded-3xl p-8">
                 <div className="text-5xl font-bold mb-4" style={{ color: BRAND }}>{big}</div>
@@ -206,19 +203,19 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
             <h2 className="text-5xl md:text-6xl font-bold mb-6">
-              Diseñado para equipos de calidad
+              Built for quality teams
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Pensado para profesionales Lean Six Sigma que necesitan resultados fiables
-              sin pelearse con menús interminables.
+              Made for Lean Six Sigma professionals who need reliable results
+              without fighting endless menus.
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              ['🎯', 'Guiado por DMAIC', 'Las herramientas se organizan por las fases Definir, Medir, Analizar, Mejorar y Controlar, no en menús estadísticos genéricos.'],
-              ['☁️', 'En la nube', 'Trabaja desde cualquier navegador. Sin instalaciones, sin licencias por equipo y con tus estudios siempre disponibles.'],
-              ['⚡', 'Flujo más rápido', 'Genera capability, cartas de control y tests en segundos, con informes listos para presentar.'],
+              ['🎯', 'Guided by DMAIC', 'Tools are organized by the Define, Measure, Analyze, Improve and Control phases, not by generic statistical menus.'],
+              ['☁️', 'In the cloud', 'Work from any browser. No installations, no per-seat licenses, and your studies always available.'],
+              ['⚡', 'Faster workflow', 'Generate capability, control charts and tests in seconds, with presentation-ready reports.'],
             ].map(([icon, title, text]) => (
               <div key={title} className="bg-white border rounded-3xl p-10 shadow-sm hover:shadow-lg transition">
                 <div className="text-5xl mb-6">{icon}</div>
@@ -235,22 +232,22 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
             <h2 className="text-5xl md:text-6xl font-bold mb-6 tracking-tight">
-              Análisis estadístico profesional
+              Professional statistical analysis
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Informes Six Sigma y capability de proceso con la calidad que esperas
-              de una herramienta profesional.
+              Six Sigma and process capability reports with the quality you expect
+              from a professional tool.
             </p>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-10">
             {[
-              ['/images/graphical-summary.png', 'Resumen gráfico', 'Histogramas, curvas de densidad, intervalos de confianza y análisis de normalidad de forma automática.'],
-              ['/images/capability-test.png', 'Capacidad de proceso', 'Cp, Cpk, PPM y nivel sigma calculados al instante desde tus datos de producción.'],
-              ['/images/pareto.png', 'Análisis de Pareto', 'Identifica las causas críticas y prioriza las mejoras del proceso.'],
-              ['/images/two-sample-t-test.png', 'Tests de hipótesis', 'Compara poblaciones y valida mejoras del proceso con contrastes estadísticos.'],
-              ['/images/imr.png', 'Cartas de control I-MR', 'Monitoriza la estabilidad del proceso y detecta causas especiales.'],
-              ['/images/normality-test.png', 'Test de normalidad', 'Valida supuestos estadísticos con el análisis de Anderson-Darling.'],
+              ['/images/graphical-summary.png', 'Graphical Summary', 'Histograms, density curves, confidence intervals and normality analysis, automatically.'],
+              ['/images/capability-test.png', 'Process Capability', 'Cp, Cpk, PPM and sigma level calculated instantly from your production data.'],
+              ['/images/pareto.png', 'Pareto Analysis', 'Identify the critical causes and prioritize process improvements.'],
+              ['/images/two-sample-t-test.png', 'Hypothesis Testing', 'Compare populations and validate process improvements with statistical tests.'],
+              ['/images/imr.png', 'I-MR Control Charts', 'Monitor process stability and detect special causes.'],
+              ['/images/normality-test.png', 'Normality Test', 'Validate statistical assumptions with Anderson-Darling analysis.'],
             ].map(([src, title, text]) => (
               <div key={title} className="group bg-white rounded-3xl overflow-hidden border shadow-xl hover:shadow-2xl transition duration-300">
                 <Image src={src} alt={title} width={800} height={500} className="w-full transition duration-500 group-hover:scale-[1.01]" />
@@ -268,20 +265,20 @@ export default function Home() {
       <section className="px-6 py-28 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
-            <h2 className="text-5xl md:text-6xl font-bold mb-6">Construido en torno a DMAIC</h2>
+            <h2 className="text-5xl md:text-6xl font-bold mb-6">Built around DMAIC</h2>
             <p className="text-xl text-gray-600 max-w-4xl mx-auto">
-              A diferencia del software estadístico tradicional, las herramientas se organizan
-              según la metodología Lean Six Sigma, facilitando cada proyecto desde Definir hasta Controlar.
+              Unlike traditional statistical software, the tools are organized around the
+              Lean Six Sigma methodology, guiding every project from Define to Control.
             </p>
           </div>
 
           <div className="grid lg:grid-cols-5 gap-6">
             {[
-              ['FASE 1', 'Definir', ['Diagrama de Pareto', 'Muestreo aleatorio']],
-              ['FASE 2', 'Medir', ['Resumen gráfico', 'Test de normalidad', 'Capability', 'Gage R&R', 'Acuerdo de atributos', 'Histogramas']],
-              ['FASE 3', 'Analizar', ['Tests de hipótesis', 'Multi-Vari', 'Análisis causa raíz']],
-              ['FASE 4', 'Mejorar', ['DOE (próximamente)', 'Optimización']],
-              ['FASE 5', 'Controlar', ['Cartas I-MR', 'Monitorización SPC', 'Planes de control']],
+              ['PHASE 1', 'Define', ['Pareto Chart', 'Random Sampling']],
+              ['PHASE 2', 'Measure', ['Graphical Summary', 'Normality Test', 'Capability', 'Gage R&R', 'Attribute Agreement', 'Histograms']],
+              ['PHASE 3', 'Analyze', ['Hypothesis Tests', 'Multi-Vari', 'Root Cause Analysis']],
+              ['PHASE 4', 'Improve', ['DOE (coming soon)', 'Optimization']],
+              ['PHASE 5', 'Control', ['I-MR Charts', 'SPC Monitoring', 'Control Plans']],
             ].map(([phase, title, items]) => (
               <div key={title as string} className="rounded-3xl p-8 border" style={{ backgroundColor: BRAND_SOFT, borderColor: '#cfe6dd' }}>
                 <div className="text-sm font-semibold mb-3" style={{ color: BRAND_DARK }}>{phase}</div>
@@ -299,32 +296,32 @@ export default function Home() {
       <section id="features" className="px-6 py-28" style={{ backgroundColor: BRAND_SOFT }}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
-            <h2 className="text-5xl font-bold mb-6">La misma potencia, mucho más simple</h2>
+            <h2 className="text-5xl font-bold mb-6">The same power, far simpler</h2>
             <p className="text-xl text-gray-600 max-w-4xl mx-auto">
-              Toda la potencia estadística del software de escritorio tradicional,
-              pero en la nube, en español y organizado por el flujo DMAIC.
+              All the statistical power of traditional desktop software, but in the cloud
+              and organized around the DMAIC workflow.
             </p>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full bg-white rounded-3xl overflow-hidden shadow-lg">
               <thead>
-                <tr className="border-b" style={{ backgroundColor: BRAND, color: 'white' }}>
-                  <th className="text-left p-8 text-xl">Característica</th>
+                <tr style={{ backgroundColor: BRAND, color: 'white' }}>
+                  <th className="text-left p-8 text-xl">Feature</th>
                   <th className="p-8 text-xl">{PRODUCT_NAME}</th>
-                  <th className="p-8 text-xl">Software estadístico tradicional</th>
+                  <th className="p-8 text-xl">Traditional statistical software</th>
                 </tr>
               </thead>
               <tbody>
                 {[
-                  ['Organización por DMAIC', true, false],
-                  ['100% en la nube (sin instalar)', true, false],
-                  ['Interfaz en español', true, false],
-                  ['Prueba gratuita sin tarjeta', true, false],
-                  ['Análisis de capability', true, true],
-                  ['Cartas de control', true, true],
-                  ['Tests de hipótesis', true, true],
-                  ['DOE', 'Próximamente', true],
+                  ['Organized by DMAIC', true, false],
+                  ['100% cloud (no install)', true, false],
+                  ['No credit card to start', true, false],
+                  ['Presentation-ready reports', true, true],
+                  ['Capability analysis', true, true],
+                  ['Control charts', true, true],
+                  ['Hypothesis testing', true, true],
+                  ['DOE', 'Coming soon', true],
                 ].map(([feat, us, them]) => (
                   <tr key={feat as string} className="border-b">
                     <td className="p-6 font-medium">{feat}</td>
@@ -345,7 +342,7 @@ export default function Home() {
       {/* VIDEOS */}
       <section id="videos" className="px-6 py-28">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-5xl font-bold text-center mb-16">Vídeos de formación</h2>
+          <h2 className="text-5xl font-bold text-center mb-16">Training videos</h2>
 
           <div className="flex flex-wrap justify-center gap-4 mb-16">
             {['define', 'measure', 'analyze', 'improve', 'control'].map((tab) => (
@@ -375,7 +372,7 @@ export default function Home() {
                 </div>
               ))
             ) : (
-              <div className="col-span-2 text-center py-20 text-gray-500 text-xl">Próximamente</div>
+              <div className="col-span-2 text-center py-20 text-gray-500 text-xl">Coming soon</div>
             )}
           </div>
         </div>
@@ -384,31 +381,31 @@ export default function Home() {
       {/* PRICING */}
       <section id="pricing" className="px-6 py-28" style={{ backgroundColor: BRAND_SOFT }}>
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-5xl md:text-6xl font-bold mb-6">Empieza gratis hoy</h2>
+          <h2 className="text-5xl md:text-6xl font-bold mb-6">Start free today</h2>
           <p className="text-xl text-gray-600 mb-16 max-w-2xl mx-auto">
-            Prueba todas las funciones durante 7 días. Sin tarjeta de crédito y sin compromiso.
+            Try every feature for 7 days. No credit card, no commitment.
           </p>
 
           <div className="bg-white rounded-3xl border shadow-2xl p-12 max-w-md mx-auto">
             <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 mb-6" style={{ backgroundColor: BRAND_SOFT }}>
               <span className="text-sm font-semibold" style={{ color: BRAND_DARK }}>
-                Prueba gratuita
+                7-day free trial
               </span>
             </div>
 
             <div className="mb-2">
-              <span className="text-6xl font-bold" style={{ color: BRAND }}>7</span>
-              <span className="text-2xl text-gray-600"> días gratis</span>
+              <span className="text-6xl font-bold" style={{ color: BRAND }}>€49</span>
+              <span className="text-2xl text-gray-600"> / year</span>
             </div>
-            <p className="text-gray-500 mb-8">Acceso completo a toda la plataforma</p>
+            <p className="text-gray-500 mb-8">after your 7-day free trial</p>
 
             <ul className="text-left space-y-4 mb-10">
               {[
-                'Todas las herramientas DMAIC',
-                'Estudios de capability ilimitados',
-                'Cartas de control y tests de hipótesis',
-                'Informes listos para presentar',
-                'Sin instalación, 100% en la nube',
+                'All DMAIC tools',
+                'Unlimited capability studies',
+                'Control charts and hypothesis tests',
+                'Presentation-ready reports',
+                'No install, 100% cloud',
               ].map((item) => (
                 <li key={item} className="flex items-start gap-3">
                   <span className="mt-0.5 text-lg" style={{ color: BRAND }}>✓</span>
@@ -422,11 +419,11 @@ export default function Home() {
                 className="w-full text-white px-8 py-5 rounded-2xl text-lg font-semibold hover:scale-105 transition"
                 style={{ backgroundColor: BRAND }}
               >
-                Crear cuenta y empezar
+                Create account & start trial
               </button>
             </Link>
             <p className="mt-4 text-sm text-gray-500">
-              Sin tarjeta · Cancela cuando quieras
+              No credit card · Cancel anytime
             </p>
           </div>
         </div>
@@ -436,14 +433,14 @@ export default function Home() {
       <section className="px-6 py-28 text-white" style={{ background: `linear-gradient(135deg, ${BRAND}, ${BRAND_DARK})` }}>
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-5xl md:text-6xl font-bold mb-8">
-            ¿Listo para tu próximo proyecto Six Sigma?
+            Ready for your next Six Sigma project?
           </h2>
           <p className="text-xl md:text-2xl mb-12 opacity-90 max-w-2xl mx-auto">
-            Únete a los profesionales de calidad que ya realizan sus estudios de principio a fin.
+            Join the quality professionals who already run their studies from start to finish.
           </p>
           <Link href="/login?mode=register">
             <button className="bg-white px-12 py-5 rounded-2xl text-lg font-semibold hover:scale-105 transition" style={{ color: BRAND_DARK }}>
-              Empieza tu prueba gratis de 7 días
+              Start your free 7-day trial
             </button>
           </Link>
         </div>
@@ -464,15 +461,15 @@ export default function Home() {
             </div>
 
             <div className="flex flex-wrap justify-center gap-8 text-sm">
-              <a href="#features" className="hover:text-white transition">Funciones</a>
-              <a href="#videos" className="hover:text-white transition">Vídeos</a>
-              <a href="#pricing" className="hover:text-white transition">Precios</a>
-              <Link href="/contact" className="hover:text-white transition">Contacto</Link>
+              <a href="#features" className="hover:text-white transition">Features</a>
+              <a href="#videos" className="hover:text-white transition">Videos</a>
+              <a href="#pricing" className="hover:text-white transition">Pricing</a>
+              <Link href="/contact" className="hover:text-white transition">Contact</Link>
             </div>
           </div>
 
           <div className="border-t border-gray-800 mt-10 pt-8 text-center text-sm">
-            © {new Date().getFullYear()} {PRODUCT_NAME}. Todos los derechos reservados.
+            © {new Date().getFullYear()} {PRODUCT_NAME}. All rights reserved.
           </div>
         </div>
       </footer>
