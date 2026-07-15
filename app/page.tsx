@@ -96,7 +96,7 @@ export default function Home() {
             {user ? (
               <>
                 <span className="text-sm text-gray-600">{user.email}</span>
-                <Link href="/app/six-sigma">
+                <Link href="/app">
                   <button
                     className="text-white px-5 py-2.5 rounded-2xl transition text-sm font-semibold"
                     style={{ backgroundColor: BRAND }}
