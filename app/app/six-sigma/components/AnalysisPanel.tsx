@@ -575,32 +575,6 @@ function NormalityResults({
   );
 }
 
-
-
-/* ---------- Small reusable UI bits ---------- */
-function Stat({
-  label,
-  value,
-  highlight,
-}: {
-  label: string;
-  value: string | number;
-  highlight?: boolean;
-}) {
-  return (
-    <div
-      className={`rounded border px-3 py-2 ${
-        highlight
-          ? "border-[#00674d] bg-emerald-50"
-          : "border-gray-200 bg-white"
-      }`}
-    >
-      <div className="text-xs text-gray-500">{label}</div>
-      <div className="font-semibold text-gray-800">{value}</div>
-    </div>
-  );
-}
-
 function SaveButton({ onSave }: { onSave: () => void }) {
   return (
     <button

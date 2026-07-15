@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import type { SheetData, Cell } from "../lib/types";
 import { parseCellValue } from "../lib/excel";
 
@@ -9,8 +9,11 @@ interface DataGridProps {
   onCellChange: (row: number, col: number, value: Cell) => void;
   onHeaderChange: (col: number, value: string) => void;
   onPaste: (startRow: number, startCol: number, matrix: Cell[][]) => void;
-  onDeleteRows: (rows: number[]) => void;
-  onDeleteColumns: (cols: number[]) => void;
+  onAddRow: () => void;
+  selRows: Set<number>;
+  selCols: Set<number>;
+  setSelRows: (s: Set<number>) => void;
+  setSelCols: (s: Set<number>) => void;
 }
 
 function colLabel(i: number): string {
@@ -25,40 +28,72 @@ function colLabel(i: number): string {
 
 const DEFAULT_COL_WIDTH = 64;
 const MIN_COL_WIDTH = 32;
-const MIN_COLS = 26;
+const FIXED_COLS = 26; // A … Z
 
 type DragMode = "col" | "row" | null;
+interface RangeSel { r1: number; c1: number; r2: number; c2: number; }
 
 export default function DataGrid({
   sheet,
   onCellChange,
   onHeaderChange,
   onPaste,
-  onDeleteRows,
-  onDeleteColumns,
+  onAddRow,
+  selRows,
+  selCols,
+  setSelRows,
+  setSelCols,
 }: DataGridProps) {
   const [active, setActive] = useState<{ r: number; c: number } | null>(null);
   const [colWidths, setColWidths] = useState<Record<number, number>>({});
-  const [selCols, setSelCols] = useState<Set<number>>(new Set());
-  const [selRows, setSelRows] = useState<Set<number>>(new Set());
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [range, setRange] = useState<RangeSel | null>(null);
 
   const resizeRef = useRef<{ col: number; startX: number; startW: number } | null>(null);
   const dragRef = useRef<{ mode: DragMode; anchor: number } | null>(null);
+  const anchorRef = useRef<{ r: number; c: number } | null>(null);
+  const endRef = useRef<{ r: number; c: number } | null>(null);
+  const selectingRef = useRef(false);
 
   const numCols = Math.max(
+    FIXED_COLS,
     sheet.headers.length,
-    sheet.rows.reduce((m, r) => Math.max(m, r.length), 0),
-    MIN_COLS
+    sheet.rows.reduce((m, r) => Math.max(m, r.length), 0)
   );
   const numRows = sheet.rows.length;
 
   const widthOf = (c: number) => colWidths[c] ?? DEFAULT_COL_WIDTH;
 
-  // ---------- Selección helpers ----------
+  // ---------- Foco de celdas ----------
+  const focusCell = (r: number, c: number) => {
+    const el = document.getElementById(`dg-cell-${r}-${c}`) as HTMLInputElement | null;
+    if (el) {
+      el.focus();
+      el.select();
+    }
+  };
+
+  const focusCellWhenReady = (r: number, c: number, tries = 5) => {
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`dg-cell-${r}-${c}`) as HTMLInputElement | null;
+      if (el) {
+        el.focus();
+        el.select();
+      } else if (tries > 0) {
+        focusCellWhenReady(r, c, tries - 1);
+      }
+    });
+  };
+
+  // ---------- Selección de filas/columnas (cabeceras) ----------
   const clearSelection = () => {
     setSelCols(new Set());
     setSelRows(new Set());
+  };
+
+  const clearRange = () => {
+    setRange(null);
+    anchorRef.current = null;
+    endRef.current = null;
   };
 
   const rangeSet = (a: number, b: number): Set<number> => {
@@ -69,10 +104,10 @@ export default function DataGrid({
     return s;
   };
 
-  // ---------- Selección de columna (clic en cabecera de letra) ----------
   const handleColHeaderMouseDown = (c: number, e: React.MouseEvent) => {
     e.preventDefault();
     setActive(null);
+    clearRange();
     setSelRows(new Set());
     if (e.shiftKey && dragRef.current?.mode === "col") {
       setSelCols(rangeSet(dragRef.current.anchor, c));
@@ -81,17 +116,14 @@ export default function DataGrid({
     dragRef.current = { mode: "col", anchor: c };
     setSelCols(new Set([c]));
   };
-
   const handleColHeaderMouseEnter = (c: number) => {
-    if (dragRef.current?.mode === "col") {
-      setSelCols(rangeSet(dragRef.current.anchor, c));
-    }
+    if (dragRef.current?.mode === "col") setSelCols(rangeSet(dragRef.current.anchor, c));
   };
 
-  // ---------- Selección de fila (clic en número de fila) ----------
   const handleRowHeaderMouseDown = (r: number, e: React.MouseEvent) => {
     e.preventDefault();
     setActive(null);
+    clearRange();
     setSelCols(new Set());
     if (e.shiftKey && dragRef.current?.mode === "row") {
       setSelRows(rangeSet(dragRef.current.anchor, r));
@@ -100,37 +132,156 @@ export default function DataGrid({
     dragRef.current = { mode: "row", anchor: r };
     setSelRows(new Set([r]));
   };
-
   const handleRowHeaderMouseEnter = (r: number) => {
-    if (dragRef.current?.mode === "row") {
-      setSelRows(rangeSet(dragRef.current.anchor, r));
+    if (dragRef.current?.mode === "row") setSelRows(rangeSet(dragRef.current.anchor, r));
+  };
+
+  // ---------- Selección de RANGO de celdas con ratón ----------
+  const applyRange = () => {
+    const a = anchorRef.current;
+    const b = endRef.current;
+    if (!a || !b) return;
+    setRange({
+      r1: Math.min(a.r, b.r),
+      c1: Math.min(a.c, b.c),
+      r2: Math.max(a.r, b.r),
+      c2: Math.max(a.c, b.c),
+    });
+  };
+
+  const handleCellMouseDown = (r: number, c: number, e: React.MouseEvent) => {
+    // Solo iniciamos selección de rango con arrastre; el clic simple deja editar
+    clearSelection();
+    if (e.shiftKey && anchorRef.current) {
+      endRef.current = { r, c };
+      applyRange();
+      e.preventDefault();
+      return;
+    }
+    anchorRef.current = { r, c };
+    endRef.current = { r, c };
+    selectingRef.current = true;
+    setRange(null); // aún no hay rango hasta que arrastre
+  };
+
+  const handleCellMouseEnter = (r: number, c: number) => {
+    if (selectingRef.current && anchorRef.current) {
+      endRef.current = { r, c };
+      applyRange();
+
     }
   };
 
-  // Fin del arrastre de selección
-  React.useEffect(() => {
+  // Fin de cualquier arrastre (selección de fila/col/rango)
+  useEffect(() => {
     const up = () => {
-      if (dragRef.current) dragRef.current = null;
+      dragRef.current = null;
+      selectingRef.current = false;
     };
     window.addEventListener("mouseup", up);
     return () => window.removeEventListener("mouseup", up);
   }, []);
 
-  // ---------- Borrado con tecla Supr cuando hay filas/cols seleccionadas ----------
-  const handleGridKeyDown = (e: React.KeyboardEvent) => {
-    if ((e.key === "Delete" || e.key === "Backspace") && !active) {
-      if (selCols.size > 0) {
-        onDeleteColumns([...selCols]);
-        clearSelection();
-        e.preventDefault();
-      } else if (selRows.size > 0) {
-        onDeleteRows([...selRows]);
-        clearSelection();
-        e.preventDefault();
+  const inRange = (r: number, c: number): boolean =>
+    !!range && r >= range.r1 && r <= range.r2 && c >= range.c1 && c <= range.c2;
+
+  // ---------- Copiar (Ctrl+C) el rango / fila / columna seleccionados ----------
+  const buildClipboardMatrix = (): string | null => {
+    // Prioridad: rango de celdas > columnas > filas
+    if (range) {
+      const lines: string[] = [];
+      for (let r = range.r1; r <= range.r2; r++) {
+        const cells: string[] = [];
+        for (let c = range.c1; c <= range.c2; c++) {
+          const v = sheet.rows[r]?.[c] ?? "";
+          cells.push(v === "" ? "" : String(v));
+        }
+        lines.push(cells.join("\t"));
       }
+      return lines.join("\n");
+    }
+    if (selCols.size > 0) {
+      const cols = [...selCols].sort((a, b) => a - b);
+      const lines: string[] = [];
+      // incluye títulos arriba
+      lines.push(cols.map((c) => String(sheet.headers[c] ?? "")).join("\t"));
+      for (let r = 0; r < numRows; r++) {
+        lines.push(
+          cols
+            .map((c) => {
+              const v = sheet.rows[r]?.[c] ?? "";
+              return v === "" ? "" : String(v);
+            })
+            .join("\t")
+        );
+      }
+      return lines.join("\n");
+    }
+    if (selRows.size > 0) {
+      const rows = [...selRows].sort((a, b) => a - b);
+      const lines = rows.map((r) =>
+        (sheet.rows[r] ?? [])
+          .map((v) => (v === "" ? "" : String(v)))
+          .join("\t")
+      );
+      return lines.join("\n");
+    }
+    return null;
+  };
+
+  const handleGridCopy = (e: React.ClipboardEvent) => {
+    const text = buildClipboardMatrix();
+    if (text !== null) {
+      e.preventDefault();
+      e.clipboardData.setData("text/plain", text);
     }
   };
 
+  // ---------- Borrar contenido (Supr / Delete) ----------
+  const clearSelectedContent = () => {
+    // Prioridad: rango de celdas > columnas > filas
+    if (range) {
+      for (let r = range.r1; r <= range.r2; r++) {
+        for (let c = range.c1; c <= range.c2; c++) {
+          onCellChange(r, c, "");
+        }
+      }
+      return true;
+    }
+    if (selCols.size > 0) {
+      for (const c of selCols) {
+        for (let r = 0; r < numRows; r++) onCellChange(r, c, "");
+      }
+      return true;
+    }
+    if (selRows.size > 0) {
+      for (const r of selRows) {
+        for (let c = 0; c < numCols; c++) onCellChange(r, c, "");
+      }
+      return true;
+    }
+    return false;
+  };
+
+  // Captura Supr/Delete a nivel de contenedor cuando hay selección múltiple.
+  const handleGridKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== "Delete") return;
+    // Solo actuamos si hay rango / columnas / filas seleccionadas.
+    // (Si estás editando una sola celda, dejamos el Delete nativo del input.)
+    if (range || selCols.size > 0 || selRows.size > 0) {
+      // Evita borrar cuando el foco está dentro de una celda sin rango real
+      const activeEl = document.activeElement as HTMLElement | null;
+      const editingSingle =
+        activeEl?.tagName === "INPUT" && !range && selCols.size === 0 && selRows.size === 0;
+      if (editingSingle) return;
+      e.preventDefault();
+      clearSelectedContent();
+    }
+  };
+
+
+
+  
   // ---------- Redimensionar columnas ----------
   const startResize = (col: number, e: React.MouseEvent) => {
     e.preventDefault();
@@ -151,61 +302,124 @@ export default function DataGrid({
     window.removeEventListener("mouseup", stopResize);
   };
 
-  // ---------- Pegado (coma -> punto) ----------
-  const handlePaste = (e: React.ClipboardEvent, r: number, c: number) => {
+  // ---------- Pegado ----------
+  const textToMatrix = (text: string): string[][] =>
+    text
+      .replace(/\r/g, "")
+      .split("\n")
+      .filter((line, i, arr) => !(i === arr.length - 1 && line === ""))
+      .map((line) => line.split("\t"));
+
+  const handleCellPaste = (e: React.ClipboardEvent, r: number, c: number) => {
     const text = e.clipboardData.getData("text");
     if (!text) return;
-    // Solo interceptamos si hay tabuladores o saltos (pegado tipo tabla)
     if (text.includes("\t") || text.includes("\n")) {
       e.preventDefault();
-      const matrix: Cell[][] = text
-        .replace(/\r/g, "")
-        .split("\n")
-        .filter((line, i, arr) => !(i === arr.length - 1 && line === ""))
-        .map((line) => line.split("\t").map((v) => parseCellValue(v)));
+      const matrix: Cell[][] = textToMatrix(text).map((row) =>
+        row.map((v) => parseCellValue(v))
+      );
       onPaste(r, c, matrix);
+    }
+  };
+
+  const handleHeaderPaste = (e: React.ClipboardEvent, c: number) => {
+    const text = e.clipboardData.getData("text");
+    if (!text) return;
+    if (!text.includes("\t") && !text.includes("\n")) return;
+    e.preventDefault();
+    const matrix = textToMatrix(text);
+    if (matrix.length === 0) return;
+    matrix[0].forEach((h, dc) => onHeaderChange(c + dc, h.trim()));
+    const dataMatrix: Cell[][] = matrix
+      .slice(1)
+      .map((row) => row.map((v) => parseCellValue(v)));
+    if (dataMatrix.length > 0) onPaste(0, c, dataMatrix);
+  };
+
+  // ---------- Teclado en celdas ----------
+  const handleCellKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, r: number, c: number) => {
+    const input = e.currentTarget;
+    const atStart = input.selectionStart === 0 && input.selectionEnd === 0;
+    const atEnd =
+      input.selectionStart === input.value.length &&
+      input.selectionEnd === input.value.length;
+
+    // Selección con Shift + cursores (para copiar luego)
+    if (e.shiftKey && ["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+      e.preventDefault();
+      if (!anchorRef.current) anchorRef.current = { r, c };
+      const cur = endRef.current ?? { r, c };
+      let nr = cur.r;
+      let nc = cur.c;
+      if (e.key === "ArrowDown") nr = Math.min(numRows - 1, cur.r + 1);
+      if (e.key === "ArrowUp") nr = Math.max(0, cur.r - 1);
+      if (e.key === "ArrowLeft") nc = Math.max(0, cur.c - 1);
+      if (e.key === "ArrowRight") nc = Math.min(numCols - 1, cur.c + 1);
+      endRef.current = { r: nr, c: nc };
+      applyRange();
+      focusCell(nr, nc);
+      return;
+    }
+
+    // Movimiento normal → limpia rango
+    switch (e.key) {
+      case "Enter":
+      case "ArrowDown":
+        e.preventDefault();
+        clearRange();
+        if (r + 1 >= numRows) {
+          onAddRow();
+          focusCellWhenReady(r + 1, c);
+        } else focusCell(r + 1, c);
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        clearRange();
+        if (r > 0) focusCell(r - 1, c);
+        break;
+      case "ArrowLeft":
+        if (atStart && c > 0) {
+          e.preventDefault();
+          clearRange();
+          focusCell(r, c - 1);
+        }
+        break;
+      case "ArrowRight":
+        if (atEnd && c < numCols - 1) {
+          e.preventDefault();
+          clearRange();
+          focusCell(r, c + 1);
+        }
+        break;
+      case "Tab":
+        e.preventDefault();
+        clearRange();
+        if (e.shiftKey) {
+          if (c > 0) focusCell(r, c - 1);
+        } else if (c < numCols - 1) {
+          focusCell(r, c + 1);
+        }
+        break;
+    }
+  };
+
+  const handleHeaderKeyDown = (e: React.KeyboardEvent, c: number) => {
+    if (e.key === "Enter" || e.key === "ArrowDown") {
+      e.preventDefault();
+      if (numRows === 0) {
+        onAddRow();
+        focusCellWhenReady(0, c);
+      } else focusCell(0, c);
     }
   };
 
   const displayCell = (v: Cell): string => (v === "" ? "" : String(v));
 
   return (
-    <div
-      ref={containerRef}
-      className="overflow-auto h-full outline-none"
-      tabIndex={0}
-      onKeyDown={handleGridKeyDown}
-    >
-      {/* Barra de acciones para selección */}
-      {(selCols.size > 0 || selRows.size > 0) && (
-        <div className="sticky top-0 z-30 flex items-center gap-2 bg-emerald-50 border-b border-emerald-200 px-3 py-1 text-xs">
-          <span className="text-emerald-800">
-            {selCols.size > 0
-              ? `${selCols.size} columna(s) seleccionada(s)`
-              : `${selRows.size} fila(s) seleccionada(s)`}
-          </span>
-          <button
-            onClick={() => {
-              if (selCols.size > 0) onDeleteColumns([...selCols]);
-              else onDeleteRows([...selRows]);
-              clearSelection();
-            }}
-            className="rounded bg-red-500 px-2 py-0.5 text-white hover:bg-red-600"
-          >
-            🗑 Borrar
-          </button>
-          <button
-            onClick={clearSelection}
-            className="rounded border border-gray-300 px-2 py-0.5 text-gray-600 hover:bg-white"
-          >
-            Cancelar
-          </button>
-        </div>
-      )}
-
+    <div className="overflow-auto h-full" onCopy={handleGridCopy} onKeyDown={handleGridKeyDown} tabIndex={0}>
       <table className="border-collapse select-none" style={{ tableLayout: "fixed" }}>
         <thead>
-          {/* Fila de letras de columna (A, B, C...) — clic para seleccionar columna */}
+          {/* Letras de columna (A..Z) */}
           <tr>
             <th className="sticky top-0 left-0 z-20 w-12 min-w-12 bg-gray-200 border border-gray-300" />
             {Array.from({ length: numCols }, (_, c) => (
@@ -219,7 +433,6 @@ export default function DataGrid({
                 style={{ width: widthOf(c), minWidth: widthOf(c) }}
               >
                 {colLabel(c)}
-                {/* Tirador de redimensión */}
                 <span
                   onMouseDown={(e) => startResize(c, e)}
                   className="absolute top-0 right-0 h-full w-1 cursor-col-resize hover:bg-emerald-400"
@@ -228,7 +441,7 @@ export default function DataGrid({
             ))}
           </tr>
 
-          {/* Fila de TÍTULOS (editable, color distinto — estilo Minitab) */}
+          {/* Fila de TÍTULOS */}
           <tr>
             <th className="sticky left-0 z-10 w-12 min-w-12 bg-[#00674d] border border-[#00513d] text-[10px] text-white">
               ↓
@@ -244,6 +457,8 @@ export default function DataGrid({
                 <input
                   value={sheet.headers[c] ?? ""}
                   onChange={(e) => onHeaderChange(c, e.target.value)}
+                  onPaste={(e) => handleHeaderPaste(e, c)}
+                  onKeyDown={(e) => handleHeaderKeyDown(e, c)}
                   placeholder={colLabel(c)}
                   className="w-full bg-transparent px-1 py-0.5 text-xs font-semibold text-[#00513d] placeholder-[#8bbcab] outline-none"
                 />
@@ -255,7 +470,6 @@ export default function DataGrid({
         <tbody>
           {Array.from({ length: numRows }, (_, r) => (
             <tr key={r}>
-              {/* Número de fila (empieza en 1) — clic para seleccionar fila */}
               <td
                 onMouseDown={(e) => handleRowHeaderMouseDown(r, e)}
                 onMouseEnter={() => handleRowHeaderMouseEnter(r)}
@@ -268,27 +482,26 @@ export default function DataGrid({
 
               {Array.from({ length: numCols }, (_, c) => {
                 const isActive = active?.r === r && active?.c === c;
-                const inSelCol = selCols.has(c);
-                const inSelRow = selRows.has(r);
+                const highlighted =
+                  selCols.has(c) || selRows.has(r) || inRange(r, c);
                 return (
                   <td
                     key={c}
+                    onMouseDown={(e) => handleCellMouseDown(r, c, e)}
+                    onMouseEnter={() => handleCellMouseEnter(r, c)}
                     className={`border border-gray-200 p-0 ${
-                      inSelCol || inSelRow ? "bg-emerald-50" : "bg-white"
+                      highlighted ? "bg-emerald-50" : "bg-white"
                     }`}
                     style={{ width: widthOf(c), minWidth: widthOf(c) }}
                   >
                     <input
+                      id={`dg-cell-${r}-${c}`}
                       value={displayCell(sheet.rows[r]?.[c] ?? "")}
-                      onFocus={() => {
-                        setActive({ r, c });
-                        clearSelection();
-                      }}
+                      onFocus={() => setActive({ r, c })}
                       onBlur={() => setActive(null)}
-                      onChange={(e) =>
-                        onCellChange(r, c, e.target.value)
-                      }
-                      onPaste={(e) => handlePaste(e, r, c)}
+                      onChange={(e) => onCellChange(r, c, e.target.value)}
+                      onPaste={(e) => handleCellPaste(e, r, c)}
+                      onKeyDown={(e) => handleCellKeyDown(e, r, c)}
                       className={`w-full px-1 py-0.5 text-xs text-gray-800 outline-none bg-transparent ${
                         isActive ? "ring-2 ring-[#00674d] ring-inset" : ""
                       }`}
@@ -303,6 +516,9 @@ export default function DataGrid({
     </div>
   );
 }
+
+
+
 
 
     

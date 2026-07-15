@@ -1,10 +1,18 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import type { WorkbookData, SheetData, Cell } from "../lib/types";
+import type { WorkbookData, Cell } from "../lib/types";
 import { createEmptySheet, parseCellValue } from "../lib/excel";
 
 const DEFAULT_SHEET = "Sheet1";
+const GRID_COLS = 26; // A … Z (debe coincidir con FIXED_COLS del DataGrid)
+
+// helper: copia un array y lo rellena hasta `len`
+const padTo = <T,>(arr: T[], len: number, fill: T): T[] => {
+  const a = [...arr];
+  while (a.length < len) a.push(fill);
+  return a;
+};
 
 export function useWorkbook() {
   const [data, setData] = useState<WorkbookData>(() => ({
@@ -185,6 +193,43 @@ export function useWorkbook() {
     [activeSheet]
   );
 
+  // ---- Insertar columnas ANTES de `start` (empuja a la derecha, recorta a Z) ----
+  const insertColumnsAt = useCallback(
+    (start: number, count: number) => {
+      setData((prev) => {
+        const sheet = prev[activeSheet];
+        const headers = padTo(sheet.headers, GRID_COLS, "");
+        headers.splice(start, 0, ...Array(count).fill(""));
+        headers.length = GRID_COLS; // recorta la cola
+        const rows = sheet.rows.map((r) => {
+          const rr = padTo(r as Cell[], GRID_COLS, "" as Cell);
+          rr.splice(start, 0, ...Array(count).fill("" as Cell));
+          rr.length = GRID_COLS;
+          return rr;
+        });
+        return { ...prev, [activeSheet]: { headers, rows } };
+      });
+    },
+    [activeSheet]
+  );
+
+  // ---- Insertar filas ANTES de `start` (las filas crecen sin límite) ----
+  const insertRowsAt = useCallback(
+    (start: number, count: number) => {
+      setData((prev) => {
+        const sheet = prev[activeSheet];
+        const width = Math.max(GRID_COLS, sheet.headers.length);
+        const empties: Cell[][] = Array.from({ length: count }, () =>
+          Array.from({ length: width }, () => "" as Cell)
+        );
+        const rows = [...sheet.rows];
+        rows.splice(start, 0, ...empties);
+        return { ...prev, [activeSheet]: { ...sheet, rows } };
+      });
+    },
+    [activeSheet]
+  );
+  
   return {
     data,
     order,
@@ -203,5 +248,7 @@ export function useWorkbook() {
     deleteSheet,
     pasteData,
     resetWorkbook,
+    insertColumnsAt,
+    insertRowsAt,
   };
 }
