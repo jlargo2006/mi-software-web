@@ -9,6 +9,7 @@ import ResultChart from "./ResultChart";
 import ReportLayout from "./ReportLayout";
 import StatBlock, { fmt, fmtPPM, StatSection } from "./StatBlock";
 import type { Data } from "plotly.js";
+import DescriptiveStatsPanel from "./DescriptiveStatsPanel";
 
 // Estado del formulario/análisis: vive en el padre
 export interface AnalysisState {
@@ -84,6 +85,11 @@ export default function AnalysisPanel({
     );
   }
 
+  // 👇 NUEVO: Descriptive tiene su propio flujo (multi-columna, sin Run/snapshot)
+  if (tool === "descriptive") {
+    return <DescriptiveStatsPanel sheet={sheet} />;
+  }
+  
   // Datos vivos de la hoja activa (para análisis nuevos, ANTES del primer Run)
   const liveSheetValues = getColumnValues(sheet, state.colIndex);
 
