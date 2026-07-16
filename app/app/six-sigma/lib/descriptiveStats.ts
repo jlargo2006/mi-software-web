@@ -23,8 +23,12 @@ export interface StatDef {
 }
 
 // Formateo numérico coherente (ajústalo cuando validemos)
-const f = (v: number, dp = 4): string =>
-  !Number.isFinite(v) ? "*" : Number(v.toFixed(dp)).toString();
+const f = (v: number, sig = 6): string => {
+  if (!Number.isFinite(v)) return "*";
+  if (v === 0) return "0";
+  return Number(v.toPrecision(sig)).toString();
+};
+
 const fInt = (v: number): string => (Number.isFinite(v) ? String(v) : "*");
 
 export const STAT_DEFS: StatDef[] = [
