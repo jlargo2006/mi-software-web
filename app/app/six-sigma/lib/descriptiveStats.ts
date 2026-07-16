@@ -129,8 +129,13 @@ import type { SheetData, Cell } from "./types";
 // pueda contar N y N* correctamente.
 // ⚠️ NO uses getColumnValues: ese helper ya descarta los missing con toNumericColumn.
 export function getRawColumn(sheet: SheetData, colIndex: number): Cell[] {
-  return sheet.rows.map((row) => row[colIndex] ?? "");
+  const col = sheet.rows.map((row) => row[colIndex] ?? "");
+  // Recorta las celdas vacías del FINAL (no son "missing" reales)
+  let last = col.length - 1;
+  while (last >= 0 && String(col[last]).trim() === "") last--;
+  return col.slice(0, last + 1);
 }
+
 
 
 
