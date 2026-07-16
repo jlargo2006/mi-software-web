@@ -111,7 +111,7 @@ export const GROUP_TITLES: Record<1 | 2 | 3 | 4 | 5, string> = {
 
 // Calcula solo las estadísticas seleccionadas para una columna
 export function computeSelected(
-  raw: (number | string | "")[],
+  raw: Cell[],
   selected: Set<StatKey>
 ): Record<string, string> {
   const ctx = S.buildContext(raw);
