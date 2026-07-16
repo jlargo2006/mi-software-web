@@ -1,6 +1,6 @@
 // lib/descriptiveStats.ts
 import * as S from "./statistics";
-
+ 
 export type StatKey =
   // Grupo 1
   | "mean" | "seMean" | "stDev" | "variance" | "coefVar"
