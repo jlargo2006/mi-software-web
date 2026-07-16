@@ -111,18 +111,24 @@ export function trimmedMean(ctx: StatContext): number {
 }
 
 // ---- Forma (FÓRMULAS MINITAB) ----
-// Skewness = (1/n) Σ ((xi - x̄)/s)^3
+// Skewness (Minitab / Excel SKEW)
 export function skewness(ctx: StatContext): number {
+  const n = ctx.n;
   const s = stDev(ctx);
-  if (ctx.n < 1 || !Number.isFinite(s) || s === 0) return NaN;
-  return m3(ctx) / ctx.n / s ** 3;
+  if (n < 3 || !Number.isFinite(s) || s === 0) return NaN;
+  return (n / ((n - 1) * (n - 2))) * (m3(ctx) / s ** 3);
 }
-// Kurtosis (exceso) = (1/n) Σ ((xi - x̄)/s)^4 - 3
+
+// Kurtosis exceso (Minitab / Excel KURT)
 export function kurtosis(ctx: StatContext): number {
+  const n = ctx.n;
   const s = stDev(ctx);
-  if (ctx.n < 1 || !Number.isFinite(s) || s === 0) return NaN;
-  return m4(ctx) / ctx.n / s ** 4 - 3;
+  if (n < 4 || !Number.isFinite(s) || s === 0) return NaN;
+  const a = (n * (n + 1)) / ((n - 1) * (n - 2) * (n - 3));
+  const b = (3 * (n - 1) ** 2) / ((n - 2) * (n - 3));
+  return a * (m4(ctx) / s ** 4) - b;
 }
+
 
 // ---- MSSD (Minitab): Σ(x[i+1]-x[i])^2 / (2(n-1)) sobre orden ORIGINAL ----
 export function mssd(ctx: StatContext): number {
