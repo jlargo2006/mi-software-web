@@ -23,9 +23,7 @@ export default function DescriptiveStatsPanel({ sheet }: Props) {
   const [showDialog, setShowDialog] = useState(false);
 
   // Columnas que tienen cabecera
-  const availableCols = sheet.headers
-    .map((h, i) => ({ name: h?.trim() || `C${i + 1}`, index: i }))
-    .filter((_, i) => String(sheet.headers[i] ?? "").trim() !== "");
+  const availableCols = getColumns(sheet); 
 
   const toggleCol = (i: number) =>
     setSelectedCols((prev) => {
@@ -40,9 +38,9 @@ export default function DescriptiveStatsPanel({ sheet }: Props) {
 
   const results = useMemo(() => {
     return [...selectedCols].sort((a, b) => a - b).map((colIdx) => {
-      const raw = sheet.rows.map((r) => r[colIdx] ?? "");
+      const raw = getRawColumn(sheet, colIdx);   // ← usa lib/descriptiveStats
       const values = computeSelected(raw, selectedStats);
-      const ctx = buildContext(raw);
+      const ctx = buildContext(raw);             // ← usa lib/statistics
       return {
         name: sheet.headers[colIdx]?.trim() || `C${colIdx + 1}`,
         values,
