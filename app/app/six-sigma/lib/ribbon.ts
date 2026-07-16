@@ -12,7 +12,7 @@
 // ============================================================================
 
 // All tool ids that are actually implemented today
-export type ToolId = "capability" | "normality" | null;
+export type ToolId = "capability" | "normality" | "descriptive" | null;
 
 export interface RibbonTool {
   id: string;              // unique id
@@ -54,7 +54,7 @@ export const PHASES: RibbonPhase[] = [
       { id: "causeEffect", label: "Cause and Effect (Fishbone)", tool: null, enabled: false },
 
       // p.144 | mpj: Measure Data Sets.mpj | mtw: basicstatistics.mtw
-      { id: "descriptive", label: "Descriptive Statistics", tool: null, enabled: false },
+      { id: "descriptive", label: "Descriptive Statistics", tool: "descriptive", enabled: true },
 
       // p.153 | mpj: Measure Data Sets.mpj | mtw: Descriptive Statistics.MTW
       { id: "normality", label: "Normality Test (Anderson-Darling)", tool: "normality", enabled: true },
