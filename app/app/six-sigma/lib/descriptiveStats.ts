@@ -133,6 +133,4 @@ export function getRawColumn(sheet: SheetData, colIndex: number): Cell[] {
 }
 
 
-// Reexport cómodo para que el panel importe columnas desde un solo sitio
-export { getColumns };
 
