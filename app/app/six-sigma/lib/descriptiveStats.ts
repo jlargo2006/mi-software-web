@@ -122,22 +122,16 @@ export function computeSelected(
   return out;
 }
 
-// lib/descriptiveStats.ts  (añadir al final)
-import type { SheetData } from "./types";
-import { getColumns } from "./columns";
+// lib/descriptiveStats.ts  (al final del archivo)
+import type { SheetData, Cell } from "./types";
 
-// Extrae la columna CRUDA (con celdas vacías/no numéricas incluidas)
-// para que buildContext pueda contar N y N* correctamente.
-// ⚠️ No uses getColumnValues aquí: ese helper ya descarta los missing.
-export function getRawColumn(
-  sheet: SheetData,
-  colIndex: number
-): (number | string | "")[] {
-  return sheet.rows.map((row) => {
-    const cell = row[colIndex];
-    return cell === undefined || cell === null ? "" : (cell as number | string);
-  });
+// Extrae la columna CRUDA (incluyendo celdas vacías) para que buildContext
+// pueda contar N y N* correctamente.
+// ⚠️ NO uses getColumnValues: ese helper ya descarta los missing con toNumericColumn.
+export function getRawColumn(sheet: SheetData, colIndex: number): Cell[] {
+  return sheet.rows.map((row) => row[colIndex] ?? "");
 }
+
 
 // Reexport cómodo para que el panel importe columnas desde un solo sitio
 export { getColumns };
