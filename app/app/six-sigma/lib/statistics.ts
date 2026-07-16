@@ -1,9 +1,10 @@
 // lib/statistics.ts
 // Cálculos base reutilizables. Se computan una sola vez por columna y se
 // reparten entre todos los estadísticos (evita recomputar al crecer la app).
+import type { Cell } from "./types";
 
 export interface StatContext {
-  raw: (number | string | "")[]; // celdas originales de la columna
+  raw: Cell[];
   values: number[];              // solo valores numéricos válidos (sin ordenar)
   sorted: number[];              // valores numéricos ordenados asc
   n: number;                     // N (no missing)
@@ -17,7 +18,7 @@ export interface StatContext {
   _m4?: number; // Σ(x-mean)^4
 }
 
-export function buildContext(raw: (number | string | "")[]): StatContext {
+export function buildContext(raw: Cell[]): StatContext {
   const values: number[] = [];
   let nMissing = 0;
 
