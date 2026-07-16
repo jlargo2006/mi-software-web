@@ -5,18 +5,16 @@ import React, { useMemo, useState } from "react";
 import DescriptiveStatsDialog from "./DescriptiveStatsDialog";
 import {
   STAT_DEFS, StatKey, DEFAULT_KEYS, computeSelected, modeCount,
+  getRawColumn,
 } from "../lib/descriptiveStats";
 import { buildContext } from "../lib/statistics";
+import { getColumns } from "../lib/columns";
+import type { SheetData } from "../lib/types";
 
 const BRAND = "#00674d";
 
-interface Sheet {
-  headers: string[];
-  rows: (number | string | "")[][];
-}
-
 interface Props {
-  sheet: Sheet;
+  sheet: SheetData;
 }
 
 export default function DescriptiveStatsPanel({ sheet }: Props) {
