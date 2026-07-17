@@ -15,7 +15,6 @@ export interface SavedStudy {
   type: string;                     // "capability" | "normality" | "descriptive" | ...
   name: string;
   params: Record<string, unknown>;  // config reproducible propia de cada tool
-  results?: Record<string, unknown>;   // 👈 AÑADIR esta línea
   snapshot: StudySnapshot;
 }
 
@@ -24,5 +23,6 @@ export interface SaveStudyInput {
   type: string;
   name: string;
   params: Record<string, unknown>;
+  results?: Record<string, unknown>;   // 👈 AÑADIR esta línea
   cols: StudyColumn[]; // columnas usadas por el estudio
 }
