@@ -15,6 +15,7 @@ export interface SavedStudy {
   type: string;                     // "capability" | "normality" | "descriptive" | ...
   name: string;
   params: Record<string, unknown>;  // config reproducible propia de cada tool
+  results?: Record<string, unknown>;   // 👈 AÑADIR esta línea
   snapshot: StudySnapshot;
 }
 
