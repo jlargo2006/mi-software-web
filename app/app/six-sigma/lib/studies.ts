@@ -16,6 +16,7 @@ export interface SavedStudy {
   name: string;
   params: Record<string, unknown>;  // config reproducible propia de cada tool
   snapshot: StudySnapshot;
+  form?: AnalysisState;   // 👈 AÑADIR esta línea
 }
 
 // Lo que un panel pasa a onSaveStudy (el padre añade id + timestamp + sheetName)
