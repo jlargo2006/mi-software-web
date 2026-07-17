@@ -4,7 +4,8 @@ import React, { useMemo, useState } from "react";
 import type { SheetData } from "../lib/types";
 import type { ToolId } from "../lib/ribbon";
 import { getColumns, getColumnValues, sameData } from "../lib/columns";
-import { capabilityStudy, normalityTest, normInv} from "../lib/stats";
+import { capabilityStudy, normalityTest, normInv } from "../lib/stats";
+import type { SaveStudyInput, StudyColumn, SavedStudy } from "../lib/studies";
 import ResultChart from "./ResultChart";
 import ReportLayout from "./ReportLayout";
 import StatBlock, { fmt, fmtPPM, StatSection } from "./StatBlock";
@@ -19,8 +20,8 @@ export interface AnalysisState {
   target: string;
   subgroupSize: string;
   ran: boolean;
-  runValues: number[];   // 👈 CAMBIO: datos congelados al pulsar Run
-  runColName: string;    // 👈 CAMBIO: nombre de columna congelado al pulsar Run
+  runValues: number[];   // datos congelados al pulsar Run
+  runColName: string;    // nombre de columna congelado al pulsar Run
 }
 
 export const EMPTY_ANALYSIS: AnalysisState = {
@@ -30,35 +31,22 @@ export const EMPTY_ANALYSIS: AnalysisState = {
   target: "",
   subgroupSize: "1",
   ran: false,
-  runValues: [],   // 👈 CAMBIO
-  runColName: "",  // 👈 CAMBIO
+  runValues: [],
+  runColName: "",
 };
-
-// Snapshot congelado de los datos de un estudio guardado
-export interface StudySnapshot {
-  values: number[];
-  colName: string;
-  sheetName: string;
-}
 
 interface AnalysisPanelProps {
   tool: ToolId;
   sheet: SheetData;
   state: AnalysisState;
   onStateChange: (next: AnalysisState) => void;
-  onSaveStudy: (study: {
-    type: "capability" | "normality";
-    name: string;
-    params: Record<string, unknown>;
-    results: Record<string, unknown>;
-    snapshot?: { values: number[]; colName: string };  //NuevoMio
-  }) => void;
-  // NUEVO: modo "viendo estudio guardado"
-  snapshot?: StudySnapshot | null;
-  liveValues?: number[] | null; // datos vivos de la columna/hoja original del estudio
+  onSaveStudy: (study: SaveStudyInput) => void;
+  // Modo "viendo estudio guardado"
+  study?: SavedStudy | null;               // 👈 estudio activo (para Descriptive params)
+  snapshot?: StudyColumn | null;           // 👈 CAMBIO: ahora es 1 StudyColumn {name, values}
+  liveValues?: number[] | null;            // datos vivos de la columna original del estudio
   onUpdateSnapshot?: (newValues: number[]) => void;
 }
-
 
 export default function AnalysisPanel({
   tool,
@@ -66,6 +54,7 @@ export default function AnalysisPanel({
   state,
   onStateChange,
   onSaveStudy,
+  study = null,
   snapshot = null,
   liveValues = null,
   onUpdateSnapshot,
@@ -85,11 +74,24 @@ export default function AnalysisPanel({
     );
   }
 
-  // 👇 NUEVO: Descriptive tiene su propio flujo (multi-columna, sin Run/snapshot)
+  // Descriptive: flujo propio (multi-columna) — ahora con guardado y recálculo
   if (tool === "descriptive") {
-    return <DescriptiveStatsPanel sheet={sheet} />;
+    return (
+      <DescriptiveStatsPanel
+        sheet={sheet}
+        onSaveStudy={onSaveStudy}
+        savedParams={
+          study?.type === "descriptive"
+            ? (study.params as {
+                selectedColNames?: string[];
+                selectedStats?: string[];
+              })
+            : null
+        }
+      />
+    );
   }
-  
+
   // Datos vivos de la hoja activa (para análisis nuevos, ANTES del primer Run)
   const liveSheetValues = getColumnValues(sheet, state.colIndex);
 
@@ -97,14 +99,14 @@ export default function AnalysisPanel({
   //   1) snapshot de estudio guardado (datos congelados al guardar)
   //   2) datos congelados en el último Run (state.runValues)
   //   3) datos vivos de la hoja (solo antes del primer Run)
-  const values = snapshot                              // 👈 CAMBIO
+  const values = snapshot
     ? snapshot.values
     : state.ran
     ? state.runValues
     : liveSheetValues;
 
-  const colName = snapshot                             // 👈 CAMBIO
-    ? snapshot.colName
+  const colName = snapshot
+    ? snapshot.name
     : state.ran
     ? state.runColName
     : columns[state.colIndex]?.name ?? "Column";
@@ -119,11 +121,11 @@ export default function AnalysisPanel({
   };
 
   const runAnalysis = () => {
-    if (liveSheetValues.length < 2) {                  // 👈 CAMBIO: valida contra la hoja viva
+    if (liveSheetValues.length < 2) {
       alert("The selected column needs at least 2 numeric values.");
       return;
     }
-    set({                                              // 👈 CAMBIO: congela los datos al pulsar Run
+    set({
       ran: true,
       runValues: liveSheetValues,
       runColName: columns[state.colIndex]?.name ?? "Column",
@@ -198,7 +200,7 @@ export default function AnalysisPanel({
               alert("The selected column needs at least 2 numeric values.");
               return;
             }
-            set({                                        // 👈 CAMBIO: congela los datos al pulsar Run
+            set({
               ...patch,
               ran: true,
               runValues: liveSheetValues,
@@ -249,7 +251,7 @@ function CapabilityResults({
   usl: number | null;
   target: number | null;
   subgroupSize: number;
-  onSave: AnalysisPanelProps["onSaveStudy"];
+  onSave: (study: SaveStudyInput) => void;
 }) {
   const res = useMemo(
     () => capabilityStudy(values, lsl, usl, target, subgroupSize),
@@ -291,13 +293,13 @@ function CapabilityResults({
     histnorm: "probability density",
     marker: {
       color: "#9fd5c4",
-      line: { color: "#000000", width: 1 }, // contorno negro (punto 5)
+      line: { color: "#000000", width: 1 },
     },
     name: colName,
     opacity: 0.85,
   };
 
-  // --- Curvas Overall (continua) y Within (discontinua) (punto 1) ---
+  // --- Curvas Overall (continua) y Within (discontinua) ---
   const overallCurve: Data = {
     x: overall.x,
     y: overall.y,
@@ -397,7 +399,6 @@ function CapabilityResults({
         left={<StatBlock sections={leftSections} />}
         right={<StatBlock sections={rightSections} />}
         center={
-
           <div className="flex justify-center">
             <div
               className="border border-gray-200 rounded"
@@ -434,8 +435,6 @@ function CapabilityResults({
             </div>
           </div>
         }
-
-
       />
 
       <SaveButton
@@ -445,7 +444,7 @@ function CapabilityResults({
             name: `Capability — ${colName}`,
             params: { colName, lsl, usl, target, subgroupSize },
             results: { ...res, data: undefined },
-            snapshot: { values, colName }, // 👈 NuevoMio
+            cols: [{ name: colName, values }], // 👈 CAMBIO: snapshot genérico N cols
           })
         }
       />
@@ -461,7 +460,7 @@ function NormalityResults({
 }: {
   values: number[];
   colName: string;
-  onSave: AnalysisPanelProps["onSaveStudy"];
+  onSave: (study: SaveStudyInput) => void;
 }) {
   const res = useMemo(() => normalityTest(values), [values]);
 
@@ -469,14 +468,12 @@ function NormalityResults({
     const sorted = [...values].sort((a, b) => a - b);
     const n = sorted.length;
 
-    // (1) Percentiles de 0.1 a 99.9
     const tickPercents = [
       0.1, 1, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 99, 99.9,
     ];
     const tickVals = tickPercents.map((p) => normInv(p / 100));
     const tickText = tickPercents.map((p) => String(p));
 
-    // Posiciones de trazado (median rank) → z-score
     const pointsX: number[] = [];
     const pointsY: number[] = [];
     sorted.forEach((x, i) => {
@@ -485,13 +482,11 @@ function NormalityResults({
       pointsY.push(normInv(p));
     });
 
-    // (2) Ajuste eje X a los datos reales (con pequeño padding)
     const xMin = sorted[0];
     const xMax = sorted[n - 1];
     const pad = (xMax - xMin) * 0.03 || 1;
     const xRange: [number, number] = [xMin - pad, xMax + pad];
 
-    // Recta normal en z-score
     const lineX = [xRange[0], xRange[1]];
     const lineY = lineX.map((x) => (x - res.mean) / res.std);
 
@@ -516,7 +511,6 @@ function NormalityResults({
     line: { color: "#dc2626", width: 2 },
   };
 
-  // (3) Datos a la derecha
   const rightSections: StatSection[] = [
     {
       title: "Statistics",
@@ -549,13 +543,13 @@ function NormalityResults({
                   title: { text: `Probability Plot — ${colName}` },
                   xaxis: {
                     title: { text: colName },
-                    range: plot.xRange, // (2)
+                    range: plot.xRange,
                   },
                   yaxis: {
                     title: { text: "Percent" },
                     tickvals: plot.tickVals,
                     ticktext: plot.tickText,
-                    range: [normInv(0.001), normInv(0.999)], // (1) 0.1 → 99.9
+                    range: [normInv(0.001), normInv(0.999)],
                   },
                   showlegend: true,
                   legend: { orientation: "v", x: 1.02, y: 1 },
@@ -573,7 +567,7 @@ function NormalityResults({
             name: `Normality — ${colName}`,
             params: { colName },
             results: { ...res, sortedData: undefined },
-            snapshot: { values, colName }, // 👈 CAMBIO: faltaba el snapshot en Normality
+            cols: [{ name: colName, values }], // 👈 CAMBIO: snapshot genérico N cols
           })
         }
       />
@@ -661,12 +655,19 @@ function CapabilityDialog({
         <div className="mt-5 flex justify-end gap-2">
           <button
             onClick={onCancel}
-            className="px-4 py-2 rounded text-sm font-medium text-gray-600 hover:bg-gray-100"
+            className="px-4 py-2 rounded text-sm text-gray-600 hover:bg-gray-100"
           >
             Cancel
           </button>
           <button
-            onClick={() => onRun({ lsl, usl, target, subgroupSize })}
+            onClick={() =>
+              onRun({
+                lsl,
+                usl,
+                target,
+                subgroupSize,
+              })
+            }
             className="bg-[#00674d] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#00513d]"
           >
             ▶ Run
@@ -675,4 +676,4 @@ function CapabilityDialog({
       </div>
     </div>
   );
-}          
+}
