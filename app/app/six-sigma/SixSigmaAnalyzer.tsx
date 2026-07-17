@@ -5,7 +5,8 @@ import { useWorkbook } from "./hooks/useWorkbook";
 import { readExcelFile, writeExcelFile } from "./lib/excel";
 import { exportProject, importProject } from "./lib/project";
 import { ToolId } from "./lib/ribbon";
-import { getColumnValues } from "./lib/columns"; // 👈 NUEVO
+import { getColumnByName } from "./lib/columns"; // ðŸ‘ˆ por NOMBRE (recÃ¡lculo genÃ©rico)
+import type { SavedStudy, SaveStudyInput, StudyColumn } from "./lib/studies";
 import MenuBar from "./components/MenuBar";
 import DataGrid from "./components/DataGrid";
 import SheetTabs from "./components/SheetTabs";
@@ -13,21 +14,6 @@ import Splitter from "./components/Splitter";
 import AnalysisPanel, { AnalysisState, EMPTY_ANALYSIS } from "./components/AnalysisPanel";
 
 type ViewMode = "split" | "grid" | "graphics";
-
-interface SavedStudy {
-  id: string;
-  type: "capability" | "normality";
-  name: string;
-  params: Record<string, unknown>;
-  results: Record<string, unknown>;
-  form: AnalysisState; // snapshot para rehidratar
-  snapshot: {
-    // 👈 NUEVO: datos congelados del estudio
-    values: number[];
-    colName: string;
-    sheetName: string;
-  };
-}
 
 interface SixSigmaAnalyzerProps {
   userEmail?: string;
@@ -48,17 +34,17 @@ export default function SixSigmaAnalyzer({
   onSignOut,
 }: SixSigmaAnalyzerProps) {
   const wb = useWorkbook();
-  const EMPTY_SHEET = { headers: [], rows: [] }; // 👈 NUEVO: fallback Opción A
+  const EMPTY_SHEET = { headers: [], rows: [] }; // fallback OpciÃ³n A
   const [view, setView] = useState<ViewMode>("split");
   const [topPercent, setTopPercent] = useState(80);
   const [activeTool, setActiveTool] = useState<ToolId>(null);
   const [analysis, setAnalysis] = useState<AnalysisState>(EMPTY_ANALYSIS);
   const [studies, setStudies] = useState<SavedStudy[]>([]);
-  const [viewingId, setViewingId] = useState<string | null>(null); // 👈 NUEVO
+  const [viewingId, setViewingId] = useState<string | null>(null);
   const [selRows, setSelRows] = useState<Set<number>>(new Set());
   const [selCols, setSelCols] = useState<Set<number>>(new Set());
-  const [warning, setWarning] = useState<string | null>(null); // 👈 NUEVO
-  const splitRef = useRef<HTMLDivElement>(null);  
+  const [warning, setWarning] = useState<string | null>(null);
+  const splitRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const projectInputRef = useRef<HTMLInputElement>(null);
 
@@ -82,7 +68,7 @@ export default function SixSigmaAnalyzer({
     setStudies([]);
     setActiveTool(null);
     setAnalysis(EMPTY_ANALYSIS);
-    setViewingId(null); // 👈 NUEVO
+    setViewingId(null);
   };
 
   // --- Proyecto: exportar / importar todo ---
@@ -97,34 +83,27 @@ export default function SixSigmaAnalyzer({
       setStudies((project.studies as SavedStudy[]) ?? []);
       setActiveTool(null);
       setAnalysis(EMPTY_ANALYSIS);
-      setViewingId(null); // 👈 NUEVO
-      alert("Proyecto importado correctamente ✅");
+      setViewingId(null);
+      alert("Proyecto importado correctamente âœ…");
     } catch (err) {
       alert((err as Error).message);
     }
   };
 
-  // 👇 saveStudy ahora congela el snapshot (añade sheetName de la hoja activa)
-  const saveStudy = (study: {
-    type: "capability" | "normality";
-    name: string;
-    params: Record<string, unknown>;
-    results: Record<string, unknown>;
-    snapshot?: { values: number[]; colName: string };
-  }) => {
+  // ðŸ‘‡ saveStudy GENÃ‰RICO: snapshot multi-columna + form solo si aplica
+  const saveStudy = (study: SaveStudyInput) => {
     setStudies((prev) => [
       {
-        type: study.type,
-        params: study.params,
-        results: study.results,
-        name: `${timestamp()} — ${study.name}`, // timestamp delante
         id: crypto.randomUUID(),
-        form: analysis,
-        snapshot: {
-          values: study.snapshot?.values ?? [],
-          colName: study.snapshot?.colName ?? "",
-          sheetName: wb.activeSheet, // 👈 hoja de origen
-        },
+        type: study.type,
+        name: `${timestamp()} â€” ${study.name}`, // timestamp delante
+        params: study.params,
+        results: study.results ?? {},
+        snapshot: { sheetName: wb.activeSheet, cols: study.cols },
+        form:
+          study.type === "capability" || study.type === "normality"
+            ? analysis
+            : undefined,
       },
       ...prev,
     ]);
@@ -146,16 +125,25 @@ export default function SixSigmaAnalyzer({
     </button>
   );
 
-  // 👇 Estudio que se está viendo (si lo hay) + datos vivos de su hoja/columna
+  // ðŸ‘‡ Estudio en visualizaciÃ³n + columnas VIVAS resueltas por NOMBRE (N columnas)
   const viewingStudy = studies.find((s) => s.id === viewingId) ?? null;
-  const liveValues = viewingStudy
-    ? getColumnValues(
-        wb.data[viewingStudy.snapshot.sheetName] ?? EMPTY_SHEET, // 👈 CAMBIO
-        viewingStudy.form.colIndex
-      )
+  const liveCols: StudyColumn[] | null = viewingStudy
+    ? viewingStudy.snapshot.cols.map((c) => ({
+        name: c.name,
+        values: getColumnByName(
+          wb.data[viewingStudy.snapshot.sheetName] ?? EMPTY_SHEET,
+          c.name
+        ),
+      }))
     : null;
 
-  // ---------- Insertar filas/columnas ---------- 👈 NUEVO (todo el bloque)
+  // Compatibilidad capability/normality: primera columna del estudio (1 col)
+  const viewingSnapshotCol = viewingStudy
+    ? viewingStudy.snapshot.cols[0] ?? null
+    : null;
+  const liveValues = liveCols ? liveCols[0]?.values ?? null : null;
+
+  // ---------- Insertar filas/columnas ----------
   const GRID_COLS = 26;
 
   const lastColumnsHaveData = (count: number): boolean => {
@@ -176,8 +164,8 @@ export default function SixSigmaAnalyzer({
     const start = Math.min(...selCols);
     if (lastColumnsHaveData(count)) {
       setWarning(
-        `No se pueden insertar ${count} columna(s): las últimas ${count} columna(s) ` +
-          `contienen datos que se perderían. Borra primero esos datos y vuelve a intentarlo.`
+        `No se pueden insertar ${count} columna(s): las Ãºltimas ${count} columna(s) ` +
+          `contienen datos que se perderÃ­an. Borra primero esos datos y vuelve a intentarlo.`
       );
       return;
     }
@@ -204,7 +192,7 @@ export default function SixSigmaAnalyzer({
         onSignOut={onSignOut}
         onSelectTool={(tool) => {
           setActiveTool(tool);
-          setViewingId(null); // 👈 nuevo análisis: salimos de modo "viewing"
+          setViewingId(null); // nuevo anÃ¡lisis: salimos de modo "viewing"
           setAnalysis((prev) => ({ ...prev, ran: false }));
           if (view === "grid") setView("split");
         }}
@@ -251,9 +239,9 @@ export default function SixSigmaAnalyzer({
               <button
                 key={s.id}
                 onClick={() => {
-                  setActiveTool(s.type);
-                  setAnalysis(s.form); // restaura columna, LSL/USL, target y ran
-                  setViewingId(s.id); // 👈 entramos en modo "viewing" de este estudio
+                  setActiveTool(s.type as ToolId);
+                  setAnalysis(s.form ?? EMPTY_ANALYSIS); // rehidrata si aplica
+                  setViewingId(s.id); // modo "viewing" de este estudio
                   if (view === "grid") setView("split");
                 }}
                 className="w-full text-left text-sm px-2 py-1.5 rounded hover:bg-emerald-50 border border-transparent hover:border-[#00674d] text-gray-700"
@@ -274,11 +262,12 @@ export default function SixSigmaAnalyzer({
               >
                 <AnalysisPanel
                   tool={activeTool}
-                  sheet={wb.data[wb.activeSheet] ?? EMPTY_SHEET} // 👈 CAMBIO
+                  sheet={wb.data[wb.activeSheet] ?? EMPTY_SHEET}
                   state={analysis}
                   onStateChange={setAnalysis}
                   onSaveStudy={saveStudy}
-                  snapshot={viewingStudy ? viewingStudy.snapshot : null}
+                  study={viewingStudy}
+                  snapshot={viewingSnapshotCol}
                   liveValues={liveValues}
                   onUpdateSnapshot={(newValues) => {
                     if (!viewingStudy) return;
@@ -287,7 +276,13 @@ export default function SixSigmaAnalyzer({
                         s.id === viewingStudy.id
                           ? {
                               ...s,
-                              snapshot: { ...s.snapshot, values: newValues },
+                              snapshot: {
+                                ...s.snapshot,
+                                // actualiza SOLO la primera columna (capability/normality)
+                                cols: s.snapshot.cols.map((c, i) =>
+                                  i === 0 ? { ...c, values: newValues } : c
+                                ),
+                              },
                             }
                           : s
                       )
@@ -354,14 +349,14 @@ export default function SixSigmaAnalyzer({
                     onClick={handleInsertColumns}
                     className="rounded bg-[#00674d] px-2 py-0.5 text-xs text-white hover:bg-[#00513d]"
                   >
-                    ➕ Insertar {selCols.size} columna{selCols.size > 1 ? "s" : ""}
+                    âž• Insertar {selCols.size} columna{selCols.size > 1 ? "s" : ""}
                   </button>
                 ) : (
                   <button
                     onClick={handleInsertRows}
                     className="rounded bg-[#00674d] px-2 py-0.5 text-xs text-white hover:bg-[#00513d]"
                   >
-                    ➕ Insertar {selRows.size} fila{selRows.size > 1 ? "s" : ""}
+                    âž• Insertar {selRows.size} fila{selRows.size > 1 ? "s" : ""}
                   </button>
                 )}
 
@@ -374,25 +369,25 @@ export default function SixSigmaAnalyzer({
                   }}
                   className="rounded bg-red-500 px-2 py-0.5 text-xs text-white hover:bg-red-600"
                 >
-                  🗑 Borrar selección
+                  ðŸ—‘ Borrar selecciÃ³n
                 </button>
                 <span className="mx-1 h-4 w-px bg-gray-300" />
               </>
             )}
 
-            {viewBtn("split", "⊞ Split")}
-            {viewBtn("grid", "▦ Grid only")}
-            {viewBtn("graphics", "📊 Charts only")}
+            {viewBtn("split", "âŠž Split")}
+            {viewBtn("grid", "â–¦ Grid only")}
+            {viewBtn("graphics", "ðŸ“Š Charts only")}
           </div>
         </div>
       </div>
-    
-      {/* Pop-up de aviso 👈 NUEVO */}
+
+      {/* Pop-up de aviso */}
       {warning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="w-full max-w-md rounded-lg bg-white p-5 shadow-xl">
             <div className="mb-2 flex items-center gap-2">
-              <span className="text-xl">⚠️</span>
+              <span className="text-xl">âš ï¸</span>
               <h3 className="font-semibold text-gray-800">No se puede insertar</h3>
             </div>
             <p className="mb-4 text-sm text-gray-600">{warning}</p>
