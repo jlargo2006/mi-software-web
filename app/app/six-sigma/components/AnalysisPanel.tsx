@@ -11,6 +11,7 @@ import ReportLayout from "./ReportLayout";
 import StatBlock, { fmt, fmtPPM, StatSection } from "./StatBlock";
 import type { Data } from "plotly.js";
 import DescriptiveStatsPanel from "./DescriptiveStatsPanel";
+import type { StatKey } from "../lib/descriptiveStats";
 
 // Estado del formulario/análisis: vive en el padre
 export interface AnalysisState {
@@ -84,7 +85,7 @@ export default function AnalysisPanel({
           study?.type === "descriptive"
             ? (study.params as {
                 selectedColNames?: string[];
-                selectedStats?: string[];
+                selectedStats?: StatKey[];
               })
             : null
         }
