@@ -8,22 +8,45 @@ import {
   getRawColumn,
 } from "../lib/descriptiveStats";
 import { buildContext } from "../lib/statistics";
-import { getColumns } from "../lib/columns";
+import { getColumns, getColumnValues } from "../lib/columns";
 import type { SheetData } from "../lib/types";
+import type { SaveStudyInput } from "../lib/studies";
 
 const BRAND = "#00674d";
 
 interface Props {
   sheet: SheetData;
+  onSaveStudy?: (study: SaveStudyInput) => void;
+  // Modo "viendo estudio guardado": params restaurados para recalcular
+  savedParams?: {
+    selectedColNames?: string[];
+    selectedStats?: StatKey[];
+  } | null;
 }
 
-export default function DescriptiveStatsPanel({ sheet }: Props) {
-  const [selectedCols, setSelectedCols] = useState<Set<number>>(new Set());
-  const [selectedStats, setSelectedStats] = useState<Set<StatKey>>(new Set(DEFAULT_KEYS));
-  const [showDialog, setShowDialog] = useState(false);
+export default function DescriptiveStatsPanel({
+  sheet,
+  onSaveStudy,
+  savedParams = null,
+}: Props) {
+  const availableCols = getColumns(sheet);
 
-  // Columnas que tienen cabecera
-  const availableCols = getColumns(sheet); 
+  // Si venimos de un estudio guardado, reconstruimos la selección por NOMBRE
+  const initialCols = useMemo(() => {
+    if (!savedParams?.selectedColNames) return new Set<number>();
+    const set = new Set<number>();
+    for (const name of savedParams.selectedColNames) {
+      const col = availableCols.find((c) => c.name === name);
+      if (col) set.add(col.index);
+    }
+    return set;
+  }, [savedParams, availableCols]);
+
+  const [selectedCols, setSelectedCols] = useState<Set<number>>(initialCols);
+  const [selectedStats, setSelectedStats] = useState<Set<StatKey>>(
+    new Set(savedParams?.selectedStats ?? DEFAULT_KEYS)
+  );
+  const [showDialog, setShowDialog] = useState(false);
 
   const toggleCol = (i: number) =>
     setSelectedCols((prev) => {
@@ -32,15 +55,15 @@ export default function DescriptiveStatsPanel({ sheet }: Props) {
       return next;
     });
 
-  // Estadísticos activos en orden fijo (el de STAT_DEFS)
   const activeDefs = STAT_DEFS.filter((d) => selectedStats.has(d.key));
   const showModeCount = selectedStats.has("mode");
 
+  // Recalcula SIEMPRE desde la hoja viva (requisito: datos recalculados)
   const results = useMemo(() => {
     return [...selectedCols].sort((a, b) => a - b).map((colIdx) => {
-      const raw = getRawColumn(sheet, colIdx);   // ← usa lib/descriptiveStats
+      const raw = getRawColumn(sheet, colIdx);
       const values = computeSelected(raw, selectedStats);
-      const ctx = buildContext(raw);             // ← usa lib/statistics
+      const ctx = buildContext(raw);
       return {
         name: sheet.headers[colIdx]?.trim() || `C${colIdx + 1}`,
         values,
@@ -49,11 +72,32 @@ export default function DescriptiveStatsPanel({ sheet }: Props) {
     });
   }, [selectedCols, selectedStats, sheet, showModeCount]);
 
+  const handleSaveStudy = () => {
+    if (!onSaveStudy || results.length === 0) return;
+    const chosen = [...selectedCols].sort((a, b) => a - b);
+    const colNames = chosen.map(
+      (i) => availableCols.find((c) => c.index === i)?.name ?? `C${i + 1}`
+    );
+    onSaveStudy({
+      type: "descriptive",
+      name: `Descriptive — ${colNames.join(", ")}`,
+      // params = config reproducible (por NOMBRE, no índice)
+      params: {
+        selectedColNames: colNames,
+        selectedStats: [...selectedStats],
+      },
+      // cols = snapshot de datos crudos (para el banner "datos difieren")
+      cols: chosen.map((i) => ({
+        name: availableCols.find((c) => c.index === i)?.name ?? `C${i + 1}`,
+        values: getColumnValues(sheet, i),
+      })),
+    });
+  };
+
   return (
     <div className="p-4">
       <h2 className="mb-4 text-lg font-semibold text-gray-800">Descriptive Statistics</h2>
 
-      {/* Selección de columnas */}
       <div className="mb-4">
         <div className="mb-2 text-sm font-medium text-gray-600">Variables</div>
         <div className="flex flex-wrap gap-2">
@@ -89,9 +133,17 @@ export default function DescriptiveStatsPanel({ sheet }: Props) {
         >
           Statistics…
         </button>
+
+        <button
+          onClick={handleSaveStudy}
+          disabled={results.length === 0 || activeDefs.length === 0}
+          className="rounded px-4 py-1.5 text-sm font-medium text-white disabled:opacity-40"
+          style={{ backgroundColor: BRAND }}
+        >
+          💾 Save study
+        </button>
       </div>
 
-      {/* Tabla de resultados */}
       {results.length > 0 && activeDefs.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="min-w-full border-collapse text-sm">
