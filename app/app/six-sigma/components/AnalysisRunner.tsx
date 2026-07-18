@@ -11,7 +11,7 @@ import type {
 } from "../studies/types";
 import type { SaveStudyInput } from "../lib/studies";
 
-interface Props<P extends Record<string, unknown>, R> {
+interface Props<P, R> {
   def: AnalysisDefinition<P, R>;
   sheet: SheetData;
   mode: StudyMode;
@@ -21,7 +21,7 @@ interface Props<P extends Record<string, unknown>, R> {
   onSaveStudy: (s: SaveStudyInput) => void;
 }
 
-export default function AnalysisRunner<P extends Record<string, unknown>, R>({
+export default function AnalysisRunner<P, R>({
   def,
   sheet,
   mode,
@@ -68,7 +68,7 @@ export default function AnalysisRunner<P extends Record<string, unknown>, R>({
     onSaveStudy({
       type: def.id,
       name: `${def.label}`,
-      params,
+      params: params as Record<string, unknown>,
       cols: Object.values(snap).map((c) => ({ name: c.name, values: c.values })),
     });
   };
