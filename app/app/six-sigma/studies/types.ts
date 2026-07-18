@@ -19,7 +19,7 @@ interface BaseArtifact {
 }
 
 /* ---------- Familia 1: estudios de datos ---------- */
-export interface AnalysisDefinition<P extends Record<string, unknown> = Record<string, unknown>, R = unknown>
+export interface AnalysisDefinition<P = unknown, R = unknown> extends BaseArtifact {
   extends BaseArtifact {
   kind: "analysis";
   defaultParams: P;
@@ -55,5 +55,5 @@ export interface DiagramDefinition<D = unknown> extends BaseArtifact {
 }
 
 export type ArtifactDefinition =
-  | AnalysisDefinition<Record<string, unknown>, unknown>
+  | AnalysisDefinition<unknown, unknown>
   | DiagramDefinition<unknown>;
