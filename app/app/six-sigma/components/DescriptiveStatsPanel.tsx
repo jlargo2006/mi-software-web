@@ -9,7 +9,7 @@ import {
 } from "../lib/descriptiveStats";
 import { buildContext } from "../lib/statistics";
 import { getColumns, getColumnValues } from "../lib/columns";
-import type { SheetData } from "../lib/types";
+import type { SheetData, Cell } from "../lib/types";
 import type { SaveStudyInput } from "../lib/studies";
 
 const BRAND = "#00674d";
@@ -17,21 +17,27 @@ const BRAND = "#00674d";
 interface Props {
   sheet: SheetData;
   onSaveStudy?: (study: SaveStudyInput) => void;
-  // Modo "viendo estudio guardado": params restaurados para recalcular
+  // "Viewing saved study" mode: restored params to recompute
   savedParams?: {
     selectedColNames?: string[];
     selectedStats?: StatKey[];
   } | null;
+  // "Viewing saved study" mode: FROZEN snapshot columns (independent of active sheet)
+  savedCols?: { name: string; values: number[] }[] | null;
 }
 
 export default function DescriptiveStatsPanel({
   sheet,
   onSaveStudy,
   savedParams = null,
+  savedCols = null,
 }: Props) {
   const availableCols = getColumns(sheet);
 
-  // Si venimos de un estudio guardado, reconstruimos la selección por NOMBRE
+  // Are we viewing a saved study? (frozen data present)
+  const viewing = !!savedCols && savedCols.length > 0;
+
+  // If coming from a saved study, rebuild the selection BY NAME
   const initialCols = useMemo(() => {
     if (!savedParams?.selectedColNames) return new Set<number>();
     const set = new Set<number>();
@@ -58,8 +64,22 @@ export default function DescriptiveStatsPanel({
   const activeDefs = STAT_DEFS.filter((d) => selectedStats.has(d.key));
   const showModeCount = selectedStats.has("mode");
 
-  // Recalcula SIEMPRE desde la hoja viva (requisito: datos recalculados)
+  // Results:
+  //   - Viewing a saved study  -> compute from FROZEN snapshot columns
+  //   - New analysis           -> compute LIVE from the active sheet
   const results = useMemo(() => {
+    if (viewing) {
+      return savedCols!.map((col) => {
+        const raw = col.values as Cell[];
+        const values = computeSelected(raw, selectedStats);
+        const ctx = buildContext(raw);
+        return {
+          name: col.name,
+          values,
+          modeN: showModeCount ? modeCount(ctx) : null,
+        };
+      });
+    }
     return [...selectedCols].sort((a, b) => a - b).map((colIdx) => {
       const raw = getRawColumn(sheet, colIdx);
       const values = computeSelected(raw, selectedStats);
@@ -70,7 +90,7 @@ export default function DescriptiveStatsPanel({
         modeN: showModeCount ? modeCount(ctx) : null,
       };
     });
-  }, [selectedCols, selectedStats, sheet, showModeCount]);
+  }, [viewing, savedCols, selectedCols, selectedStats, sheet, showModeCount]);
 
   const handleSaveStudy = () => {
     if (!onSaveStudy || results.length === 0) return;
@@ -81,12 +101,12 @@ export default function DescriptiveStatsPanel({
     onSaveStudy({
       type: "descriptive",
       name: `Descriptive - ${colNames.join(", ")}`,
-      // params = config reproducible (por NOMBRE, no índice)
+      // params = reproducible config (BY NAME, not index)
       params: {
         selectedColNames: colNames,
         selectedStats: [...selectedStats],
       },
-      // cols = snapshot de datos crudos (para el banner "datos difieren")
+      // cols = raw data snapshot
       cols: chosen.map((i) => ({
         name: availableCols.find((c) => c.index === i)?.name ?? `C${i + 1}`,
         values: getColumnValues(sheet, i),
@@ -101,28 +121,43 @@ export default function DescriptiveStatsPanel({
       <div className="mb-4">
         <div className="mb-2 text-sm font-medium text-gray-600">Variables</div>
         <div className="flex flex-wrap gap-2">
-          {availableCols.length === 0 && (
-            <span className="text-sm text-gray-400">Add headers to your columns first.</span>
+          {viewing ? (
+            // Frozen study: show the study's own columns (independent of active sheet)
+            savedCols!.map((c) => (
+              <span
+                key={c.name}
+                className="flex items-center gap-1.5 rounded border border-transparent px-2.5 py-1 text-sm text-white"
+                style={{ backgroundColor: BRAND }}
+              >
+                {c.name}
+              </span>
+            ))
+          ) : (
+            <>
+              {availableCols.length === 0 && (
+                <span className="text-sm text-gray-400">Add headers to your columns first.</span>
+              )}
+              {availableCols.map((c) => (
+                <label
+                  key={c.index}
+                  className={`flex items-center gap-1.5 rounded border px-2.5 py-1 text-sm cursor-pointer ${
+                    selectedCols.has(c.index)
+                      ? "border-transparent text-white"
+                      : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                  }`}
+                  style={selectedCols.has(c.index) ? { backgroundColor: BRAND } : undefined}
+                >
+                  <input
+                    type="checkbox"
+                    className="hidden"
+                    checked={selectedCols.has(c.index)}
+                    onChange={() => toggleCol(c.index)}
+                  />
+                  {c.name}
+                </label>
+              ))}
+            </>
           )}
-          {availableCols.map((c) => (
-            <label
-              key={c.index}
-              className={`flex items-center gap-1.5 rounded border px-2.5 py-1 text-sm cursor-pointer ${
-                selectedCols.has(c.index)
-                  ? "border-transparent text-white"
-                  : "border-gray-300 text-gray-700 hover:bg-gray-50"
-              }`}
-              style={selectedCols.has(c.index) ? { backgroundColor: BRAND } : undefined}
-            >
-              <input
-                type="checkbox"
-                className="hidden"
-                checked={selectedCols.has(c.index)}
-                onChange={() => toggleCol(c.index)}
-              />
-              {c.name}
-            </label>
-          ))}
         </div>
       </div>
 
@@ -134,14 +169,16 @@ export default function DescriptiveStatsPanel({
           Statistics{"\u2026"}
         </button>
 
-        <button
-          onClick={handleSaveStudy}
-          disabled={results.length === 0 || activeDefs.length === 0}
-          className="rounded px-4 py-1.5 text-sm font-medium text-white disabled:opacity-40"
-          style={{ backgroundColor: BRAND }}
-        >
-          {"\uD83D\uDCBE"} Save study
-        </button>
+        {!viewing && (
+          <button
+            onClick={handleSaveStudy}
+            disabled={results.length === 0 || activeDefs.length === 0}
+            className="rounded px-4 py-1.5 text-sm font-medium text-white disabled:opacity-40"
+            style={{ backgroundColor: BRAND }}
+          >
+            {"\uD83D\uDCBE"} Save study
+          </button>
+        )}
       </div>
 
       {results.length > 0 && activeDefs.length > 0 ? (
