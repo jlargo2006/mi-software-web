@@ -302,6 +302,7 @@ export default function SixSigmaAnalyzer({
                   onStateChange={setAnalysis}
                   onSaveStudy={saveStudy}
                   study={viewingStudy}
+                  mode={viewingId ? "view" : "edit"}
                   snapshot={viewingSnapshotCol}
                   liveValues={liveValues}
                   onUpdateSnapshot={(newValues) => {
