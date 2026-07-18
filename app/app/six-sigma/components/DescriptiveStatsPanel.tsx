@@ -131,7 +131,7 @@ export default function DescriptiveStatsPanel({
           onClick={() => setShowDialog(true)}
           className="rounded border border-gray-300 px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
         >
-          Statistics…
+          Statistics{"\u2026"}
         </button>
 
         <button
@@ -140,7 +140,7 @@ export default function DescriptiveStatsPanel({
           className="rounded px-4 py-1.5 text-sm font-medium text-white disabled:opacity-40"
           style={{ backgroundColor: BRAND }}
         >
-          💾 Save study
+          {"\uD83D\uDCBE"} Save study
         </button>
       </div>
 
