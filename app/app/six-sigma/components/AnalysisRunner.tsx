@@ -11,19 +11,17 @@ import type {
 } from "../studies/types";
 import type { SaveStudyInput } from "../lib/studies";
 
-interface Props {
-  def: AnalysisDefinition<any, any>;
+interface Props<P, R> {
+  def: AnalysisDefinition<P, R>;
   sheet: SheetData;
   mode: StudyMode;
-  // Estado de params (vive en el padre para persistir entre navegaciones)
-  params: any;
-  onParamsChange: (p: any) => void;
-  // Snapshot guardado (modo view) o null (modo edit)
+  params: P;
+  onParamsChange: (p: P) => void;
   savedSnapshot?: ColumnSnapshot | null;
   onSaveStudy: (s: SaveStudyInput) => void;
 }
 
-export default function AnalysisRunner({
+export default function AnalysisRunner<P, R>({
   def,
   sheet,
   mode,
@@ -31,7 +29,7 @@ export default function AnalysisRunner({
   onParamsChange,
   savedSnapshot = null,
   onSaveStudy,
-}: Props) {
+}: Props<P, R>) {
   const columns = useMemo(() => getColumns(sheet), [sheet]);
   const [ran, setRan] = useState(false);
   const [frozen, setFrozen] = useState<ColumnSnapshot | null>(null);
