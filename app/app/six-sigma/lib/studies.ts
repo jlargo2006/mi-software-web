@@ -3,7 +3,7 @@ import type { AnalysisState } from "../components/AnalysisPanel";
 // Una columna capturada en el momento de guardar (para comparar y recalcular)
 export interface StudyColumn {
   name: string;      // nombre de cabecera → se re-resuelve por nombre al abrir
-  values: number[];  // valores congelados al guardar (para el banner "datos difieren")
+  values: Cell[];  // valores congelados al guardar (para el banner "datos difieren")
 }
 
 export interface StudySnapshot {
@@ -17,9 +17,9 @@ export interface SavedStudy {
   type: string;                     // "capability" | "normality" | "descriptive" | ...
   name: string;
   params: Record<string, unknown>;  // config reproducible propia de cada tool
-  results: Record<string, unknown>; // 👈 resultados guardados
+  results: Record<string, unknown>; // resultados guardados
   snapshot: StudySnapshot;
-  form?: AnalysisState;             // 👈 solo capability/normality lo usan
+  form?: AnalysisState;             // solo capability/normality lo usan
 }
 
 // Lo que un panel pasa a onSaveStudy (el padre añade id + timestamp + sheetName)
