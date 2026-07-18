@@ -11,33 +11,36 @@ import { buildContext } from "../lib/statistics";
 import { getColumns, getColumnValues } from "../lib/columns";
 import type { SheetData, Cell } from "../lib/types";
 import type { SaveStudyInput } from "../lib/studies";
+import StudyControls, { StudyMode } from "./StudyControls";
 
 const BRAND = "#00674d";
 
 interface Props {
   sheet: SheetData;
+  mode: StudyMode;                          // unica fuente de verdad: "edit" | "view"
   onSaveStudy?: (study: SaveStudyInput) => void;
-  // "Viewing saved study" mode: restored params to recompute
+  // Params restaurados para recomputar (por NOMBRE)
   savedParams?: {
     selectedColNames?: string[];
     selectedStats?: StatKey[];
   } | null;
-  // "Viewing saved study" mode: FROZEN snapshot columns (independent of active sheet)
+  // Snapshot congelado (independiente de la hoja activa)
   savedCols?: { name: string; values: number[] }[] | null;
 }
 
 export default function DescriptiveStatsPanel({
   sheet,
+  mode,
   onSaveStudy,
   savedParams = null,
   savedCols = null,
 }: Props) {
   const availableCols = getColumns(sheet);
 
-  // Are we viewing a saved study? (frozen data present)
-  const viewing = !!savedCols && savedCols.length > 0;
+  // Modo "viendo estudio guardado" derivado de la unica fuente de verdad
+  const viewing = mode === "view";
 
-  // If coming from a saved study, rebuild the selection BY NAME
+  // Si venimos de un estudio guardado, reconstruye la seleccion POR NOMBRE
   const initialCols = useMemo(() => {
     if (!savedParams?.selectedColNames) return new Set<number>();
     const set = new Set<number>();
@@ -64,12 +67,12 @@ export default function DescriptiveStatsPanel({
   const activeDefs = STAT_DEFS.filter((d) => selectedStats.has(d.key));
   const showModeCount = selectedStats.has("mode");
 
-  // Results:
-  //   - Viewing a saved study  -> compute from FROZEN snapshot columns
-  //   - New analysis           -> compute LIVE from the active sheet
+  // Resultados:
+  //   - Viendo estudio guardado -> se calculan del snapshot CONGELADO
+  //   - Analisis nuevo          -> se calculan EN VIVO de la hoja activa
   const results = useMemo(() => {
-    if (viewing) {
-      return savedCols!.map((col) => {
+    if (viewing && savedCols) {
+      return savedCols.map((col) => {
         const raw = col.values as Cell[];
         const values = computeSelected(raw, selectedStats);
         const ctx = buildContext(raw);
@@ -101,12 +104,12 @@ export default function DescriptiveStatsPanel({
     onSaveStudy({
       type: "descriptive",
       name: `Descriptive - ${colNames.join(", ")}`,
-      // params = reproducible config (BY NAME, not index)
+      // params = configuracion reproducible (POR NOMBRE, no por indice)
       params: {
         selectedColNames: colNames,
         selectedStats: [...selectedStats],
       },
-      // cols = raw data snapshot
+      // cols = snapshot de datos crudos
       cols: chosen.map((i) => ({
         name: availableCols.find((c) => c.index === i)?.name ?? `C${i + 1}`,
         values: getColumnValues(sheet, i),
@@ -118,58 +121,47 @@ export default function DescriptiveStatsPanel({
     <div className="p-4">
       <h2 className="mb-4 text-lg font-semibold text-gray-800">Descriptive Statistics</h2>
 
-      <div className="mb-4">
-        <div className="mb-2 text-sm font-medium text-gray-600">Variables</div>
-        <div className="flex flex-wrap gap-2">
-          {viewing ? (
-            // Frozen study: show the study's own columns (independent of active sheet)
-            savedCols!.map((c) => (
-              <span
-                key={c.name}
-                className="flex items-center gap-1.5 rounded border border-transparent px-2.5 py-1 text-sm text-white"
-                style={{ backgroundColor: BRAND }}
+      {/* Selector de variables: control -> generico via StudyControls (oculto en "view") */}
+      <StudyControls mode={mode} boxed={false}>
+        <div className="mb-4">
+          <div className="mb-2 text-sm font-medium text-gray-600">Variables</div>
+          <div className="flex flex-wrap gap-2">
+            {availableCols.length === 0 && (
+              <span className="text-sm text-gray-400">Add headers to your columns first.</span>
+            )}
+            {availableCols.map((c) => (
+              <label
+                key={c.index}
+                className={`flex items-center gap-1.5 rounded border px-2.5 py-1 text-sm cursor-pointer ${
+                  selectedCols.has(c.index)
+                    ? "border-transparent text-white"
+                    : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                }`}
+                style={selectedCols.has(c.index) ? { backgroundColor: BRAND } : undefined}
               >
+                <input
+                  type="checkbox"
+                  className="hidden"
+                  checked={selectedCols.has(c.index)}
+                  onChange={() => toggleCol(c.index)}
+                />
                 {c.name}
-              </span>
-            ))
-          ) : (
-            <>
-              {availableCols.length === 0 && (
-                <span className="text-sm text-gray-400">Add headers to your columns first.</span>
-              )}
-              {availableCols.map((c) => (
-                <label
-                  key={c.index}
-                  className={`flex items-center gap-1.5 rounded border px-2.5 py-1 text-sm cursor-pointer ${
-                    selectedCols.has(c.index)
-                      ? "border-transparent text-white"
-                      : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                  }`}
-                  style={selectedCols.has(c.index) ? { backgroundColor: BRAND } : undefined}
-                >
-                  <input
-                    type="checkbox"
-                    className="hidden"
-                    checked={selectedCols.has(c.index)}
-                    onChange={() => toggleCol(c.index)}
-                  />
-                  {c.name}
-                </label>
-              ))}
-            </>
-          )}
+              </label>
+            ))}
+          </div>
         </div>
-      </div>
+      </StudyControls>
 
-      <div className="mb-5 flex gap-2">
-        <button
-          onClick={() => setShowDialog(true)}
-          className="rounded border border-gray-300 px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
-        >
-          Statistics{"\u2026"}
-        </button>
+      {/* Botones de configuracion: control -> generico via StudyControls (oculto en "view") */}
+      <StudyControls mode={mode} boxed={false}>
+        <div className="mb-5 flex gap-2">
+          <button
+            onClick={() => setShowDialog(true)}
+            className="rounded border border-gray-300 px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+          >
+            Statistics{"\u2026"}
+          </button>
 
-        {!viewing && (
           <button
             onClick={handleSaveStudy}
             disabled={results.length === 0 || activeDefs.length === 0}
@@ -178,8 +170,8 @@ export default function DescriptiveStatsPanel({
           >
             {"\uD83D\uDCBE"} Save study
           </button>
-        )}
-      </div>
+        </div>
+      </StudyControls>
 
       {results.length > 0 && activeDefs.length > 0 ? (
         <div className="overflow-x-auto">
