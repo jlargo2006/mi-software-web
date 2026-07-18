@@ -48,10 +48,21 @@ export default function SixSigmaAnalyzer({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const projectInputRef = useRef<HTMLInputElement>(null);
 
+  // Point 3+4: opening an Excel asks to discard, and does NOT keep studies
   const handleImport = async (file: File) => {
+    const ok = window.confirm(
+      "Opening an Excel file will discard your current work (including saved studies).\n\n" +
+        "Do you want to export your project first?\n\nOK = export first, Cancel = discard."
+    );
+    if (ok) handleExportProject();
     try {
       const { data, order } = await readExcelFile(file);
       wb.loadWorkbook(data, order);
+      // Point 4: an Excel has no studies -> clear them
+      setStudies([]);
+      setActiveTool(null);
+      setAnalysis(EMPTY_ANALYSIS);
+      setViewingId(null);
     } catch (err) {
       alert("Could not read file: " + (err as Error).message);
     }
@@ -59,11 +70,12 @@ export default function SixSigmaAnalyzer({
 
   const handleExport = () => writeExcelFile(wb.data, wb.order);
 
+  // Point 2: "New" saves the PROJECT (not just the Excel)
   const handleNew = () => {
     const ok = window.confirm(
-      "Do you want to save your current work before clearing it?\n\nOK = save first, Cancel = discard."
+      "Do you want to export your project before clearing it?\n\nOK = export first, Cancel = discard."
     );
-    if (ok) handleExport();
+    if (ok) handleExportProject();
     wb.resetWorkbook();
     setStudies([]);
     setActiveTool(null);
@@ -71,12 +83,18 @@ export default function SixSigmaAnalyzer({
     setViewingId(null);
   };
 
+
   // --- Project: export / import everything ---
   const handleExportProject = () => {
     exportProject(wb.data, wb.order, studies);
   };
 
   const handleImportProject = async (file: File) => {
+    const ok = window.confirm(
+      "Opening a project will discard your current work.\n\n" +
+        "Do you want to export your current project first?\n\nOK = export first, Cancel = discard."
+    );
+    if (ok) handleExportProject();
     try {
       const project = await importProject(file);
       wb.loadWorkbook(project.workbook.data, project.workbook.order);
@@ -89,6 +107,7 @@ export default function SixSigmaAnalyzer({
       alert((err as Error).message);
     }
   };
+
 
   // GENERIC saveStudy: multi-column snapshot + form only when applicable
   const saveStudy = (study: SaveStudyInput) => {
@@ -236,18 +255,36 @@ export default function SixSigmaAnalyzer({
               <div className="text-sm text-gray-400">No saved studies yet.</div>
             )}
             {studies.map((s) => (
-              <button
+              <div
                 key={s.id}
-                onClick={() => {
-                  setActiveTool(s.type as ToolId);
-                  setAnalysis(s.form ?? EMPTY_ANALYSIS); // rehydrate if applicable
-                  setViewingId(s.id); // "viewing" mode for this study
-                  if (view === "grid") setView("split");
-                }}
-                className="w-full text-left text-sm px-2 py-1.5 rounded hover:bg-emerald-50 border border-transparent hover:border-[#00674d] text-gray-700"
+                className="group relative flex items-center rounded hover:bg-emerald-50 border border-transparent hover:border-[#00674d]"
               >
-                {s.name}
-              </button>
+                <button
+                  onClick={() => {
+                    setActiveTool(s.type as ToolId);
+                    setAnalysis(s.form ?? EMPTY_ANALYSIS);
+                    setViewingId(s.id);
+                    if (view === "grid") setView("split");
+                  }}
+                  className="flex-1 text-left text-sm px-2 py-1.5 pr-6 text-gray-700"
+                >
+                  {s.name}
+                </button>
+                <button
+                  onClick={() => {
+                    setStudies((prev) => prev.filter((x) => x.id !== s.id));
+                    if (viewingId === s.id) {
+                      setViewingId(null);
+                      setActiveTool(null);
+                      setAnalysis(EMPTY_ANALYSIS);
+                    }
+                  }}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-600"
+                  title="Delete study"
+                >
+                  {"\u2715"}
+                </button>
+              </div>
             ))}
           </div>
         </aside>
