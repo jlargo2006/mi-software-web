@@ -1,4 +1,5 @@
 import type { AnalysisState } from "../components/AnalysisPanel";
+import type { Cell } from "./types";
 
 // Una columna capturada en el momento de guardar (para comparar y recalcular)
 export interface StudyColumn {
