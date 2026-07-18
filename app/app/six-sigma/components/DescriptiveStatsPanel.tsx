@@ -25,7 +25,7 @@ interface Props {
     selectedStats?: StatKey[];
   } | null;
   // Snapshot congelado (independiente de la hoja activa)
-  savedCols?: { name: string; values: number[] }[] | null;
+  savedCols?: { name: string; values: Cell[] }[] | null;
 }
 
 export default function DescriptiveStatsPanel({
