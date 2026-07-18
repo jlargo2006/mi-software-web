@@ -176,17 +176,17 @@ export default function AnalysisPanel({
         )}
       </div>
 
-      {/* Banner "datos diferentes a los originales" (estilo Minitab) */}
+      {/* Banner: current data differs from the study's original data */}
       {state.ran && snapshot && dataDiffers && (
         <div className="mb-4 flex items-center justify-between gap-3 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
           <span>
-            {"\u26A0\uFE0F"} Los datos actuales difieren de los originales de este estudio.
+            {"\u26A0\uFE0F"} The current data differs from this study&apos;s original data.
           </span>
           <button
             onClick={() => liveValues && onUpdateSnapshot?.(liveValues)}
             className="shrink-0 rounded bg-amber-500 px-3 py-1 text-xs font-medium text-white hover:bg-amber-600"
           >
-            \u00BFActualizar con los nuevos datos?
+            Update with the new data?
           </button>
         </div>
       )}
