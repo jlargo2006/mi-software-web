@@ -80,7 +80,7 @@ export default function DescriptiveStatsPanel({
     );
     onSaveStudy({
       type: "descriptive",
-      name: `Descriptive — ${colNames.join(", ")}`,
+      name: `Descriptive - ${colNames.join(", ")}`,
       // params = config reproducible (por NOMBRE, no índice)
       params: {
         selectedColNames: colNames,
