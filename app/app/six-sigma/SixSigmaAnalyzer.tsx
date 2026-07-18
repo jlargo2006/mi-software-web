@@ -5,7 +5,7 @@ import { useWorkbook } from "./hooks/useWorkbook";
 import { readExcelFile, writeExcelFile } from "./lib/excel";
 import { exportProject, importProject } from "./lib/project";
 import { ToolId } from "./lib/ribbon";
-import { getColumnByName } from "./lib/columns"; // ðŸ‘ˆ por NOMBRE (recÃ¡lculo genÃ©rico)
+import { getColumnByName } from "./lib/columns"; // by NAME (generic recompute)
 import type { SavedStudy, SaveStudyInput, StudyColumn } from "./lib/studies";
 import MenuBar from "./components/MenuBar";
 import DataGrid from "./components/DataGrid";
@@ -20,7 +20,7 @@ interface SixSigmaAnalyzerProps {
   onSignOut: () => void;
 }
 
-// Timestamp aaaa/mm/dd hh:mm:ss
+// Timestamp yyyy/mm/dd hh:mm:ss
 function timestamp(): string {
   const d = new Date();
   const p = (n: number) => String(n).padStart(2, "0");
@@ -34,7 +34,7 @@ export default function SixSigmaAnalyzer({
   onSignOut,
 }: SixSigmaAnalyzerProps) {
   const wb = useWorkbook();
-  const EMPTY_SHEET = { headers: [], rows: [] }; // fallback OpciÃ³n A
+  const EMPTY_SHEET = { headers: [], rows: [] }; // fallback (Option A)
   const [view, setView] = useState<ViewMode>("split");
   const [topPercent, setTopPercent] = useState(80);
   const [activeTool, setActiveTool] = useState<ToolId>(null);
@@ -71,7 +71,7 @@ export default function SixSigmaAnalyzer({
     setViewingId(null);
   };
 
-  // --- Proyecto: exportar / importar todo ---
+  // --- Project: export / import everything ---
   const handleExportProject = () => {
     exportProject(wb.data, wb.order, studies);
   };
@@ -84,19 +84,19 @@ export default function SixSigmaAnalyzer({
       setActiveTool(null);
       setAnalysis(EMPTY_ANALYSIS);
       setViewingId(null);
-      alert("Proyecto importado correctamente âœ…");
+      alert("Project imported successfully");
     } catch (err) {
       alert((err as Error).message);
     }
   };
 
-  // ðŸ‘‡ saveStudy GENÃ‰RICO: snapshot multi-columna + form solo si aplica
+  // GENERIC saveStudy: multi-column snapshot + form only when applicable
   const saveStudy = (study: SaveStudyInput) => {
     setStudies((prev) => [
       {
         id: crypto.randomUUID(),
         type: study.type,
-        name: `${timestamp()} - ${study.name}`, // timestamp delante
+        name: `${timestamp()} - ${study.name}`, // timestamp first
         params: study.params,
         results: study.results ?? {},
         snapshot: { sheetName: wb.activeSheet, cols: study.cols },
@@ -125,7 +125,7 @@ export default function SixSigmaAnalyzer({
     </button>
   );
 
-  // ðŸ‘‡ Estudio en visualizaciÃ³n + columnas VIVAS resueltas por NOMBRE (N columnas)
+  // Study being viewed + LIVE columns resolved by NAME (N columns)
   const viewingStudy = studies.find((s) => s.id === viewingId) ?? null;
   const liveCols: StudyColumn[] | null = viewingStudy
     ? viewingStudy.snapshot.cols.map((c) => ({
@@ -137,13 +137,13 @@ export default function SixSigmaAnalyzer({
       }))
     : null;
 
-  // Compatibilidad capability/normality: primera columna del estudio (1 col)
+  // capability/normality compatibility: first column of the study (1 col)
   const viewingSnapshotCol = viewingStudy
     ? viewingStudy.snapshot.cols[0] ?? null
     : null;
   const liveValues = liveCols ? liveCols[0]?.values ?? null : null;
 
-  // ---------- Insertar filas/columnas ----------
+  // ---------- Insert rows/columns ----------
   const GRID_COLS = 26;
 
   const lastColumnsHaveData = (count: number): boolean => {
@@ -164,8 +164,8 @@ export default function SixSigmaAnalyzer({
     const start = Math.min(...selCols);
     if (lastColumnsHaveData(count)) {
       setWarning(
-        `No se pueden insertar ${count} columna(s): las Ãºltimas ${count} columna(s) ` +
-          `contienen datos que se perderÃ­an. Borra primero esos datos y vuelve a intentarlo.`
+        `Cannot insert ${count} column(s): the last ${count} column(s) ` +
+          `contain data that would be lost. Delete that data first and try again.`
       );
       return;
     }
@@ -192,7 +192,7 @@ export default function SixSigmaAnalyzer({
         onSignOut={onSignOut}
         onSelectTool={(tool) => {
           setActiveTool(tool);
-          setViewingId(null); // nuevo anÃ¡lisis: salimos de modo "viewing"
+          setViewingId(null); // new analysis: leave "viewing" mode
           setAnalysis((prev) => ({ ...prev, ran: false }));
           if (view === "grid") setView("split");
         }}
@@ -240,8 +240,8 @@ export default function SixSigmaAnalyzer({
                 key={s.id}
                 onClick={() => {
                   setActiveTool(s.type as ToolId);
-                  setAnalysis(s.form ?? EMPTY_ANALYSIS); // rehidrata si aplica
-                  setViewingId(s.id); // modo "viewing" de este estudio
+                  setAnalysis(s.form ?? EMPTY_ANALYSIS); // rehydrate if applicable
+                  setViewingId(s.id); // "viewing" mode for this study
                   if (view === "grid") setView("split");
                 }}
                 className="w-full text-left text-sm px-2 py-1.5 rounded hover:bg-emerald-50 border border-transparent hover:border-[#00674d] text-gray-700"
@@ -278,7 +278,7 @@ export default function SixSigmaAnalyzer({
                               ...s,
                               snapshot: {
                                 ...s.snapshot,
-                                // actualiza SOLO la primera columna (capability/normality)
+                                // update ONLY the first column (capability/normality)
                                 cols: s.snapshot.cols.map((c, i) =>
                                   i === 0 ? { ...c, values: newValues } : c
                                 ),
@@ -341,7 +341,7 @@ export default function SixSigmaAnalyzer({
                 <span className="text-xs text-gray-500">
                   {selCols.size > 0
                     ? `${selCols.size} col.`
-                    : `${selRows.size} fila(s)`}
+                    : `${selRows.size} row(s)`}
                 </span>
 
                 {selCols.size > 0 ? (
@@ -349,14 +349,14 @@ export default function SixSigmaAnalyzer({
                     onClick={handleInsertColumns}
                     className="rounded bg-[#00674d] px-2 py-0.5 text-xs text-white hover:bg-[#00513d]"
                   >
-                    âž• Insertar {selCols.size} columna{selCols.size > 1 ? "s" : ""}
+                    {"\u2795"} Insert {selCols.size} column{selCols.size > 1 ? "s" : ""}
                   </button>
                 ) : (
                   <button
                     onClick={handleInsertRows}
                     className="rounded bg-[#00674d] px-2 py-0.5 text-xs text-white hover:bg-[#00513d]"
                   >
-                    âž• Insertar {selRows.size} fila{selRows.size > 1 ? "s" : ""}
+                    {"\u2795"} Insert {selRows.size} row{selRows.size > 1 ? "s" : ""}
                   </button>
                 )}
 
@@ -369,26 +369,26 @@ export default function SixSigmaAnalyzer({
                   }}
                   className="rounded bg-red-500 px-2 py-0.5 text-xs text-white hover:bg-red-600"
                 >
-                  ðŸ—‘ Borrar selecciÃ³n
+                  {"\uD83D\uDDD1"} Delete selection
                 </button>
                 <span className="mx-1 h-4 w-px bg-gray-300" />
               </>
             )}
 
-            {viewBtn("split", "âŠž Split")}
-            {viewBtn("grid", "â–¦ Grid only")}
-            {viewBtn("graphics", "ðŸ“Š Charts only")}
+            {viewBtn("split", "\u229E Split")}
+            {viewBtn("grid", "\u25A6 Grid only")}
+            {viewBtn("graphics", "\uD83D\uDCCA Charts only")}
           </div>
         </div>
       </div>
 
-      {/* Pop-up de aviso */}
+      {/* Warning pop-up */}
       {warning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="w-full max-w-md rounded-lg bg-white p-5 shadow-xl">
             <div className="mb-2 flex items-center gap-2">
-              <span className="text-xl">âš ï¸</span>
-              <h3 className="font-semibold text-gray-800">No se puede insertar</h3>
+              <span className="text-xl">{"\u26A0\uFE0F"}</span>
+              <h3 className="font-semibold text-gray-800">Cannot insert</h3>
             </div>
             <p className="mb-4 text-sm text-gray-600">{warning}</p>
             <div className="flex justify-end">
@@ -396,7 +396,7 @@ export default function SixSigmaAnalyzer({
                 onClick={() => setWarning(null)}
                 className="rounded bg-[#00674d] px-4 py-1.5 text-sm text-white hover:bg-[#00513d]"
               >
-                Entendido
+                Got it
               </button>
             </div>
           </div>
