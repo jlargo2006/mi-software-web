@@ -11,7 +11,7 @@ import type {
 } from "../studies/types";
 import type { SaveStudyInput } from "../lib/studies";
 
-interface Props<P, R> {
+interface Props<P extends Record<string, unknown>, R> {
   def: AnalysisDefinition<P, R>;
   sheet: SheetData;
   mode: StudyMode;
