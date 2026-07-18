@@ -12,8 +12,9 @@ import StatBlock, { fmt, fmtPPM, StatSection } from "./StatBlock";
 import type { Data } from "plotly.js";
 import DescriptiveStatsPanel from "./DescriptiveStatsPanel";
 import type { StatKey } from "../lib/descriptiveStats";
+import StudyControls, { StudyMode } from "./StudyControls";
 
-// Estado del formulario/análisis: vive en el padre
+// Estado del formulario/analisis: vive en el padre
 export interface AnalysisState {
   colIndex: number;
   lsl: string;
@@ -42,10 +43,10 @@ interface AnalysisPanelProps {
   state: AnalysisState;
   onStateChange: (next: AnalysisState) => void;
   onSaveStudy: (study: SaveStudyInput) => void;
-  // Modo "viendo estudio guardado"
-  study?: SavedStudy | null;               // estudio activo (para Descriptive params)
-  snapshot?: StudyColumn | null;           // CAMBIO: ahora es 1 StudyColumn {name, values}
-  liveValues?: number[] | null;            // datos vivos de la columna original del estudio
+  study?: SavedStudy | null;
+  mode: StudyMode;                          // unica fuente de verdad: "edit" | "view"
+  snapshot?: StudyColumn | null;
+  liveValues?: number[] | null;
   onUpdateSnapshot?: (newValues: number[]) => void;
 }
 
@@ -56,6 +57,7 @@ export default function AnalysisPanel({
   onStateChange,
   onSaveStudy,
   study = null,
+  mode,
   snapshot = null,
   liveValues = null,
   onUpdateSnapshot,
@@ -75,11 +77,12 @@ export default function AnalysisPanel({
     );
   }
 
-  // Descriptive: its own flow (multi-column) — with save & recompute
+  // Descriptive: su propio flujo (multi-columna). Recibe el mismo `mode`.
   if (tool === "descriptive") {
     return (
       <DescriptiveStatsPanel
         sheet={sheet}
+        mode={mode}
         onSaveStudy={onSaveStudy}
         savedParams={
           study?.type === "descriptive"
@@ -96,15 +99,15 @@ export default function AnalysisPanel({
     );
   }
 
-  // Modo "viendo estudio guardado": ocultar controles de configuración
-  const viewing = !!snapshot;
+  // Modo "viendo estudio guardado" derivado de la unica fuente de verdad
+  const viewing = mode === "view";
 
-  // Datos vivos de la hoja activa (para análisis nuevos, ANTES del primer Run)
+  // Datos vivos de la hoja activa (para analisis nuevos, ANTES del primer Run)
   const liveSheetValues = getColumnValues(sheet, state.colIndex);
 
   // Prioridad de datos a pintar:
   //   1) snapshot de estudio guardado (datos congelados al guardar)
-  //   2) datos congelados en el último Run (state.runValues)
+  //   2) datos congelados en el ultimo Run (state.runValues)
   //   3) datos vivos de la hoja (solo antes del primer Run)
   const values = snapshot
     ? snapshot.values
@@ -118,7 +121,7 @@ export default function AnalysisPanel({
     ? state.runColName
     : columns[state.colIndex]?.name ?? "Column";
 
-  // ¿Los datos actuales difieren de los originales del estudio?
+  // Los datos actuales difieren de los originales del estudio?
   const dataDiffers =
     !!snapshot && !!liveValues && !sameData(snapshot.values, liveValues);
 
@@ -146,45 +149,43 @@ export default function AnalysisPanel({
         {tool === "capability" ? "Capability Study (Cp / Cpk)" : "Normality Test"}
       </h2>
 
-      {/* Form / controls — SOLO en modo "nuevo análisis" (no al ver un estudio guardado) */}
-      {!viewing && (
-        <div className="flex flex-wrap items-end gap-3 mb-4 bg-gray-50 p-3 rounded border border-gray-200">
-          <label className="flex flex-col text-xs text-gray-600">
-            Data column
-            <select
-              value={state.colIndex}
-              onChange={(e) =>
-                set({ colIndex: Number(e.target.value), ran: false })
-              }
-              className="mt-1 border border-gray-300 rounded px-2 py-1 text-sm text-gray-800 min-w-[160px]"
-            >
-              {columns.map((c) => (
-                <option key={c.index} value={c.index}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
+      {/* Controles de configuracion: genericos via StudyControls (ocultos en "view") */}
+      <StudyControls mode={mode}>
+        <label className="flex flex-col text-xs text-gray-600">
+          Data column
+          <select
+            value={state.colIndex}
+            onChange={(e) =>
+              set({ colIndex: Number(e.target.value), ran: false })
+            }
+            className="mt-1 border border-gray-300 rounded px-2 py-1 text-sm text-gray-800 min-w-[160px]"
+          >
+            {columns.map((c) => (
+              <option key={c.index} value={c.index}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </label>
 
-          {tool === "capability" ? (
-            <button
-              onClick={() => setDialogOpen(true)}
-              className="bg-[#00674d] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#00513d]"
-            >
-              {"\u2699"} Set up & Run
-            </button>
-          ) : (
-            <button
-              onClick={runAnalysis}
-              className="bg-[#00674d] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#00513d]"
-            >
-              {"\u25B6"} Run
-            </button>
-          )}
-        </div>
-      )}
+        {tool === "capability" ? (
+          <button
+            onClick={() => setDialogOpen(true)}
+            className="bg-[#00674d] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#00513d]"
+          >
+            {"\u2699"} Set up & Run
+          </button>
+        ) : (
+          <button
+            onClick={runAnalysis}
+            className="bg-[#00674d] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#00513d]"
+          >
+            {"\u25B6"} Run
+          </button>
+        )}
+      </StudyControls>
 
-      {/* Banner: solo aplica en modo nuevo análisis (nunca al ver estudio guardado) */}
+      {/* Banner "los datos difieren": tambien es control -> oculto en "view" */}
       {!viewing && state.ran && snapshot && dataDiffers && (
         <div className="mb-4 flex items-center justify-between gap-3 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
           <span>
@@ -220,7 +221,7 @@ export default function AnalysisPanel({
         />
       )}
 
-      {/* Results */}
+      {/* Results (siempre se pintan al ver estudio guardado o tras Run) */}
       {(state.ran || viewing) && tool === "capability" && (
         <CapabilityResults
           values={values}
@@ -230,7 +231,7 @@ export default function AnalysisPanel({
           target={parseNum(state.target)}
           subgroupSize={parseInt(state.subgroupSize, 10) || 1}
           onSave={onSaveStudy}
-          readOnly={viewing}
+          mode={mode}
         />
       )}
 
@@ -239,7 +240,7 @@ export default function AnalysisPanel({
           values={values}
           colName={colName}
           onSave={onSaveStudy}
-          readOnly={viewing}
+          mode={mode}
         />
       )}
     </div>
@@ -255,7 +256,7 @@ function CapabilityResults({
   target,
   subgroupSize,
   onSave,
-  readOnly = false,
+  mode,
 }: {
   values: number[];
   colName: string;
@@ -264,14 +265,14 @@ function CapabilityResults({
   target: number | null;
   subgroupSize: number;
   onSave: (study: SaveStudyInput) => void;
-  readOnly?: boolean;
+  mode: StudyMode;
 }) {
   const res = useMemo(
     () => capabilityStudy(values, lsl, usl, target, subgroupSize),
     [values, lsl, usl, target, subgroupSize]
   );
 
-  // --- Rango del eje X (datos + límites) ---
+  // Rango del eje X (datos + limites)
   const xs = [...values, lsl, usl, target].filter(
     (v): v is number => v !== null && v !== undefined
   );
@@ -281,7 +282,7 @@ function CapabilityResults({
   const lo = xMin - pad;
   const hi = xMax + pad;
 
-  // --- Generador de curva normal (PDF) ---
+  // Generador de curva normal (PDF)
   const STEPS = 200;
   const gaussian = (s: number): { x: number[]; y: number[] } => {
     const x: number[] = [];
@@ -299,7 +300,7 @@ function CapabilityResults({
   const overall = gaussian(res.stdOverall);
   const within = gaussian(res.stdWithin);
 
-  // --- Histograma (densidad para que case con las curvas) ---
+  // Histograma (densidad para que case con las curvas)
   const histogram: Data = {
     x: values,
     type: "histogram",
@@ -312,7 +313,7 @@ function CapabilityResults({
     opacity: 0.85,
   };
 
-  // --- Curvas Overall (continua) y Within (discontinua) ---
+  // Curvas Overall (continua) y Within (discontinua)
   const overallCurve: Data = {
     x: overall.x,
     y: overall.y,
@@ -330,7 +331,7 @@ function CapabilityResults({
     line: { color: "#dc2626", width: 2, dash: "dash" },
   };
 
-  // --- Líneas verticales de límites ---
+  // Lineas verticales de limites
   const specLines = [
     lsl !== null && { x: lsl, color: "#111827", label: "LSL" },
     usl !== null && { x: usl, color: "#111827", label: "USL" },
@@ -450,7 +451,8 @@ function CapabilityResults({
         }
       />
 
-      {!readOnly && (
+      {/* "Save study" es un control: generico via StudyControls (oculto en "view") */}
+      <StudyControls mode={mode} boxed={false}>
         <SaveButton
           onSave={() =>
             onSave({
@@ -458,11 +460,11 @@ function CapabilityResults({
               name: `Capability - ${colName}`,
               params: { colName, lsl, usl, target, subgroupSize },
               results: { ...res, data: undefined },
-              cols: [{ name: colName, values }], // CAMBIO: snapshot genérico N cols
+              cols: [{ name: colName, values }],
             })
           }
         />
-      )}
+      </StudyControls>
     </div>
   );
 }
@@ -472,12 +474,12 @@ function NormalityResults({
   values,
   colName,
   onSave,
-  readOnly = false,
+  mode,
 }: {
   values: number[];
   colName: string;
   onSave: (study: SaveStudyInput) => void;
-  readOnly?: boolean;
+  mode: StudyMode;
 }) {
   const res = useMemo(() => normalityTest(values), [values]);
 
@@ -577,7 +579,8 @@ function NormalityResults({
         }
       />
 
-      {!readOnly && (
+      {/* "Save study" es un control: generico via StudyControls (oculto en "view") */}
+      <StudyControls mode={mode} boxed={false}>
         <SaveButton
           onSave={() =>
             onSave({
@@ -585,11 +588,11 @@ function NormalityResults({
               name: `Normality - ${colName}`,
               params: { colName },
               results: { ...res, sortedData: undefined },
-              cols: [{ name: colName, values }], // CAMBIO: snapshot genérico N cols
+              cols: [{ name: colName, values }],
             })
           }
         />
-      )}
+      </StudyControls>
     </div>
   );
 }
