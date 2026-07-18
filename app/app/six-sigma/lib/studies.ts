@@ -39,7 +39,7 @@ export function sameCols(a: StudyColumn[], b: StudyColumn[]): boolean {
     if (a[i].name !== b[i].name) return false;
     if (a[i].values.length !== b[i].values.length) return false;
     for (let j = 0; j < a[i].values.length; j++) {
-      if (Math.abs(a[i].values[j] - b[i].values[j]) > 1e-9) return false;
+      if (String(a[i].values[j] ?? "") !== String(b[i].values[j] ?? "")) return false;
     }
   }
   return true;
