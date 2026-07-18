@@ -41,8 +41,6 @@ export function getColumnValues(sheet: SheetData, colIndex: number): number[] {
   return toNumericColumn(raw);
 }
 
-// 👇 NUEVO: resuelve una columna por NOMBRE (para recalcular estudios guardados
-// aunque el usuario haya reordenado columnas). Devuelve [] si ya no existe.
 export function getColumnByName(sheet: SheetData, name: string): number[] {
   const found = getColumns(sheet).find((c) => c.name === name);
   return found ? getColumnValues(sheet, found.index) : [];
