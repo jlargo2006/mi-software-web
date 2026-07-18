@@ -1,5 +1,6 @@
 import type { SheetData } from "./types";
 import { toNumericColumn } from "./stats";
+import type { Cell } from "./types";
 
 export interface ColumnInfo {
   index: number;
@@ -46,10 +47,7 @@ export function getColumnByName(sheet: SheetData, name: string): number[] {
   return found ? getColumnValues(sheet, found.index) : [];
 }
 
-export function sameData(a: number[], b: number[]): boolean {
+export function sameData(a: Cell[], b: Cell[]): boolean {
   if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) {
-    if (Math.abs(a[i] - b[i]) > 1e-9) return false;
-  }
-  return true;
+  return a.every((v, i) => String(v ?? "") === String(b[i] ?? ""));
 }
