@@ -671,7 +671,7 @@ function CapabilityDialog({
             }
             className="bg-[#00674d] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#00513d]"
           >
-            ▶ Run
+            {"\u25B6"} Run
           </button>
         </div>
       </div>
