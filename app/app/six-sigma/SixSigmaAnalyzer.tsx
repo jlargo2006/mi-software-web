@@ -96,7 +96,7 @@ export default function SixSigmaAnalyzer({
       {
         id: crypto.randomUUID(),
         type: study.type,
-        name: `${timestamp()} â€” ${study.name}`, // timestamp delante
+        name: `${timestamp()} - ${study.name}`, // timestamp delante
         params: study.params,
         results: study.results ?? {},
         snapshot: { sheetName: wb.activeSheet, cols: study.cols },
