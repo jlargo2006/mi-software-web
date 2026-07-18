@@ -48,6 +48,30 @@ export default function SixSigmaAnalyzer({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const projectInputRef = useRef<HTMLInputElement>(null);
 
+  // --- Project: export / import everything (declared first: used by handleImport/handleNew) ---
+  const handleExportProject = () => {
+    exportProject(wb.data, wb.order, studies);
+  };
+
+  const handleImportProject = async (file: File) => {
+    const ok = window.confirm(
+      "Opening a project will discard your current work.\n\n" +
+        "Do you want to export your current project first?\n\nOK = export first, Cancel = discard."
+    );
+    if (ok) handleExportProject();
+    try {
+      const project = await importProject(file);
+      wb.loadWorkbook(project.workbook.data, project.workbook.order);
+      setStudies((project.studies as SavedStudy[]) ?? []);
+      setActiveTool(null);
+      setAnalysis(EMPTY_ANALYSIS);
+      setViewingId(null);
+      alert("Project imported successfully");
+    } catch (err) {
+      alert((err as Error).message);
+    }
+  };
+
   // Point 3+4: opening an Excel asks to discard, and does NOT keep studies
   const handleImport = async (file: File) => {
     const ok = window.confirm(
@@ -82,32 +106,6 @@ export default function SixSigmaAnalyzer({
     setAnalysis(EMPTY_ANALYSIS);
     setViewingId(null);
   };
-
-
-  // --- Project: export / import everything ---
-  const handleExportProject = () => {
-    exportProject(wb.data, wb.order, studies);
-  };
-
-  const handleImportProject = async (file: File) => {
-    const ok = window.confirm(
-      "Opening a project will discard your current work.\n\n" +
-        "Do you want to export your current project first?\n\nOK = export first, Cancel = discard."
-    );
-    if (ok) handleExportProject();
-    try {
-      const project = await importProject(file);
-      wb.loadWorkbook(project.workbook.data, project.workbook.order);
-      setStudies((project.studies as SavedStudy[]) ?? []);
-      setActiveTool(null);
-      setAnalysis(EMPTY_ANALYSIS);
-      setViewingId(null);
-      alert("Project imported successfully");
-    } catch (err) {
-      alert((err as Error).message);
-    }
-  };
-
 
   // GENERIC saveStudy: multi-column snapshot + form only when applicable
   const saveStudy = (study: SaveStudyInput) => {
