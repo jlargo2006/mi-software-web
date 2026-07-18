@@ -1,6 +1,6 @@
 // studies/types.ts
 import type React from "react";
-import type { SheetData, Cell } from "../lib/types";
+import type { Cell } from "../lib/types";
 import type { ColumnInfo } from "../lib/columns";
 
 export type SixSigmaPhase = "define" | "measure" | "analyze" | "improve" | "control";
@@ -54,5 +54,5 @@ export interface DiagramDefinition<D = unknown> extends BaseArtifact {
 }
 
 export type ArtifactDefinition =
-  | AnalysisDefinition<any, any>
-  | DiagramDefinition<any>;
+  | AnalysisDefinition<unknown, unknown>
+  | DiagramDefinition<unknown>;
