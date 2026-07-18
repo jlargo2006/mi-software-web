@@ -11,7 +11,7 @@ export type StatKey =
   // Grupo 4
   | "q1" | "median" | "q3" | "iqr" | "mode"
   // Grupo 5
-  | "sumSq" | "skewness" | "kurtosis" | "mssd";
+  | "sumSq" | "skewness" | "kurtosis" | "msd" | "mssd";
 
 export interface StatDef {
   key: StatKey;
@@ -92,6 +92,8 @@ export const STAT_DEFS: StatDef[] = [
     compute: (c) => f(S.skewness(c)) },
   { key: "kurtosis", label: "Kurtosis", menuLabel: "Kurtosis", group: 5, isDefault: false,
     compute: (c) => f(S.kurtosis(c)) },
+  { key: "msd", label: "MSD", menuLabel: "MSD", group: 5, isDefault: false,
+    compute: (c) => f(S.msd(c)) },
   { key: "mssd", label: "MSSD", menuLabel: "MSSD", group: 5, isDefault: false,
     compute: (c) => f(S.mssd(c)) },
 ];

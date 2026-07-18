@@ -131,13 +131,23 @@ export function kurtosis(ctx: StatContext): number {
 
 
 // ---- MSSD (Minitab): Σ(x[i+1]-x[i])^2 / (2(n-1)) sobre orden ORIGINAL ----
+// MSD = Σ(xi - x̄)² / n   (divide por n, NO por n-1)
+export function msd(ctx: StatContext): number {
+  const n = ctx.n;
+  if (n < 1) return NaN;
+  const mean = ctx.mean; // usa el nombre real del campo en tu StatContext
+  const ss = ctx.values.reduce((acc, x) => acc + (x - mean) ** 2, 0);
+  return ss / n;
+}
+
+// MSSD = Σ(x(i+1) - xi)² / (2(n-1))   (usa el ORDEN original de los datos)
 export function mssd(ctx: StatContext): number {
-  const v = ctx.values; // orden original (no ordenado)
+  const v = ctx.values; // deben estar en orden de aparición, NO ordenados
   const n = v.length;
   if (n < 2) return NaN;
-  let acc = 0;
-  for (let i = 0; i < n - 1; i++) acc += (v[i + 1] - v[i]) ** 2;
-  return acc / (2 * (n - 1));
+  let sum = 0;
+  for (let i = 1; i < n; i++) sum += (v[i] - v[i - 1]) ** 2;
+  return sum / (2 * (n - 1));
 }
 
 // ---- Otros ----

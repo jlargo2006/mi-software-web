@@ -4,14 +4,17 @@ import React, { useMemo, useState } from "react";
 import type { SheetData } from "../lib/types";
 import type { ToolId } from "../lib/ribbon";
 import { getColumns, getColumnValues, sameData } from "../lib/columns";
-import { capabilityStudy, normalityTest, normInv} from "../lib/stats";
+import { capabilityStudy, normalityTest, normInv } from "../lib/stats";
+import type { SaveStudyInput, StudyColumn, SavedStudy } from "../lib/studies";
 import ResultChart from "./ResultChart";
 import ReportLayout from "./ReportLayout";
 import StatBlock, { fmt, fmtPPM, StatSection } from "./StatBlock";
 import type { Data } from "plotly.js";
 import DescriptiveStatsPanel from "./DescriptiveStatsPanel";
+import type { StatKey } from "../lib/descriptiveStats";
+import StudyControls, { StudyMode } from "./StudyControls";
 
-// Estado del formulario/análisis: vive en el padre
+// Estado del formulario/analisis: vive en el padre
 export interface AnalysisState {
   colIndex: number;
   lsl: string;
@@ -19,8 +22,8 @@ export interface AnalysisState {
   target: string;
   subgroupSize: string;
   ran: boolean;
-  runValues: number[];   // 👈 CAMBIO: datos congelados al pulsar Run
-  runColName: string;    // 👈 CAMBIO: nombre de columna congelado al pulsar Run
+  runValues: number[];   // datos congelados al pulsar Run
+  runColName: string;    // nombre de columna congelado al pulsar Run
 }
 
 export const EMPTY_ANALYSIS: AnalysisState = {
@@ -30,35 +33,22 @@ export const EMPTY_ANALYSIS: AnalysisState = {
   target: "",
   subgroupSize: "1",
   ran: false,
-  runValues: [],   // 👈 CAMBIO
-  runColName: "",  // 👈 CAMBIO
+  runValues: [],
+  runColName: "",
 };
-
-// Snapshot congelado de los datos de un estudio guardado
-export interface StudySnapshot {
-  values: number[];
-  colName: string;
-  sheetName: string;
-}
 
 interface AnalysisPanelProps {
   tool: ToolId;
   sheet: SheetData;
   state: AnalysisState;
   onStateChange: (next: AnalysisState) => void;
-  onSaveStudy: (study: {
-    type: "capability" | "normality";
-    name: string;
-    params: Record<string, unknown>;
-    results: Record<string, unknown>;
-    snapshot?: { values: number[]; colName: string };  //NuevoMio
-  }) => void;
-  // NUEVO: modo "viendo estudio guardado"
-  snapshot?: StudySnapshot | null;
-  liveValues?: number[] | null; // datos vivos de la columna/hoja original del estudio
+  onSaveStudy: (study: SaveStudyInput) => void;
+  study?: SavedStudy | null;
+  mode: StudyMode;                          // unica fuente de verdad: "edit" | "view"
+  snapshot?: StudyColumn | null;
+  liveValues?: number[] | null;
   onUpdateSnapshot?: (newValues: number[]) => void;
 }
-
 
 export default function AnalysisPanel({
   tool,
@@ -66,6 +56,8 @@ export default function AnalysisPanel({
   state,
   onStateChange,
   onSaveStudy,
+  study = null,
+  mode,
   snapshot = null,
   liveValues = null,
   onUpdateSnapshot,
@@ -85,31 +77,51 @@ export default function AnalysisPanel({
     );
   }
 
-  // 👇 NUEVO: Descriptive tiene su propio flujo (multi-columna, sin Run/snapshot)
+  // Descriptive: su propio flujo (multi-columna). Recibe el mismo `mode`.
   if (tool === "descriptive") {
-    return <DescriptiveStatsPanel sheet={sheet} />;
+    return (
+      <DescriptiveStatsPanel
+        sheet={sheet}
+        mode={mode}
+        onSaveStudy={onSaveStudy}
+        savedParams={
+          study?.type === "descriptive"
+            ? (study.params as {
+                selectedColNames?: string[];
+                selectedStats?: StatKey[];
+              })
+            : null
+        }
+        savedCols={
+          study?.type === "descriptive" ? study.snapshot.cols : null
+        }
+      />
+    );
   }
-  
-  // Datos vivos de la hoja activa (para análisis nuevos, ANTES del primer Run)
+
+  // Modo "viendo estudio guardado" derivado de la unica fuente de verdad
+  const viewing = mode === "view";
+
+  // Datos vivos de la hoja activa (para analisis nuevos, ANTES del primer Run)
   const liveSheetValues = getColumnValues(sheet, state.colIndex);
 
   // Prioridad de datos a pintar:
   //   1) snapshot de estudio guardado (datos congelados al guardar)
-  //   2) datos congelados en el último Run (state.runValues)
+  //   2) datos congelados en el ultimo Run (state.runValues)
   //   3) datos vivos de la hoja (solo antes del primer Run)
-  const values = snapshot                              // 👈 CAMBIO
+  const values = snapshot
     ? snapshot.values
     : state.ran
     ? state.runValues
     : liveSheetValues;
 
-  const colName = snapshot                             // 👈 CAMBIO
-    ? snapshot.colName
+  const colName = snapshot
+    ? snapshot.name
     : state.ran
     ? state.runColName
     : columns[state.colIndex]?.name ?? "Column";
 
-  // ¿Los datos actuales difieren de los originales del estudio?
+  // Los datos actuales difieren de los originales del estudio?
   const dataDiffers =
     !!snapshot && !!liveValues && !sameData(snapshot.values, liveValues);
 
@@ -119,11 +131,11 @@ export default function AnalysisPanel({
   };
 
   const runAnalysis = () => {
-    if (liveSheetValues.length < 2) {                  // 👈 CAMBIO: valida contra la hoja viva
+    if (liveSheetValues.length < 2) {
       alert("The selected column needs at least 2 numeric values.");
       return;
     }
-    set({                                              // 👈 CAMBIO: congela los datos al pulsar Run
+    set({
       ran: true,
       runValues: liveSheetValues,
       runColName: columns[state.colIndex]?.name ?? "Column",
@@ -137,8 +149,8 @@ export default function AnalysisPanel({
         {tool === "capability" ? "Capability Study (Cp / Cpk)" : "Normality Test"}
       </h2>
 
-      {/* Form / controls */}
-      <div className="flex flex-wrap items-end gap-3 mb-4 bg-gray-50 p-3 rounded border border-gray-200">
+      {/* Controles de configuracion: genericos via StudyControls (ocultos en "view") */}
+      <StudyControls mode={mode}>
         <label className="flex flex-col text-xs text-gray-600">
           Data column
           <select
@@ -161,29 +173,29 @@ export default function AnalysisPanel({
             onClick={() => setDialogOpen(true)}
             className="bg-[#00674d] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#00513d]"
           >
-            ⚙ Set up & Run
+            {"\u2699"} Set up & Run
           </button>
         ) : (
           <button
             onClick={runAnalysis}
             className="bg-[#00674d] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#00513d]"
           >
-            ▶ Run
+            {"\u25B6"} Run
           </button>
         )}
-      </div>
+      </StudyControls>
 
-      {/* Banner "datos diferentes a los originales" (estilo Minitab) */}
-      {state.ran && snapshot && dataDiffers && (
+      {/* Banner "los datos difieren": tambien es control -> oculto en "view" */}
+      {!viewing && state.ran && snapshot && dataDiffers && (
         <div className="mb-4 flex items-center justify-between gap-3 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
           <span>
-            ⚠️ Los datos actuales difieren de los originales de este estudio.
+            {"\u26A0\uFE0F"} The current data differs from this study&apos;s original data.
           </span>
           <button
             onClick={() => liveValues && onUpdateSnapshot?.(liveValues)}
             className="shrink-0 rounded bg-amber-500 px-3 py-1 text-xs font-medium text-white hover:bg-amber-600"
           >
-            ¿Actualizar con los nuevos datos?
+            Update with the new data?
           </button>
         </div>
       )}
@@ -198,7 +210,7 @@ export default function AnalysisPanel({
               alert("The selected column needs at least 2 numeric values.");
               return;
             }
-            set({                                        // 👈 CAMBIO: congela los datos al pulsar Run
+            set({
               ...patch,
               ran: true,
               runValues: liveSheetValues,
@@ -209,8 +221,8 @@ export default function AnalysisPanel({
         />
       )}
 
-      {/* Results */}
-      {state.ran && tool === "capability" && (
+      {/* Results (siempre se pintan al ver estudio guardado o tras Run) */}
+      {(state.ran || viewing) && tool === "capability" && (
         <CapabilityResults
           values={values}
           colName={colName}
@@ -219,14 +231,16 @@ export default function AnalysisPanel({
           target={parseNum(state.target)}
           subgroupSize={parseInt(state.subgroupSize, 10) || 1}
           onSave={onSaveStudy}
+          mode={mode}
         />
       )}
 
-      {state.ran && tool === "normality" && (
+      {(state.ran || viewing) && tool === "normality" && (
         <NormalityResults
           values={values}
           colName={colName}
           onSave={onSaveStudy}
+          mode={mode}
         />
       )}
     </div>
@@ -242,6 +256,7 @@ function CapabilityResults({
   target,
   subgroupSize,
   onSave,
+  mode,
 }: {
   values: number[];
   colName: string;
@@ -249,14 +264,15 @@ function CapabilityResults({
   usl: number | null;
   target: number | null;
   subgroupSize: number;
-  onSave: AnalysisPanelProps["onSaveStudy"];
+  onSave: (study: SaveStudyInput) => void;
+  mode: StudyMode;
 }) {
   const res = useMemo(
     () => capabilityStudy(values, lsl, usl, target, subgroupSize),
     [values, lsl, usl, target, subgroupSize]
   );
 
-  // --- Rango del eje X (datos + límites) ---
+  // Rango del eje X (datos + limites)
   const xs = [...values, lsl, usl, target].filter(
     (v): v is number => v !== null && v !== undefined
   );
@@ -266,7 +282,7 @@ function CapabilityResults({
   const lo = xMin - pad;
   const hi = xMax + pad;
 
-  // --- Generador de curva normal (PDF) ---
+  // Generador de curva normal (PDF)
   const STEPS = 200;
   const gaussian = (s: number): { x: number[]; y: number[] } => {
     const x: number[] = [];
@@ -284,20 +300,20 @@ function CapabilityResults({
   const overall = gaussian(res.stdOverall);
   const within = gaussian(res.stdWithin);
 
-  // --- Histograma (densidad para que case con las curvas) ---
+  // Histograma (densidad para que case con las curvas)
   const histogram: Data = {
     x: values,
     type: "histogram",
     histnorm: "probability density",
     marker: {
       color: "#9fd5c4",
-      line: { color: "#000000", width: 1 }, // contorno negro (punto 5)
+      line: { color: "#000000", width: 1 },
     },
     name: colName,
     opacity: 0.85,
   };
 
-  // --- Curvas Overall (continua) y Within (discontinua) (punto 1) ---
+  // Curvas Overall (continua) y Within (discontinua)
   const overallCurve: Data = {
     x: overall.x,
     y: overall.y,
@@ -315,7 +331,7 @@ function CapabilityResults({
     line: { color: "#dc2626", width: 2, dash: "dash" },
   };
 
-  // --- Líneas verticales de límites ---
+  // Lineas verticales de limites
   const specLines = [
     lsl !== null && { x: lsl, color: "#111827", label: "LSL" },
     usl !== null && { x: usl, color: "#111827", label: "USL" },
@@ -397,7 +413,6 @@ function CapabilityResults({
         left={<StatBlock sections={leftSections} />}
         right={<StatBlock sections={rightSections} />}
         center={
-
           <div className="flex justify-center">
             <div
               className="border border-gray-200 rounded"
@@ -407,7 +422,7 @@ function CapabilityResults({
                 data={[histogram, overallCurve, withinCurve]}
                 layout={{
                   autosize: true,
-                  title: { text: `Process Capability Report — ${colName}` },
+                  title: { text: `Process Capability Report - ${colName}` },
                   xaxis: { title: { text: colName }, range: [lo, hi] },
                   yaxis: { title: { text: "Density" } },
                   showlegend: true,
@@ -434,21 +449,22 @@ function CapabilityResults({
             </div>
           </div>
         }
-
-
       />
 
-      <SaveButton
-        onSave={() =>
-          onSave({
-            type: "capability",
-            name: `Capability — ${colName}`,
-            params: { colName, lsl, usl, target, subgroupSize },
-            results: { ...res, data: undefined },
-            snapshot: { values, colName }, // 👈 NuevoMio
-          })
-        }
-      />
+      {/* "Save study" es un control: generico via StudyControls (oculto en "view") */}
+      <StudyControls mode={mode} boxed={false}>
+        <SaveButton
+          onSave={() =>
+            onSave({
+              type: "capability",
+              name: `Capability - ${colName}`,
+              params: { colName, lsl, usl, target, subgroupSize },
+              results: { ...res, data: undefined },
+              cols: [{ name: colName, values }],
+            })
+          }
+        />
+      </StudyControls>
     </div>
   );
 }
@@ -458,10 +474,12 @@ function NormalityResults({
   values,
   colName,
   onSave,
+  mode,
 }: {
   values: number[];
   colName: string;
-  onSave: AnalysisPanelProps["onSaveStudy"];
+  onSave: (study: SaveStudyInput) => void;
+  mode: StudyMode;
 }) {
   const res = useMemo(() => normalityTest(values), [values]);
 
@@ -469,14 +487,12 @@ function NormalityResults({
     const sorted = [...values].sort((a, b) => a - b);
     const n = sorted.length;
 
-    // (1) Percentiles de 0.1 a 99.9
     const tickPercents = [
       0.1, 1, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 99, 99.9,
     ];
     const tickVals = tickPercents.map((p) => normInv(p / 100));
     const tickText = tickPercents.map((p) => String(p));
 
-    // Posiciones de trazado (median rank) → z-score
     const pointsX: number[] = [];
     const pointsY: number[] = [];
     sorted.forEach((x, i) => {
@@ -485,13 +501,11 @@ function NormalityResults({
       pointsY.push(normInv(p));
     });
 
-    // (2) Ajuste eje X a los datos reales (con pequeño padding)
     const xMin = sorted[0];
     const xMax = sorted[n - 1];
     const pad = (xMax - xMin) * 0.03 || 1;
     const xRange: [number, number] = [xMin - pad, xMax + pad];
 
-    // Recta normal en z-score
     const lineX = [xRange[0], xRange[1]];
     const lineY = lineX.map((x) => (x - res.mean) / res.std);
 
@@ -516,7 +530,6 @@ function NormalityResults({
     line: { color: "#dc2626", width: 2 },
   };
 
-  // (3) Datos a la derecha
   const rightSections: StatSection[] = [
     {
       title: "Statistics",
@@ -526,7 +539,7 @@ function NormalityResults({
         { label: "N", value: String(res.n) },
         { label: "AD", value: fmt(res.adStatistic, 4) },
         { label: "P-Value", value: fmt(res.pValue, 4) },
-        { label: "Normal?", value: res.isNormal ? "Yes (p>0.05)" : "No (p≤0.05)" },
+        { label: "Normal?", value: res.isNormal ? "Yes (p>0.05)" : "No (p\u22640.05)" },
       ],
     },
   ];
@@ -546,16 +559,16 @@ function NormalityResults({
                 data={[pointsTrace, lineTrace]}
                 layout={{
                   autosize: true,
-                  title: { text: `Probability Plot — ${colName}` },
+                  title: { text: `Probability Plot - ${colName}` },
                   xaxis: {
                     title: { text: colName },
-                    range: plot.xRange, // (2)
+                    range: plot.xRange,
                   },
                   yaxis: {
                     title: { text: "Percent" },
                     tickvals: plot.tickVals,
                     ticktext: plot.tickText,
-                    range: [normInv(0.001), normInv(0.999)], // (1) 0.1 → 99.9
+                    range: [normInv(0.001), normInv(0.999)],
                   },
                   showlegend: true,
                   legend: { orientation: "v", x: 1.02, y: 1 },
@@ -566,17 +579,20 @@ function NormalityResults({
         }
       />
 
-      <SaveButton
-        onSave={() =>
-          onSave({
-            type: "normality",
-            name: `Normality — ${colName}`,
-            params: { colName },
-            results: { ...res, sortedData: undefined },
-            snapshot: { values, colName }, // 👈 CAMBIO: faltaba el snapshot en Normality
-          })
-        }
-      />
+      {/* "Save study" es un control: generico via StudyControls (oculto en "view") */}
+      <StudyControls mode={mode} boxed={false}>
+        <SaveButton
+          onSave={() =>
+            onSave({
+              type: "normality",
+              name: `Normality - ${colName}`,
+              params: { colName },
+              results: { ...res, sortedData: undefined },
+              cols: [{ name: colName, values }],
+            })
+          }
+        />
+      </StudyControls>
     </div>
   );
 }
@@ -587,7 +603,7 @@ function SaveButton({ onSave }: { onSave: () => void }) {
       onClick={onSave}
       className="border border-[#00674d] text-[#00674d] px-4 py-2 rounded text-sm font-medium hover:bg-emerald-50"
     >
-      💾 Save study
+      {"\uD83D\uDCBE"}  Save study
     </button>
   );
 }
@@ -613,7 +629,7 @@ function CapabilityDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-white rounded-lg shadow-xl w-80 p-5">
         <h3 className="text-base font-semibold text-[#00674d] mb-4">
-          Capability Study — Setup
+          Capability Study - Setup
         </h3>
 
         <div className="space-y-3">
@@ -643,7 +659,7 @@ function CapabilityDialog({
               value={target}
               onChange={(e) => setTarget(e.target.value)}
               className={field}
-              placeholder="e.g. 10"
+              placeholder="e.g. 10.0"
             />
           </label>
 
@@ -661,18 +677,18 @@ function CapabilityDialog({
         <div className="mt-5 flex justify-end gap-2">
           <button
             onClick={onCancel}
-            className="px-4 py-2 rounded text-sm font-medium text-gray-600 hover:bg-gray-100"
+            className="px-4 py-1.5 text-sm rounded border border-gray-300 text-gray-700 hover:bg-gray-100"
           >
             Cancel
           </button>
           <button
             onClick={() => onRun({ lsl, usl, target, subgroupSize })}
-            className="bg-[#00674d] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#00513d]"
+            className="px-4 py-1.5 text-sm rounded bg-[#00674d] text-white font-medium hover:bg-[#00513d]"
           >
-            ▶ Run
+            {"\u25B6"} Run
           </button>
         </div>
       </div>
     </div>
   );
-}          
+}

@@ -39,8 +39,8 @@ export default function DescriptiveStatsDialog({ initial, onApply, onClose }: Pr
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="w-full max-w-3xl rounded-lg bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b px-5 py-3">
-          <h3 className="font-semibold text-gray-800">Descriptive Statistics — Statistics</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-700">✕</button>
+          <h3 className="font-semibold text-gray-800">Descriptive Statistics {"\u2014"} Statistics</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700">{"\u2715"}</button>
         </div>
 
         <div className="grid grid-cols-1 gap-5 p-5 md:grid-cols-3">
