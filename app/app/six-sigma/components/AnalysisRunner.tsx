@@ -21,7 +21,7 @@ interface Props<P, R> {
   onSaveStudy: (s: SaveStudyInput) => void;
 }
 
-export default function AnalysisRunner<P, R>({
+export default function AnalysisRunner<P extends Record<string, unknown>, R>({
   def,
   sheet,
   mode,
