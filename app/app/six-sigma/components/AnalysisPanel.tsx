@@ -43,8 +43,8 @@ interface AnalysisPanelProps {
   onStateChange: (next: AnalysisState) => void;
   onSaveStudy: (study: SaveStudyInput) => void;
   // Modo "viendo estudio guardado"
-  study?: SavedStudy | null;               // 👈 estudio activo (para Descriptive params)
-  snapshot?: StudyColumn | null;           // 👈 CAMBIO: ahora es 1 StudyColumn {name, values}
+  study?: SavedStudy | null;               // estudio activo (para Descriptive params)
+  snapshot?: StudyColumn | null;           // CAMBIO: ahora es 1 StudyColumn {name, values}
   liveValues?: number[] | null;            // datos vivos de la columna original del estudio
   onUpdateSnapshot?: (newValues: number[]) => void;
 }
@@ -164,14 +164,14 @@ export default function AnalysisPanel({
             onClick={() => setDialogOpen(true)}
             className="bg-[#00674d] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#00513d]"
           >
-            ⚙ Set up & Run
+            {"\u2699"} Set up & Run
           </button>
         ) : (
           <button
             onClick={runAnalysis}
             className="bg-[#00674d] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#00513d]"
           >
-            ▶ Run
+            {"\u25B6"} Run
           </button>
         )}
       </div>
@@ -180,13 +180,13 @@ export default function AnalysisPanel({
       {state.ran && snapshot && dataDiffers && (
         <div className="mb-4 flex items-center justify-between gap-3 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
           <span>
-            ⚠️ Los datos actuales difieren de los originales de este estudio.
+            {"\u26A0\uFE0F"} Los datos actuales difieren de los originales de este estudio.
           </span>
           <button
             onClick={() => liveValues && onUpdateSnapshot?.(liveValues)}
             className="shrink-0 rounded bg-amber-500 px-3 py-1 text-xs font-medium text-white hover:bg-amber-600"
           >
-            ¿Actualizar con los nuevos datos?
+            \u00BFActualizar con los nuevos datos?
           </button>
         </div>
       )}
@@ -409,7 +409,7 @@ function CapabilityResults({
                 data={[histogram, overallCurve, withinCurve]}
                 layout={{
                   autosize: true,
-                  title: { text: `Process Capability Report — ${colName}` },
+                  title: { text: `Process Capability Report - ${colName}` },
                   xaxis: { title: { text: colName }, range: [lo, hi] },
                   yaxis: { title: { text: "Density" } },
                   showlegend: true,
@@ -442,10 +442,10 @@ function CapabilityResults({
         onSave={() =>
           onSave({
             type: "capability",
-            name: `Capability — ${colName}`,
+            name: `Capability - ${colName}`,
             params: { colName, lsl, usl, target, subgroupSize },
             results: { ...res, data: undefined },
-            cols: [{ name: colName, values }], // 👈 CAMBIO: snapshot genérico N cols
+            cols: [{ name: colName, values }], // CAMBIO: snapshot genérico N cols
           })
         }
       />
@@ -521,7 +521,7 @@ function NormalityResults({
         { label: "N", value: String(res.n) },
         { label: "AD", value: fmt(res.adStatistic, 4) },
         { label: "P-Value", value: fmt(res.pValue, 4) },
-        { label: "Normal?", value: res.isNormal ? "Yes (p>0.05)" : "No (p≤0.05)" },
+        { label: "Normal?", value: res.isNormal ? "Yes (p>0.05)" : "No (p\u22640.05)" },
       ],
     },
   ];
@@ -541,7 +541,7 @@ function NormalityResults({
                 data={[pointsTrace, lineTrace]}
                 layout={{
                   autosize: true,
-                  title: { text: `Probability Plot — ${colName}` },
+                  title: { text: `Probability Plot - ${colName}` },
                   xaxis: {
                     title: { text: colName },
                     range: plot.xRange,
@@ -565,10 +565,10 @@ function NormalityResults({
         onSave={() =>
           onSave({
             type: "normality",
-            name: `Normality — ${colName}`,
+            name: `Normality - ${colName}`,
             params: { colName },
             results: { ...res, sortedData: undefined },
-            cols: [{ name: colName, values }], // 👈 CAMBIO: snapshot genérico N cols
+            cols: [{ name: colName, values }], // CAMBIO: snapshot genérico N cols
           })
         }
       />
@@ -582,7 +582,7 @@ function SaveButton({ onSave }: { onSave: () => void }) {
       onClick={onSave}
       className="border border-[#00674d] text-[#00674d] px-4 py-2 rounded text-sm font-medium hover:bg-emerald-50"
     >
-      💾 Save study
+      {"\uD83D\uDCBE"}  Save study
     </button>
   );
 }
@@ -608,7 +608,7 @@ function CapabilityDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-white rounded-lg shadow-xl w-80 p-5">
         <h3 className="text-base font-semibold text-[#00674d] mb-4">
-          Capability Study — Setup
+          Capability Study - Setup
         </h3>
 
         <div className="space-y-3">
