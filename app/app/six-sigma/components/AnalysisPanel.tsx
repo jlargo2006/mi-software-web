@@ -75,7 +75,7 @@ export default function AnalysisPanel({
     );
   }
 
-  // Descriptive: flujo propio (multi-columna) — ahora con guardado y recálculo
+  // Descriptive: its own flow (multi-column) — with save & recompute
   if (tool === "descriptive") {
     return (
       <DescriptiveStatsPanel
@@ -89,9 +89,13 @@ export default function AnalysisPanel({
               })
             : null
         }
+        savedCols={
+          study?.type === "descriptive" ? study.snapshot.cols : null
+        }
       />
     );
   }
+
 
   // Datos vivos de la hoja activa (para análisis nuevos, ANTES del primer Run)
   const liveSheetValues = getColumnValues(sheet, state.colIndex);
