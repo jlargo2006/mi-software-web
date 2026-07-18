@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { PHASES, RibbonTool, ToolId } from "../lib/ribbon";
+import { useRouter } from "next/navigation";
 
 interface MenuBarProps {
   userEmail?: string;
@@ -28,6 +29,7 @@ export default function MenuBar({
   const [activePhase, setActivePhase] = useState<string | null>(null);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const fileRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   // Close the File menu when clicking outside
   useEffect(() => {
@@ -75,7 +77,7 @@ export default function MenuBar({
             onClick={() => setFileOpen((o) => !o)}
             className="px-3 py-1.5 rounded text-sm font-medium hover:bg-white/15"
           >
-            File ▾
+            File {"\u25BE"}
           </button>
           {fileOpen && (
             <div className="absolute left-0 top-full mt-1 w-56 bg-white rounded shadow-lg border border-gray-200 py-1 z-50">
@@ -83,7 +85,7 @@ export default function MenuBar({
                 New
               </button>
               <button className={fileItem} onClick={() => { setFileOpen(false); onOpen(); }}>
-                Open Excel…
+                Open Excel{"\u2026"}
               </button>
               <button className={fileItem} onClick={() => { setFileOpen(false); onSave(); }}>
                 Save Excel
@@ -92,10 +94,10 @@ export default function MenuBar({
               <div className="my-1 border-t border-gray-200" />
 
               <button className={fileItem} onClick={() => { setFileOpen(false); onExportProject(); }}>
-                💾 Export project…
+                {"\uD83D\uDCBE"} Export project{"\u2026"}
               </button>
               <button className={fileItem} onClick={() => { setFileOpen(false); onImportProject(); }}>
-                📂 Import project…
+                {"\uD83D\uDCC2"} Import project{"\u2026"}
               </button>
 
               <div className="my-1 border-t border-gray-200" />
@@ -111,7 +113,13 @@ export default function MenuBar({
         </div>
 
         <span className="mx-1 text-white/40">|</span>
-        <span className="font-bold text-sm mr-2">Six Sigma Analyzer</span>
+        <button
+          onClick={() => router.push("/")}
+          className="font-bold text-sm mr-2 hover:underline"
+          title="Go to landing page"
+        >
+          Six Sigma Analyzer
+        </button>
 
         {/* DMAIC phase buttons */}
         {PHASES.map((p) => (
@@ -161,7 +169,7 @@ export default function MenuBar({
                 title={t.enabled ? "" : "Coming soon"}
               >
                 {t.label}
-                {t.children ? " ▾" : ""}
+                {t.children ? " \u25BE" : ""}
               </button>
 
               {/* Sub-menu for grouped tools */}
