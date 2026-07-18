@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import type { SheetData } from "../lib/types";
+import type { SheetData, Cell } from "../lib/types";
 import type { ToolId } from "../lib/ribbon";
 import { getColumns, getColumnValues, sameData } from "../lib/columns";
 import { capabilityStudy, normalityTest, normInv } from "../lib/stats";
@@ -13,7 +13,6 @@ import type { Data } from "plotly.js";
 import DescriptiveStatsPanel from "./DescriptiveStatsPanel";
 import type { StatKey } from "../lib/descriptiveStats";
 import StudyControls, { StudyMode } from "./StudyControls";
-import type { SheetData, Cell } from "../lib/types";
 
 // La frontera de datos habla Cell[]; convertimos a number[] solo al calcular.
 const toNumeric = (values: Cell[]): number[] =>
@@ -51,7 +50,7 @@ interface AnalysisPanelProps {
   study?: SavedStudy | null;
   mode: StudyMode;                          // unica fuente de verdad: "edit" | "view"
   snapshot?: StudyColumn | null;
-  liveValues?: number[] | null;
+  liveValues?: Cell[] | null;
   onUpdateSnapshot?: (newValues:Cell[]) => void;
 }
 
@@ -275,8 +274,8 @@ function CapabilityResults({
   const nums = useMemo(() => toNumeric(values), [values]);   // <- conversion
   
   const res = useMemo(
-    () => capabilityStudy(values, lsl, usl, target, subgroupSize),
-    [values, lsl, usl, target, subgroupSize]
+    () => capabilityStudy(nums, lsl, usl, target, subgroupSize),
+    [nums, lsl, usl, target, subgroupSize]
   );
 
   // Rango del eje X (datos + limites)
@@ -490,7 +489,7 @@ function NormalityResults({
 }) {
   const nums = useMemo(() => toNumeric(values), [values]);   // <- conversion
   
-  const res = useMemo(() => normalityTest(values), [values]);
+  const res = useMemo(() => normalityTest(nums), [nums]);
 
   const plot = useMemo(() => {
     const sorted = [...nums].sort((a, b) => a - b);
