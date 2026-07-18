@@ -96,6 +96,8 @@ export default function AnalysisPanel({
     );
   }
 
+  // Modo "viendo estudio guardado": ocultar controles de configuración
+  const viewing = !!snapshot;
 
   // Datos vivos de la hoja activa (para análisis nuevos, ANTES del primer Run)
   const liveSheetValues = getColumnValues(sheet, state.colIndex);
@@ -144,44 +146,46 @@ export default function AnalysisPanel({
         {tool === "capability" ? "Capability Study (Cp / Cpk)" : "Normality Test"}
       </h2>
 
-      {/* Form / controls */}
-      <div className="flex flex-wrap items-end gap-3 mb-4 bg-gray-50 p-3 rounded border border-gray-200">
-        <label className="flex flex-col text-xs text-gray-600">
-          Data column
-          <select
-            value={state.colIndex}
-            onChange={(e) =>
-              set({ colIndex: Number(e.target.value), ran: false })
-            }
-            className="mt-1 border border-gray-300 rounded px-2 py-1 text-sm text-gray-800 min-w-[160px]"
-          >
-            {columns.map((c) => (
-              <option key={c.index} value={c.index}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </label>
+      {/* Form / controls — SOLO en modo "nuevo análisis" (no al ver un estudio guardado) */}
+      {!viewing && (
+        <div className="flex flex-wrap items-end gap-3 mb-4 bg-gray-50 p-3 rounded border border-gray-200">
+          <label className="flex flex-col text-xs text-gray-600">
+            Data column
+            <select
+              value={state.colIndex}
+              onChange={(e) =>
+                set({ colIndex: Number(e.target.value), ran: false })
+              }
+              className="mt-1 border border-gray-300 rounded px-2 py-1 text-sm text-gray-800 min-w-[160px]"
+            >
+              {columns.map((c) => (
+                <option key={c.index} value={c.index}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </label>
 
-        {tool === "capability" ? (
-          <button
-            onClick={() => setDialogOpen(true)}
-            className="bg-[#00674d] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#00513d]"
-          >
-            {"\u2699"} Set up & Run
-          </button>
-        ) : (
-          <button
-            onClick={runAnalysis}
-            className="bg-[#00674d] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#00513d]"
-          >
-            {"\u25B6"} Run
-          </button>
-        )}
-      </div>
+          {tool === "capability" ? (
+            <button
+              onClick={() => setDialogOpen(true)}
+              className="bg-[#00674d] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#00513d]"
+            >
+              {"\u2699"} Set up & Run
+            </button>
+          ) : (
+            <button
+              onClick={runAnalysis}
+              className="bg-[#00674d] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#00513d]"
+            >
+              {"\u25B6"} Run
+            </button>
+          )}
+        </div>
+      )}
 
-      {/* Banner: current data differs from the study's original data */}
-      {state.ran && snapshot && dataDiffers && (
+      {/* Banner: solo aplica en modo nuevo análisis (nunca al ver estudio guardado) */}
+      {!viewing && state.ran && snapshot && dataDiffers && (
         <div className="mb-4 flex items-center justify-between gap-3 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
           <span>
             {"\u26A0\uFE0F"} The current data differs from this study&apos;s original data.
@@ -217,7 +221,7 @@ export default function AnalysisPanel({
       )}
 
       {/* Results */}
-      {state.ran && tool === "capability" && (
+      {(state.ran || viewing) && tool === "capability" && (
         <CapabilityResults
           values={values}
           colName={colName}
@@ -226,14 +230,16 @@ export default function AnalysisPanel({
           target={parseNum(state.target)}
           subgroupSize={parseInt(state.subgroupSize, 10) || 1}
           onSave={onSaveStudy}
+          readOnly={viewing}
         />
       )}
 
-      {state.ran && tool === "normality" && (
+      {(state.ran || viewing) && tool === "normality" && (
         <NormalityResults
           values={values}
           colName={colName}
           onSave={onSaveStudy}
+          readOnly={viewing}
         />
       )}
     </div>
@@ -249,6 +255,7 @@ function CapabilityResults({
   target,
   subgroupSize,
   onSave,
+  readOnly = false,
 }: {
   values: number[];
   colName: string;
@@ -257,6 +264,7 @@ function CapabilityResults({
   target: number | null;
   subgroupSize: number;
   onSave: (study: SaveStudyInput) => void;
+  readOnly?: boolean;
 }) {
   const res = useMemo(
     () => capabilityStudy(values, lsl, usl, target, subgroupSize),
@@ -442,17 +450,19 @@ function CapabilityResults({
         }
       />
 
-      <SaveButton
-        onSave={() =>
-          onSave({
-            type: "capability",
-            name: `Capability - ${colName}`,
-            params: { colName, lsl, usl, target, subgroupSize },
-            results: { ...res, data: undefined },
-            cols: [{ name: colName, values }], // CAMBIO: snapshot genérico N cols
-          })
-        }
-      />
+      {!readOnly && (
+        <SaveButton
+          onSave={() =>
+            onSave({
+              type: "capability",
+              name: `Capability - ${colName}`,
+              params: { colName, lsl, usl, target, subgroupSize },
+              results: { ...res, data: undefined },
+              cols: [{ name: colName, values }], // CAMBIO: snapshot genérico N cols
+            })
+          }
+        />
+      )}
     </div>
   );
 }
@@ -462,10 +472,12 @@ function NormalityResults({
   values,
   colName,
   onSave,
+  readOnly = false,
 }: {
   values: number[];
   colName: string;
   onSave: (study: SaveStudyInput) => void;
+  readOnly?: boolean;
 }) {
   const res = useMemo(() => normalityTest(values), [values]);
 
@@ -565,17 +577,19 @@ function NormalityResults({
         }
       />
 
-      <SaveButton
-        onSave={() =>
-          onSave({
-            type: "normality",
-            name: `Normality - ${colName}`,
-            params: { colName },
-            results: { ...res, sortedData: undefined },
-            cols: [{ name: colName, values }], // CAMBIO: snapshot genérico N cols
-          })
-        }
-      />
+      {!readOnly && (
+        <SaveButton
+          onSave={() =>
+            onSave({
+              type: "normality",
+              name: `Normality - ${colName}`,
+              params: { colName },
+              results: { ...res, sortedData: undefined },
+              cols: [{ name: colName, values }], // CAMBIO: snapshot genérico N cols
+            })
+          }
+        />
+      )}
     </div>
   );
 }
@@ -642,7 +656,7 @@ function CapabilityDialog({
               value={target}
               onChange={(e) => setTarget(e.target.value)}
               className={field}
-              placeholder="e.g. 10"
+              placeholder="e.g. 10.0"
             />
           </label>
 
@@ -660,20 +674,13 @@ function CapabilityDialog({
         <div className="mt-5 flex justify-end gap-2">
           <button
             onClick={onCancel}
-            className="px-4 py-2 rounded text-sm text-gray-600 hover:bg-gray-100"
+            className="px-4 py-1.5 text-sm rounded border border-gray-300 text-gray-700 hover:bg-gray-100"
           >
             Cancel
           </button>
           <button
-            onClick={() =>
-              onRun({
-                lsl,
-                usl,
-                target,
-                subgroupSize,
-              })
-            }
-            className="bg-[#00674d] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#00513d]"
+            onClick={() => onRun({ lsl, usl, target, subgroupSize })}
+            className="px-4 py-1.5 text-sm rounded bg-[#00674d] text-white font-medium hover:bg-[#00513d]"
           >
             {"\u25B6"} Run
           </button>
