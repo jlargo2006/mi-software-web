@@ -51,7 +51,7 @@ export const PHASES: RibbonPhase[] = [
     name: "Measure",
     tools: [
       // p.93  | mpj: Measure Data Sets.mpj | mtw: Surfaceflaws.mtw
-      { id: "causeEffect", label: "Cause and Effect (Fishbone)", tool: null, enabled: false },
+      { id: "causeEffect", label: "Cause and Effect (Fishbone)", tool: null, enabled: true },
 
       // p.144 | mpj: Measure Data Sets.mpj | mtw: basicstatistics.mtw
       { id: "descriptive", label: "Descriptive Statistics", tool: "descriptive", enabled: true },
