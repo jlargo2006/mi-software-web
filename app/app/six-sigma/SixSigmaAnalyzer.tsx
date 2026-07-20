@@ -174,8 +174,6 @@ export default function SixSigmaAnalyzer({
           ])
         )
       : null;
-
-
   
   // capability/normality compatibility: first column of the study (1 col)
   const viewingSnapshotCol = viewingStudy
