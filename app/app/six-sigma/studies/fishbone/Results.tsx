@@ -1,36 +1,66 @@
 // studies/fishbone/Results.tsx
 "use client";
 import React, { useMemo } from "react";
-import type { FishboneResult, FishboneNode } from "./types";
+import type { ColumnSnapshot } from "../types";
+import type { FishboneParams, FishboneResult, FishboneNode } from "./types";
 
 const BRAND = "#00674d";
 const SPINE_COLOR = "#111827";
 const TEXT_COLOR = "#111827";
 
-// ---------- Layout helpers ----------
-// Un segmento dibujable (linea + etiqueta + causas).
+// Angulos de las espinas diagonales (medidos desde la vertebra).
+const DIAG_UP = (110 * Math.PI) / 180;    // arriba-izquierda
+const DIAG_DOWN = (-110 * Math.PI) / 180; // abajo-izquierda
+
+// Longitudes
+const MAIN_BASE = 170;
+const MAIN_PER_CAUSE = 14;
+const SUB_BASE = 110;
+const SUB_PER_CAUSE = 12;
+
+interface CauseLabel {
+  text: string;
+  x: number;
+  y: number;
+}
+
 interface Seg {
   x1: number;
   y1: number;
   x2: number;
   y2: number;
   label: string | null;
-  causes: string[];
+  labelX: number;
+  labelY: number;
+  causeLabels: CauseLabel[];
   depth: number;
   up: boolean;
+  horizontal: boolean;
   color: string;
 }
 
-// Longitud aproximada segun cuantas causas cuelgan (para que quepan).
-function segLength(node: FishboneNode, depth: number): number {
-  const base = depth === 0 ? 150 : 90;
-  return base + node.causes.length * 16;
+// Parte el texto largo en varias lineas (~maxChars por linea) por palabras.
+function wrapText(text: string, maxChars: number): string[] {
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let cur = "";
+  for (const w of words) {
+    if ((cur + " " + w).trim().length > maxChars && cur) {
+      lines.push(cur);
+      cur = w;
+    } else {
+      cur = (cur + " " + w).trim();
+    }
+  }
+  if (cur) lines.push(cur);
+  return lines.length ? lines : [text];
 }
 
 /**
- * Recorre el arbol y produce segmentos posicionados.
- * - depth par (0,2,...) -> diagonal 45/135 (up ? 135 : 45)
+ * Coloca un nodo y su descendencia.
+ * - depth par (0,2,...) -> diagonal 110/-110
  * - depth impar (1,3,...) -> horizontal
+ * Los hijos se anclan EXACTAMENTE en el punto de su causa "attachTo" en el padre.
  */
 function layoutNode(
   node: FishboneNode,
@@ -38,25 +68,31 @@ function layoutNode(
   originY: number,
   up: boolean,
   depth: number,
+  len: number,
   segs: Seg[]
 ): void {
-  const len = segLength(node, depth);
-  const diagonal = depth % 2 === 0;
+  const horizontal = depth % 2 === 1;
 
   let x2: number;
   let y2: number;
-  if (diagonal) {
-    // 45 (abajo->arriba hacia la izquierda) o 135; usamos componente hacia la
-    // columna vertebral. dx negativo (hacia la cabeza a la derecha), dy segun lado.
-    const dx = len * 0.7;
-    const dy = len * 0.7 * (up ? -1 : 1);
-    x2 = originX - dx;
-    y2 = originY + dy;
-  } else {
-    // horizontal (subespina)
+  if (horizontal) {
     x2 = originX - len;
     y2 = originY;
+  } else {
+    const ang = up ? DIAG_UP : DIAG_DOWN;
+    x2 = originX + len * Math.cos(ang);
+    y2 = originY - len * Math.sin(ang);
   }
+
+  // Puntos de cada causa a lo largo del segmento.
+  const causeLabels: CauseLabel[] = node.causes.map((c, ci) => {
+    const t = (ci + 1) / (node.causes.length + 1);
+    return {
+      text: c,
+      x: originX + (x2 - originX) * t,
+      y: originY + (y2 - originY) * t,
+    };
+  });
 
   const color = depth === 0 ? SPINE_COLOR : BRAND;
   segs.push({
@@ -65,53 +101,78 @@ function layoutNode(
     x2,
     y2,
     label: node.label,
-    causes: node.causes,
+    labelX: x2,
+    labelY: y2 + (up ? -10 : 18),
+    causeLabels,
     depth,
     up,
+    horizontal,
     color,
   });
 
-  // Coloca los hijos a lo largo de este segmento.
-  const n = node.children.length;
+  // Hijos: se anclan en el punto de la causa elegida (attachTo).
   node.children.forEach((child, i) => {
-    const t = (i + 1) / (n + 1); // fraccion a lo largo del segmento padre
-    const cx = node ? node : node; // (placeholder, ver abajo)
-    const px = originX + (x2 - originX) * t;
-    const py = originY + (y2 - originY) * t;
-    // Los hijos alternan lado respecto al padre para repartir espacio.
-    const childUp = depth % 2 === 0 ? up : i % 2 === 0;
-    layoutNode(child, px, py, childUp, depth + 1, segs);
+    const idx = child.attachTo ? node.causes.indexOf(child.attachTo) : -1;
+    const anchor =
+      idx >= 0
+        ? causeLabels[idx]
+        : { x: (originX + x2) / 2, y: (originY + y2) / 2 }; // fallback: mitad
+
+    // Si el padre es horizontal, el hijo es diagonal (alterna arriba/abajo).
+    // Si el padre es diagonal, el hijo es horizontal (hereda 'up' solo a efectos de texto).
+    const childUp = horizontal ? i % 2 === 0 : up;
+    const childLen = SUB_BASE + child.causes.length * SUB_PER_CAUSE;
+    layoutNode(child, anchor.x, anchor.y, childUp, depth + 1, childLen, segs);
   });
 }
 
-export default function FishboneResults({ result }: { result: FishboneResult }) {
-  const { segs, width, height, headX, headY } = useMemo(() => {
-    const segs: Seg[] = [];
-    const W = 1100;
-    const H = 640;
-    const headX = W - 140; // cabeza del pez a la derecha
-    const headY = H / 2;
-    const spineStartX = 60; // cola a la izquierda
+export default function FishboneResults({
+  result,
+}: {
+  data: ColumnSnapshot;
+  params: FishboneParams;
+  result: FishboneResult;
+}) {
+  const { segs, width, height, headX, headY, spineStartX, effectLines } =
+    useMemo(() => {
+      const segs: Seg[] = [];
+      const W = 1150;
+      const H = 660;
+      const headX = W - 230; // flecha pequena; texto del effect a su derecha
+      const headY = H / 2;
+      const spineStartX = 60;
 
-    // Espinas principales repartidas a lo largo de la columna vertebral.
-    const spines = result.spines;
-    const n = spines.length;
-    spines.forEach((spine, i) => {
-      // punto de anclaje sobre la columna vertebral
-      const t = n === 1 ? 0.5 : (i + 1) / (n + 1);
-      const ax = spineStartX + (headX - spineStartX) * t;
-      const up = i % 2 === 0;
-      layoutNode(spine, ax, headY, up, 0, segs);
-    });
+      // Punto 2: todas las espinas principales con la MISMA longitud (la mayor).
+      const spines = result.spines;
+      const mainLen = spines.reduce(
+        (max, s) => Math.max(max, MAIN_BASE + s.causes.length * MAIN_PER_CAUSE),
+        MAIN_BASE
+      );
 
-    return { segs, width: W, height: H, headX, headY, spineStartX };
-  }, [result]);
+      const n = spines.length;
+      spines.forEach((spine, i) => {
+        const t = n === 1 ? 0.5 : (i + 1) / (n + 1);
+        const ax = spineStartX + (headX - spineStartX) * t;
+        const up = i % 2 === 0;
+        layoutNode(spine, ax, headY, up, 0, mainLen, segs);
+      });
 
-  const spineStartX = 60;
+      const effectLines = wrapText(result.effect, 22);
+
+      return {
+        segs,
+        width: W,
+        height: H,
+        headX,
+        headY,
+        spineStartX,
+        effectLines,
+      };
+    }, [result]);
 
   return (
     <div className="w-full overflow-auto">
-      {/* Title arriba del diagrama */}
+      {/* Punto: Title arriba del diagrama */}
       <h2
         className="mb-2 text-center text-lg font-semibold"
         style={{ color: TEXT_COLOR }}
@@ -125,7 +186,7 @@ export default function FishboneResults({ result }: { result: FishboneResult }) 
         viewBox={`0 0 ${width} ${height}`}
         className="mx-auto block"
       >
-        {/* Columna vertebral (backbone) */}
+        {/* Vertebra */}
         <line
           x1={spineStartX}
           y1={headY}
@@ -135,25 +196,27 @@ export default function FishboneResults({ result }: { result: FishboneResult }) 
           strokeWidth={3}
         />
 
-        {/* Cabeza del pez (Effect) */}
+        {/* Punto 3: flecha PEQUENA + texto multilinea a su derecha */}
         <polygon
-          points={`${headX},${headY - 40} ${headX + 90},${headY} ${headX},${headY + 40}`}
+          points={`${headX},${headY - 22} ${headX + 40},${headY} ${headX},${headY + 22}`}
           fill={BRAND}
           opacity={0.9}
         />
         <text
-          x={headX + 45}
-          y={headY}
-          textAnchor="middle"
-          dominantBaseline="middle"
+          x={headX + 50}
+          y={headY - (effectLines.length - 1) * 8}
           fontSize={13}
           fontWeight={700}
-          fill="#fff"
+          fill={TEXT_COLOR}
         >
-          {result.effect}
+          {effectLines.map((ln, i) => (
+            <tspan key={i} x={headX + 50} dy={i === 0 ? 0 : 16}>
+              {ln}
+            </tspan>
+          ))}
         </text>
 
-        {/* Segmentos (espinas, subespinas, sub-subespinas) */}
+        {/* Segmentos */}
         {segs.map((s, i) => (
           <g key={i}>
             <line
@@ -164,11 +227,12 @@ export default function FishboneResults({ result }: { result: FishboneResult }) 
               stroke={s.color}
               strokeWidth={s.depth === 0 ? 2.5 : 1.5}
             />
-            {/* Etiqueta de la espina principal (categoria) en la punta */}
+
+            {/* Etiqueta de categoria (solo espinas principales) */}
             {s.label && (
               <text
-                x={s.x2}
-                y={s.y2 + (s.up ? -8 : 16)}
+                x={s.labelX}
+                y={s.labelY}
                 textAnchor="middle"
                 fontSize={12}
                 fontWeight={700}
@@ -177,26 +241,44 @@ export default function FishboneResults({ result }: { result: FishboneResult }) 
                 {s.label}
               </text>
             )}
-            {/* Causas escritas a lo largo del segmento */}
-            {s.causes.map((cause, ci) => {
-              const t = (ci + 1) / (s.causes.length + 1);
-              const cx = s.x1 + (s.x2 - s.x1) * t;
-              const cy = s.y1 + (s.y2 - s.y1) * t;
-              return (
+
+            {/* Causas */}
+            {s.causeLabels.map((cl, ci) =>
+              s.horizontal ? (
+                // Punto 4: en subespinas, texto a -45 ENCIMA de la linea horizontal
                 <text
                   key={ci}
-                  x={cx + 6}
-                  y={cy + (s.up ? -4 : 12)}
+                  x={cl.x}
+                  y={cl.y - 4}
+                  fontSize={10}
+                  fill={TEXT_COLOR}
+                  textAnchor="start"
+                  transform={`rotate(-45 ${cl.x} ${cl.y - 4})`}
+                >
+                  {cl.text}
+                </text>
+              ) : (
+                // En espinas diagonales, texto junto a la linea
+                <text
+                  key={ci}
+                  x={cl.x + 6}
+                  y={cl.y + (s.up ? -4 : 12)}
                   fontSize={10}
                   fill={TEXT_COLOR}
                 >
-                  {cause}
+                  {cl.text}
                 </text>
-              );
-            })}
+              )
+            )}
           </g>
         ))}
       </svg>
+
+      {result.spines.length === 0 && (
+        <div className="text-sm text-gray-400">
+          Assign at least one column to a branch to see the diagram.
+        </div>
+      )}
     </div>
   );
 }
