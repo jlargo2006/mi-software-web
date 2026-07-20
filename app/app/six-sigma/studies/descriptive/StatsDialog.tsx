@@ -1,4 +1,4 @@
-// components/DescriptiveStatsDialog.tsx
+// components/StatsDialog.tsx
 "use client";
 
 import React, { useState } from "react";
