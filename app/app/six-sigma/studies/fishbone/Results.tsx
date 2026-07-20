@@ -8,7 +8,6 @@ const BRAND = "#00674d";
 const SPINE_COLOR = "#111827";
 const TEXT_COLOR = "#111827";
 
-// Angulos de las espinas diagonales (desde la vertebra).
 const DIAG_UP = (110 * Math.PI) / 180;
 const DIAG_DOWN = (-110 * Math.PI) / 180;
 
@@ -17,21 +16,20 @@ const MAIN_PER_CAUSE = 14;
 const SUB_BASE = 110;
 const SUB_PER_CAUSE = 12;
 
-// Estimacion de tamano de texto para el des-solapador.
-const CHAR_W = 5.6;   // ancho aprox por caracter a fontSize 10
-const LABEL_H = 12;   // alto de linea de etiqueta
+const CHAR_W = 5.6;
+const LABEL_H = 12;
 
 interface CauseLabel {
   text: string;
-  // ancla real sobre la linea (origen del leader)
   ax: number;
   ay: number;
-  // posicion del texto (se ajusta por el des-solapador)
   x: number;
   y: number;
-  rotate: number;      // grados
+  rotate: number;
   anchor: "start" | "middle";
-  w: number;           // ancho estimado de la caja
+  w: number;
+  horizontal: boolean; // NEW: pertenece a una subespina horizontal
+  lineY: number;       // NEW: Y de la linea de la que cuelga (para el tope)
 }
 
 interface Seg {
@@ -92,16 +90,19 @@ function layoutNode(
     const ax = originX + (x2 - originX) * t;
     const ay = originY + (y2 - originY) * t;
     if (horizontal) {
-      // Punto 1: -45 visual = rotate(45) en SVG (cabeceado hacia abajo)
+      // Cambio: texto DEBAJO de la linea (rotate 45, cabeceado hacia abajo)
+      // y con tope para no superar la horizontal (ver deOverlap/clamp).
       return {
         text: c,
         ax,
         ay,
         x: ax,
-        y: ay - 4,
+        y: ay + LABEL_H, // por debajo de la linea
         rotate: 45,
         anchor: "start" as const,
         w: c.length * CHAR_W,
+        horizontal: true,
+        lineY: ay,
       };
     }
     return {
@@ -113,6 +114,8 @@ function layoutNode(
       rotate: 0,
       anchor: "start" as const,
       w: c.length * CHAR_W,
+      horizontal: false,
+      lineY: ay,
     };
   });
 
@@ -145,7 +148,6 @@ function layoutNode(
   });
 }
 
-// Caja aproximada de una etiqueta (para deteccion de solape).
 function boxOf(l: CauseLabel) {
   const half = l.anchor === "middle" ? l.w / 2 : 0;
   return {
@@ -162,8 +164,17 @@ function overlaps(a: CauseLabel, b: CauseLabel): boolean {
   return !(A.maxX < B.minX || A.minX > B.maxX || A.maxY < B.minY || A.minY > B.maxY);
 }
 
-// Punto 2: des-solapador heuristico. Empuja verticalmente las etiquetas
-// que colisionan, en varias pasadas.
+// NEW: mantiene las etiquetas de subespinas siempre por DEBAJO de su linea.
+function clampHorizontal(labels: CauseLabel[]): void {
+  for (const l of labels) {
+    if (l.horizontal) {
+      // el borde superior de la caja no puede quedar por encima de la linea
+      const minAllowedY = l.lineY + LABEL_H;
+      if (l.y < minAllowedY) l.y = minAllowedY;
+    }
+  }
+}
+
 function deOverlap(labels: CauseLabel[]): void {
   const PASSES = 6;
   const STEP = LABEL_H + 2;
@@ -172,7 +183,6 @@ function deOverlap(labels: CauseLabel[]): void {
     for (let i = 0; i < labels.length; i++) {
       for (let j = i + 1; j < labels.length; j++) {
         if (overlaps(labels[i], labels[j])) {
-          // empuja la de menor Y hacia arriba y la otra hacia abajo
           if (labels[i].y <= labels[j].y) {
             labels[i].y -= STEP / 2;
             labels[j].y += STEP / 2;
@@ -184,8 +194,11 @@ function deOverlap(labels: CauseLabel[]): void {
         }
       }
     }
+    // NEW: tras cada pasada, reaplica el tope de las subespinas
+    clampHorizontal(labels);
     if (!moved) break;
   }
+  clampHorizontal(labels); // seguridad final
 }
 
 export default function FishboneResults({
@@ -218,7 +231,6 @@ export default function FishboneResults({
         layoutNode(spine, ax, headY, up, 0, mainLen, segs);
       });
 
-      // Des-solapa TODAS las etiquetas de causas juntas (global).
       const allLabels = segs.flatMap((s) => s.causeLabels);
       deOverlap(allLabels);
 
@@ -242,7 +254,6 @@ export default function FishboneResults({
         viewBox={`0 0 ${width} ${height}`}
         className="mx-auto block"
       >
-        {/* Vertebra */}
         <line
           x1={spineStartX}
           y1={headY}
@@ -252,7 +263,6 @@ export default function FishboneResults({
           strokeWidth={3}
         />
 
-        {/* Cabeza: flecha pequena + effect multilinea a la derecha */}
         <polygon
           points={`${headX},${headY - 22} ${headX + 40},${headY} ${headX},${headY + 22}`}
           fill={BRAND}
@@ -272,7 +282,6 @@ export default function FishboneResults({
           ))}
         </text>
 
-        {/* Segmentos */}
         {segs.map((s, i) => (
           <g key={i}>
             <line
@@ -299,8 +308,7 @@ export default function FishboneResults({
 
             {s.causeLabels.map((cl, ci) => (
               <g key={ci}>
-                {/* Leader: solo si la etiqueta fue desplazada */}
-                {(Math.abs(cl.x - cl.ax) > 1 || Math.abs(cl.y - (cl.ay)) > 6) && (
+                {(Math.abs(cl.x - cl.ax) > 1 || Math.abs(cl.y - cl.ay) > 6) && (
                   <line
                     x1={cl.ax}
                     y1={cl.ay}
