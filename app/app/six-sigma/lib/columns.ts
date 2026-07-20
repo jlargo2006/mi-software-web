@@ -6,6 +6,7 @@ export interface ColumnInfo {
   index: number;
   name: string;      // header label (or "Column A" if empty)
   letter: string;    // A, B, C...
+  values: Cell[];    // NEW: raw cell values (for cause/cell pickers)
 }
 
 function colLetter(i: number): string {
@@ -32,6 +33,7 @@ export function getColumns(sheet: SheetData): ColumnInfo[] {
       index: i,
       letter: colLetter(i),
       name: header || `Column ${colLetter(i)}`,
+      values: sheet.rows.map((row) => row[i] ?? ""), // NEW
     });
   }
   return cols;
