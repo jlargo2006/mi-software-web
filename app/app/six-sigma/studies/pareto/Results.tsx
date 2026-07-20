@@ -28,6 +28,7 @@ function niceScale(max: number, targetTicks = 7) {
 }
 
 export default function ParetoResults({
+  params,
   result,
 }: {
   data: ColumnSnapshot;
@@ -75,6 +76,14 @@ export default function ParetoResults({
 
   return (
     <div className="w-full overflow-auto">
+      <h2
+        className="mb-2 text-center text-lg font-semibold"
+        style={{ color: TEXT }}
+      >
+        {params.categoryCol
+          ? `Pareto Chart of ${params.categoryCol}`
+          : "Pareto Chart"}
+      </h2>
       <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="mx-auto block">
         {/* Eje Y izquierdo (conteos) */}
         <line x1={marginLeft} y1={marginTop} x2={marginLeft} y2={marginTop + plotH} stroke={AXIS} />
