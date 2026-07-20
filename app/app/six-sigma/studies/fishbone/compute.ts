@@ -1,16 +1,15 @@
 // studies/fishbone/compute.ts
-import type { SheetData } from "../../lib/types";
-import { getColumns } from "../../lib/columns";
+import type { ColumnSnapshot } from "../types";
 import type {
   FishboneParams,
   FishboneResult,
   FishboneNode,
 } from "./types";
 
-// Valores no vacios de una columna por su header/name.
-function causesOfColumn(sheet: SheetData, colName: string | null): string[] {
+// Valores no vacios de una columna del snapshot, por su nombre.
+function causesOfColumn(data: ColumnSnapshot, colName: string | null): string[] {
   if (!colName) return [];
-  const col = getColumns(sheet).find((c) => c.name === colName);
+  const col = data[colName];
   if (!col) return [];
   return col.values
     .map((v) => String(v ?? "").trim())
@@ -18,7 +17,7 @@ function causesOfColumn(sheet: SheetData, colName: string | null): string[] {
 }
 
 export function computeFishbone(
-  sheet: SheetData,
+  data: ColumnSnapshot,
   params: FishboneParams
 ): FishboneResult {
   const { rows } = params;
@@ -26,15 +25,12 @@ export function computeFishbone(
   // Construye el nodo de una fila (branch = idx+1).
   const buildNode = (idx: number): FishboneNode => {
     const row = rows[idx];
-    const col = row.colName
-      ? getColumns(sheet).find((c) => c.name === row.colName)
-      : undefined;
     const isSub = row.hangsFrom !== null;
     return {
       branch: idx + 1,
-      // etiqueta = header de la columna solo en espinas principales
-      label: !isSub ? (col?.name ?? null) : null,
-      causes: causesOfColumn(sheet, row.colName),
+      // etiqueta = nombre de la columna solo en espinas principales
+      label: !isSub ? (row.colName ?? null) : null,
+      causes: causesOfColumn(data, row.colName),
       attachTo: isSub ? row.fromCause : null,
       children: [],
     };
@@ -59,7 +55,7 @@ export function computeFishbone(
     } else {
       const parent = nodeByBranch.get(row.hangsFrom);
       if (parent) parent.children.push(node);
-      else spines.push(node); // padre invalido -> lo tratamos como principal
+      else spines.push(node); // padre invalido -> tratamos como principal
     }
   });
 
