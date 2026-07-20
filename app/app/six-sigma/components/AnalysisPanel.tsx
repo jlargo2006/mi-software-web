@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import type { SheetData } from "../lib/types";
+import type { SheetData, Cell } from "../lib/types";
 import type { ToolId } from "../lib/ribbon";
 import { getColumns, getColumnValues, sameData } from "../lib/columns";
 import { capabilityStudy, normalityTest, normInv } from "../lib/stats";
@@ -14,6 +14,10 @@ import DescriptiveStatsPanel from "./DescriptiveStatsPanel";
 import type { StatKey } from "../lib/descriptiveStats";
 import StudyControls, { StudyMode } from "./StudyControls";
 
+// La frontera de datos habla Cell[]; convertimos a number[] solo al calcular.
+const toNumeric = (values: Cell[]): number[] =>
+  values.map(Number).filter((n) => !Number.isNaN(n));
+
 // Estado del formulario/analisis: vive en el padre
 export interface AnalysisState {
   colIndex: number;
@@ -22,7 +26,7 @@ export interface AnalysisState {
   target: string;
   subgroupSize: string;
   ran: boolean;
-  runValues: number[];   // datos congelados al pulsar Run
+  runValues: Cell[];   // datos congelados al pulsar Run
   runColName: string;    // nombre de columna congelado al pulsar Run
 }
 
@@ -46,8 +50,8 @@ interface AnalysisPanelProps {
   study?: SavedStudy | null;
   mode: StudyMode;                          // unica fuente de verdad: "edit" | "view"
   snapshot?: StudyColumn | null;
-  liveValues?: number[] | null;
-  onUpdateSnapshot?: (newValues: number[]) => void;
+  liveValues?: Cell[] | null;
+  onUpdateSnapshot?: (newValues:Cell[]) => void;
 }
 
 export default function AnalysisPanel({
@@ -258,7 +262,7 @@ function CapabilityResults({
   onSave,
   mode,
 }: {
-  values: number[];
+  values: Cell[];
   colName: string;
   lsl: number | null;
   usl: number | null;
@@ -267,13 +271,15 @@ function CapabilityResults({
   onSave: (study: SaveStudyInput) => void;
   mode: StudyMode;
 }) {
+  const nums = useMemo(() => toNumeric(values), [values]);   // <- conversion
+  
   const res = useMemo(
-    () => capabilityStudy(values, lsl, usl, target, subgroupSize),
-    [values, lsl, usl, target, subgroupSize]
+    () => capabilityStudy(nums, lsl, usl, target, subgroupSize),
+    [nums, lsl, usl, target, subgroupSize]
   );
 
   // Rango del eje X (datos + limites)
-  const xs = [...values, lsl, usl, target].filter(
+  const xs = [...nums, lsl, usl, target].filter(
     (v): v is number => v !== null && v !== undefined
   );
   const xMin = Math.min(...xs);
@@ -302,7 +308,7 @@ function CapabilityResults({
 
   // Histograma (densidad para que case con las curvas)
   const histogram: Data = {
-    x: values,
+    x: nums,
     type: "histogram",
     histnorm: "probability density",
     marker: {
@@ -476,15 +482,17 @@ function NormalityResults({
   onSave,
   mode,
 }: {
-  values: number[];
+  values: Cell[];
   colName: string;
   onSave: (study: SaveStudyInput) => void;
   mode: StudyMode;
 }) {
-  const res = useMemo(() => normalityTest(values), [values]);
+  const nums = useMemo(() => toNumeric(values), [values]);   // <- conversion
+  
+  const res = useMemo(() => normalityTest(nums), [nums]);
 
   const plot = useMemo(() => {
-    const sorted = [...values].sort((a, b) => a - b);
+    const sorted = [...nums].sort((a, b) => a - b);
     const n = sorted.length;
 
     const tickPercents = [
@@ -510,7 +518,7 @@ function NormalityResults({
     const lineY = lineX.map((x) => (x - res.mean) / res.std);
 
     return { tickVals, tickText, pointsX, pointsY, lineX, lineY, xRange };
-  }, [values, res.mean, res.std]);
+  }, [nums, res.mean, res.std]);
 
   const pointsTrace: Data = {
     x: plot.pointsX,

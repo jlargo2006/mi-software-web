@@ -41,8 +41,8 @@ export const PHASES: RibbonPhase[] = [
   {
     name: "Define",
     tools: [
-      // p.54  | mtw: Call Center.mtw
-      { id: "pareto", label: "Pareto Chart", tool: null, enabled: false },
+      // p.54  | mtw: Call Center.mtw      
+      { id: "pareto", label: "Pareto Chart", tool: "pareto", enabled: true },
 
       // (—) proposed – Define phase project tools
       { id: "sipoc", label: "SIPOC Diagram", tool: null, enabled: false },

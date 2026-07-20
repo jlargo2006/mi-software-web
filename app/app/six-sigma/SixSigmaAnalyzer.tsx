@@ -174,7 +174,6 @@ export default function SixSigmaAnalyzer({
           ])
         )
       : null;
-
   
   // capability/normality compatibility: first column of the study (1 col)
   const viewingSnapshotCol = viewingStudy
@@ -368,6 +367,7 @@ export default function SixSigmaAnalyzer({
                 )}
               </div>
             )}
+
 
             {view === "split" && (
               <Splitter onChange={setTopPercent} containerRef={splitRef} />

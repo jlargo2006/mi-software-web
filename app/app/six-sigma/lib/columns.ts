@@ -1,10 +1,12 @@
 import type { SheetData } from "./types";
 import { toNumericColumn } from "./stats";
+import type { Cell } from "./types";
 
 export interface ColumnInfo {
   index: number;
   name: string;      // header label (or "Column A" if empty)
   letter: string;    // A, B, C...
+  values: Cell[];    // NEW: raw cell values (for cause/cell pickers)
 }
 
 function colLetter(i: number): string {
@@ -31,6 +33,7 @@ export function getColumns(sheet: SheetData): ColumnInfo[] {
       index: i,
       letter: colLetter(i),
       name: header || `Column ${colLetter(i)}`,
+      values: sheet.rows.map((row) => row[i] ?? ""), // NEW
     });
   }
   return cols;
@@ -46,10 +49,7 @@ export function getColumnByName(sheet: SheetData, name: string): number[] {
   return found ? getColumnValues(sheet, found.index) : [];
 }
 
-export function sameData(a: number[], b: number[]): boolean {
+export function sameData(a: Cell[], b: Cell[]): boolean {
   if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) {
-    if (Math.abs(a[i] - b[i]) > 1e-9) return false;
-  }
-  return true;
+  return a.every((v, i) => String(v ?? "") === String(b[i] ?? ""));
 }
