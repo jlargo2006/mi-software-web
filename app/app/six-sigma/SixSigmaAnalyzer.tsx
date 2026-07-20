@@ -12,6 +12,9 @@ import DataGrid from "./components/DataGrid";
 import SheetTabs from "./components/SheetTabs";
 import Splitter from "./components/Splitter";
 import AnalysisPanel, { AnalysisState, EMPTY_ANALYSIS } from "./components/AnalysisPanel";
+import { getArtifact } from "./studies/_registry";
+import type { ColumnSnapshot } from "./studies/types";
+import AnalysisRunner from "./components/AnalysisRunner";
 
 type ViewMode = "split" | "grid" | "graphics";
 
@@ -39,6 +42,8 @@ export default function SixSigmaAnalyzer({
   const [topPercent, setTopPercent] = useState(80);
   const [activeTool, setActiveTool] = useState<ToolId>(null);
   const [analysis, setAnalysis] = useState<AnalysisState>(EMPTY_ANALYSIS);
+  // Params genéricos para estudios del REGISTRY (fishbone y futuros).
+  const [artifactParams, setArtifactParams] = useState<Record<string, unknown>>({});
   const [studies, setStudies] = useState<SavedStudy[]>([]);
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [selRows, setSelRows] = useState<Set<number>>(new Set());
@@ -154,6 +159,24 @@ export default function SixSigmaAnalyzer({
       }))
     : null;
 
+  // ¿La herramienta activa es un estudio genérico del REGISTRY?
+  const activeArtifact = activeTool ? getArtifact(activeTool) : undefined;
+  const activeAnalysisDef =
+    activeArtifact && activeArtifact.kind === "analysis" ? activeArtifact : null;
+  
+  // Snapshot guardado (StudyColumn[]) -> ColumnSnapshot (Record por nombre) para el runner.
+  const savedArtifactSnapshot: ColumnSnapshot | null =
+    viewingStudy && getArtifact(viewingStudy.type)
+      ? Object.fromEntries(
+          viewingStudy.snapshot.cols.map((c) => [
+            c.name,
+            { name: c.name, values: c.values },
+          ])
+        )
+      : null;
+
+
+  
   // capability/normality compatibility: first column of the study (1 col)
   const viewingSnapshotCol = viewingStudy
     ? viewingStudy.snapshot.cols[0] ?? null
@@ -211,6 +234,11 @@ export default function SixSigmaAnalyzer({
           setActiveTool(tool);
           setViewingId(null); // new analysis: leave "viewing" mode
           setAnalysis((prev) => ({ ...prev, ran: false }));
+          // Si es un estudio del registry, arranca con sus defaultParams
+          const def = tool ? getArtifact(tool) : undefined;
+          if (def && def.kind === "analysis") {
+            setArtifactParams(def.defaultParams as Record<string, unknown>);
+          }
           if (view === "grid") setView("split");
         }}
       />
@@ -261,6 +289,7 @@ export default function SixSigmaAnalyzer({
                   onClick={() => {
                     setActiveTool(s.type as ToolId);
                     setAnalysis(s.form ?? EMPTY_ANALYSIS);
+                    setArtifactParams(s.params);
                     setViewingId(s.id);
                     if (view === "grid") setView("split");
                   }}
@@ -295,38 +324,52 @@ export default function SixSigmaAnalyzer({
                 className="overflow-auto bg-white border-b border-gray-200"
                 style={{ height: view === "split" ? `${topPercent}%` : "100%" }}
               >
-                <AnalysisPanel
-                  tool={activeTool}
-                  sheet={wb.data[wb.activeSheet] ?? EMPTY_SHEET}
-                  state={analysis}
-                  onStateChange={setAnalysis}
-                  onSaveStudy={saveStudy}
-                  study={viewingStudy}
-                  mode={viewingId ? "view" : "edit"}
-                  snapshot={viewingSnapshotCol}
-                  liveValues={liveValues}
-                  onUpdateSnapshot={(newValues) => {
-                    if (!viewingStudy) return;
-                    setStudies((prev) =>
-                      prev.map((s) =>
-                        s.id === viewingStudy.id
-                          ? {
-                              ...s,
-                              snapshot: {
-                                ...s.snapshot,
-                                // update ONLY the first column (capability/normality)
-                                cols: s.snapshot.cols.map((c, i) =>
-                                  i === 0 ? { ...c, values: newValues } : c
-                                ),
-                              },
-                            }
-                          : s
-                      )
-                    );
-                  }}
-                />
+                {activeAnalysisDef ? (
+                  /* Motor NUEVO genérico: cualquier estudio del REGISTRY (fishbone, …) */
+                  <AnalysisRunner
+                    def={activeAnalysisDef}
+                    sheet={wb.data[wb.activeSheet] ?? EMPTY_SHEET}
+                    mode={viewingId ? "view" : "edit"}
+                    params={artifactParams}
+                    onParamsChange={setArtifactParams}
+                    savedSnapshot={savedArtifactSnapshot}
+                    onSaveStudy={saveStudy}
+                  />
+                ) : (
+                  /* Motor VIEJO: descriptive / capability / normality */
+                  <AnalysisPanel
+                    tool={activeTool}
+                    sheet={wb.data[wb.activeSheet] ?? EMPTY_SHEET}
+                    state={analysis}
+                    onStateChange={setAnalysis}
+                    onSaveStudy={saveStudy}
+                    study={viewingStudy}
+                    mode={viewingId ? "view" : "edit"}
+                    snapshot={viewingSnapshotCol}
+                    liveValues={liveValues}
+                    onUpdateSnapshot={(newValues) => {
+                      if (!viewingStudy) return;
+                      setStudies((prev) =>
+                        prev.map((s) =>
+                          s.id === viewingStudy.id
+                            ? {
+                                ...s,
+                                snapshot: {
+                                  ...s.snapshot,
+                                  cols: s.snapshot.cols.map((c, i) =>
+                                    i === 0 ? { ...c, values: newValues } : c
+                                  ),
+                                },
+                              }
+                            : s
+                        )
+                      );
+                    }}
+                  />
+                )}
               </div>
             )}
+
 
             {view === "split" && (
               <Splitter onChange={setTopPercent} containerRef={splitRef} />
