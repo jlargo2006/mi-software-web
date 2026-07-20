@@ -71,7 +71,7 @@ export default function DescriptiveControls({
 
       {dialogOpen && (
         <DescriptiveStatsDialog
-          selected={new Set(params.selectedStats)}
+          initial={new Set(params.selectedStats)}
           onApply={(keys: Set<StatKey>) => {
             onChange({ ...params, selectedStats: [...keys] });
             setDialogOpen(false);
