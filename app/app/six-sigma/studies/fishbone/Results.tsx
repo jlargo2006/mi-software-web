@@ -8,20 +8,30 @@ const BRAND = "#00674d";
 const SPINE_COLOR = "#111827";
 const TEXT_COLOR = "#111827";
 
-// Angulos de las espinas diagonales (medidos desde la vertebra).
-const DIAG_UP = (110 * Math.PI) / 180;    // arriba-izquierda
-const DIAG_DOWN = (-110 * Math.PI) / 180; // abajo-izquierda
+// Angulos de las espinas diagonales (desde la vertebra).
+const DIAG_UP = (110 * Math.PI) / 180;
+const DIAG_DOWN = (-110 * Math.PI) / 180;
 
-// Longitudes
 const MAIN_BASE = 170;
 const MAIN_PER_CAUSE = 14;
 const SUB_BASE = 110;
 const SUB_PER_CAUSE = 12;
 
+// Estimacion de tamano de texto para el des-solapador.
+const CHAR_W = 5.6;   // ancho aprox por caracter a fontSize 10
+const LABEL_H = 12;   // alto de linea de etiqueta
+
 interface CauseLabel {
   text: string;
+  // ancla real sobre la linea (origen del leader)
+  ax: number;
+  ay: number;
+  // posicion del texto (se ajusta por el des-solapador)
   x: number;
   y: number;
+  rotate: number;      // grados
+  anchor: "start" | "middle";
+  w: number;           // ancho estimado de la caja
 }
 
 interface Seg {
@@ -39,7 +49,6 @@ interface Seg {
   color: string;
 }
 
-// Parte el texto largo en varias lineas (~maxChars por linea) por palabras.
 function wrapText(text: string, maxChars: number): string[] {
   const words = text.split(/\s+/).filter(Boolean);
   const lines: string[] = [];
@@ -56,12 +65,6 @@ function wrapText(text: string, maxChars: number): string[] {
   return lines.length ? lines : [text];
 }
 
-/**
- * Coloca un nodo y su descendencia.
- * - depth par (0,2,...) -> diagonal 110/-110
- * - depth impar (1,3,...) -> horizontal
- * Los hijos se anclan EXACTAMENTE en el punto de su causa "attachTo" en el padre.
- */
 function layoutNode(
   node: FishboneNode,
   originX: number,
@@ -84,13 +87,32 @@ function layoutNode(
     y2 = originY - len * Math.sin(ang);
   }
 
-  // Puntos de cada causa a lo largo del segmento.
   const causeLabels: CauseLabel[] = node.causes.map((c, ci) => {
     const t = (ci + 1) / (node.causes.length + 1);
+    const ax = originX + (x2 - originX) * t;
+    const ay = originY + (y2 - originY) * t;
+    if (horizontal) {
+      // Punto 1: -45 visual = rotate(45) en SVG (cabeceado hacia abajo)
+      return {
+        text: c,
+        ax,
+        ay,
+        x: ax,
+        y: ay - 4,
+        rotate: 45,
+        anchor: "start" as const,
+        w: c.length * CHAR_W,
+      };
+    }
     return {
       text: c,
-      x: originX + (x2 - originX) * t,
-      y: originY + (y2 - originY) * t,
+      ax,
+      ay,
+      x: ax + 6,
+      y: ay + (up ? -4 : 12),
+      rotate: 0,
+      anchor: "start" as const,
+      w: c.length * CHAR_W,
     };
   });
 
@@ -110,20 +132,60 @@ function layoutNode(
     color,
   });
 
-  // Hijos: se anclan en el punto de la causa elegida (attachTo).
   node.children.forEach((child, i) => {
     const idx = child.attachTo ? node.causes.indexOf(child.attachTo) : -1;
     const anchor =
       idx >= 0
-        ? causeLabels[idx]
-        : { x: (originX + x2) / 2, y: (originY + y2) / 2 }; // fallback: mitad
+        ? { x: causeLabels[idx].ax, y: causeLabels[idx].ay }
+        : { x: (originX + x2) / 2, y: (originY + y2) / 2 };
 
-    // Si el padre es horizontal, el hijo es diagonal (alterna arriba/abajo).
-    // Si el padre es diagonal, el hijo es horizontal (hereda 'up' solo a efectos de texto).
     const childUp = horizontal ? i % 2 === 0 : up;
     const childLen = SUB_BASE + child.causes.length * SUB_PER_CAUSE;
     layoutNode(child, anchor.x, anchor.y, childUp, depth + 1, childLen, segs);
   });
+}
+
+// Caja aproximada de una etiqueta (para deteccion de solape).
+function boxOf(l: CauseLabel) {
+  const half = l.anchor === "middle" ? l.w / 2 : 0;
+  return {
+    minX: l.x - half,
+    maxX: l.x - half + l.w,
+    minY: l.y - LABEL_H,
+    maxY: l.y,
+  };
+}
+
+function overlaps(a: CauseLabel, b: CauseLabel): boolean {
+  const A = boxOf(a);
+  const B = boxOf(b);
+  return !(A.maxX < B.minX || A.minX > B.maxX || A.maxY < B.minY || A.minY > B.maxY);
+}
+
+// Punto 2: des-solapador heuristico. Empuja verticalmente las etiquetas
+// que colisionan, en varias pasadas.
+function deOverlap(labels: CauseLabel[]): void {
+  const PASSES = 6;
+  const STEP = LABEL_H + 2;
+  for (let p = 0; p < PASSES; p++) {
+    let moved = false;
+    for (let i = 0; i < labels.length; i++) {
+      for (let j = i + 1; j < labels.length; j++) {
+        if (overlaps(labels[i], labels[j])) {
+          // empuja la de menor Y hacia arriba y la otra hacia abajo
+          if (labels[i].y <= labels[j].y) {
+            labels[i].y -= STEP / 2;
+            labels[j].y += STEP / 2;
+          } else {
+            labels[i].y += STEP / 2;
+            labels[j].y -= STEP / 2;
+          }
+          moved = true;
+        }
+      }
+    }
+    if (!moved) break;
+  }
 }
 
 export default function FishboneResults({
@@ -138,11 +200,10 @@ export default function FishboneResults({
       const segs: Seg[] = [];
       const W = 1150;
       const H = 660;
-      const headX = W - 230; // flecha pequena; texto del effect a su derecha
+      const headX = W - 230;
       const headY = H / 2;
       const spineStartX = 60;
 
-      // Punto 2: todas las espinas principales con la MISMA longitud (la mayor).
       const spines = result.spines;
       const mainLen = spines.reduce(
         (max, s) => Math.max(max, MAIN_BASE + s.causes.length * MAIN_PER_CAUSE),
@@ -157,22 +218,17 @@ export default function FishboneResults({
         layoutNode(spine, ax, headY, up, 0, mainLen, segs);
       });
 
+      // Des-solapa TODAS las etiquetas de causas juntas (global).
+      const allLabels = segs.flatMap((s) => s.causeLabels);
+      deOverlap(allLabels);
+
       const effectLines = wrapText(result.effect, 22);
 
-      return {
-        segs,
-        width: W,
-        height: H,
-        headX,
-        headY,
-        spineStartX,
-        effectLines,
-      };
+      return { segs, width: W, height: H, headX, headY, spineStartX, effectLines };
     }, [result]);
 
   return (
     <div className="w-full overflow-auto">
-      {/* Punto: Title arriba del diagrama */}
       <h2
         className="mb-2 text-center text-lg font-semibold"
         style={{ color: TEXT_COLOR }}
@@ -196,7 +252,7 @@ export default function FishboneResults({
           strokeWidth={3}
         />
 
-        {/* Punto 3: flecha PEQUENA + texto multilinea a su derecha */}
+        {/* Cabeza: flecha pequena + effect multilinea a la derecha */}
         <polygon
           points={`${headX},${headY - 22} ${headX + 40},${headY} ${headX},${headY + 22}`}
           fill={BRAND}
@@ -228,7 +284,6 @@ export default function FishboneResults({
               strokeWidth={s.depth === 0 ? 2.5 : 1.5}
             />
 
-            {/* Etiqueta de categoria (solo espinas principales) */}
             {s.label && (
               <text
                 x={s.labelX}
@@ -242,34 +297,33 @@ export default function FishboneResults({
               </text>
             )}
 
-            {/* Causas */}
-            {s.causeLabels.map((cl, ci) =>
-              s.horizontal ? (
-                // Punto 4: en subespinas, texto a -45 ENCIMA de la linea horizontal
+            {s.causeLabels.map((cl, ci) => (
+              <g key={ci}>
+                {/* Leader: solo si la etiqueta fue desplazada */}
+                {(Math.abs(cl.x - cl.ax) > 1 || Math.abs(cl.y - (cl.ay)) > 6) && (
+                  <line
+                    x1={cl.ax}
+                    y1={cl.ay}
+                    x2={cl.x}
+                    y2={cl.y - LABEL_H / 2}
+                    stroke="#9ca3af"
+                    strokeWidth={0.5}
+                  />
+                )}
                 <text
-                  key={ci}
                   x={cl.x}
-                  y={cl.y - 4}
+                  y={cl.y}
                   fontSize={10}
                   fill={TEXT_COLOR}
-                  textAnchor="start"
-                  transform={`rotate(-45 ${cl.x} ${cl.y - 4})`}
+                  textAnchor={cl.anchor}
+                  transform={
+                    cl.rotate ? `rotate(${cl.rotate} ${cl.x} ${cl.y})` : undefined
+                  }
                 >
                   {cl.text}
                 </text>
-              ) : (
-                // En espinas diagonales, texto junto a la linea
-                <text
-                  key={ci}
-                  x={cl.x + 6}
-                  y={cl.y + (s.up ? -4 : 12)}
-                  fontSize={10}
-                  fill={TEXT_COLOR}
-                >
-                  {cl.text}
-                </text>
-              )
-            )}
+              </g>
+            ))}
           </g>
         ))}
       </svg>
