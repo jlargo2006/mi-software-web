@@ -136,3 +136,18 @@ export default function FishboneControls({
                 </td>
               </tr>
             );
+            })}
+        </tbody>
+      </table>
+
+      <button
+        onClick={onRun}
+        className="mt-4 rounded px-4 py-2 text-sm font-medium text-white"
+        style={{ backgroundColor: BRAND }}
+      >
+        Run
+      </button>
+    </div>
+  );
+}
+
