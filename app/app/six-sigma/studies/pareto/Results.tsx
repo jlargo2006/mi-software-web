@@ -62,7 +62,7 @@ export default function ParetoResults({
 
   const countTicks = 5;
   const cumPoints = bars
-    .map((b, i) => `${xCenter(i)},${yPct(b.cumPercent)}`)
+    .map((b, i) => `${xCenter(i)},${yCount((b.cumPercent / 100) * total)}`)
     .join(" ");
 
   return (
@@ -97,8 +97,8 @@ export default function ParetoResults({
         {/* Eje Y derecho (Percent) */}
         <line x1={W - marginRight} y1={marginTop} x2={W - marginRight} y2={marginTop + plotH} stroke={AXIS} />
         {Array.from({ length: countTicks + 1 }, (_, k) => {
-          const p = (100 / countTicks) * k;
-          const y = yPct(p);
+          const p = (100 / countTicks) * k;          // 0,20,40,60,80,100
+          const y = yCount((p / 100) * total);        // altura del conteo equivalente
           return (
             <g key={`r${k}`}>
               <line x1={W - marginRight} y1={y} x2={W - marginRight + 4} y2={y} stroke={AXIS} />
@@ -142,7 +142,13 @@ export default function ParetoResults({
         {/* Linea acumulada + puntos */}
         <polyline points={cumPoints} fill="none" stroke={LINE_COLOR} strokeWidth={2} />
         {bars.map((b, i) => (
-          <circle key={`pt${i}`} cx={xCenter(i)} cy={yPct(b.cumPercent)} r={3.5} fill={LINE_COLOR} />
+          <circle
+            key={`pt${i}`}
+            cx={xCenter(i)}
+            cy={yCount((b.cumPercent / 100) * total)}
+            r={3.5}
+            fill={LINE_COLOR}
+          />
         ))}
 
         {/* Eje X base */}
