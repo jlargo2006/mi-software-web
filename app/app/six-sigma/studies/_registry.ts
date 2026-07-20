@@ -1,9 +1,11 @@
 // studies/_registry.ts
 import type { ArtifactDefinition } from "./types";
 import { fishbone } from "./fishbone";
+import { pareto } from "./pareto";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
+  pareto,
   // ...aqui iran capability, descriptive, anova, doe, sipoc, etc.
 ];
 
