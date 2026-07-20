@@ -5,10 +5,12 @@ export const FISHBONE_ROWS = 15;
 export interface FishboneRow {
   colName: string | null;   // columna "Causes" (su header = label si es principal)
   hangsFrom: number | null; // null = espina principal; 1..N = cuelga de esa fila (branch anterior)
+  fromCause: string | null; // NEW: si es subespina, de que celda/causa del padre cuelga
 }
 
 export interface FishboneParams {
-  effect: string;           // titulo del diagrama (la "cabeza del pez")
+  title: string;            // NEW: titulo mostrado ARRIBA del diagrama
+  effect: string;           // texto de la CABEZA del pez (el defecto)
   rows: FishboneRow[];      // FISHBONE_ROWS filas
 }
 
@@ -17,18 +19,22 @@ export interface FishboneNode {
   branch: number;           // numero de fila 1..N (referencia)
   label: string | null;     // header de la columna si es espina principal; null si subespina
   causes: string[];         // valores no vacios de la columna
+  attachTo: string | null;  // NEW: causa del padre de la que cuelga (null en principales)
   children: FishboneNode[]; // subespinas que cuelgan de este nodo
 }
 
 export interface FishboneResult {
+  title: string;            // NEW
   effect: string;
   spines: FishboneNode[];   // espinas principales (hangsFrom === null)
 }
 
 export const FISHBONE_DEFAULT: FishboneParams = {
-  effect: "Cause-and-Effect",
+  title: "Cause-and-Effect Diagram",
+  effect: "Effect",
   rows: Array.from({ length: FISHBONE_ROWS }, () => ({
     colName: null,
     hangsFrom: null,
+    fromCause: null,
   })),
 };
