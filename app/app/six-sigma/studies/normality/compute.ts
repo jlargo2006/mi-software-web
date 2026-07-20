@@ -2,12 +2,21 @@
 import type { ColumnSnapshot } from "../types";
 import type { Cell } from "../../lib/types";
 import type { NormalityParams, NormalityResult } from "./types";
-// Genéricos: se quedan en lib/stats
 import { mean, std, normCDF, normInv } from "../../lib/stats";
 
-// Convierte celdas a números válidos (frontera Cell[] -> number[])
-const toNumeric = (values: Cell[]): number[] =>
-  values.map(Number).filter((n) => !Number.isNaN(n));
+// Convierte celdas a numeros validos. CLAVE: descartar vacios/blancos,
+// porque Number("") === 0 inyectaria ceros y corrompe media/desv.
+function toNumeric(values: Cell[]): number[] {
+  const out: number[] = [];
+  for (const v of values) {
+    if (v === null || v === undefined) continue;
+    const s = String(v).trim();
+    if (s === "") continue;
+    const n = Number(s.replace(",", "."));
+    if (Number.isFinite(n)) out.push(n);
+  }
+  return out;
+}
 
 // --- Específico de normalidad: p-valor a partir del AD ajustado ---
 function adPValue(ad: number): number {
