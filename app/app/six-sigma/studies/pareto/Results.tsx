@@ -82,7 +82,6 @@ export default function ParetoResults({
             </g>
           );
         })}
-
         <text
           x={16}
           y={marginTop + plotH / 2}
