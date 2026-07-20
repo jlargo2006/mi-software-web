@@ -4,7 +4,7 @@
 import React, { useState } from "react";
 import {
   STAT_DEFS, StatKey, DEFAULT_KEYS, ALL_KEYS, GROUP_TITLES,
-} from "../lib/descriptiveStats";
+} from "../../lib/descriptiveStats";
 
 const BRAND = "#00674d";
 const BRAND_DARK = "#00513d";
