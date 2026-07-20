@@ -68,11 +68,11 @@ export default function ParetoResults({
   return (
     <div className="w-full overflow-auto">
       <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="mx-auto block">
-        {/* Eje Y izquierdo (conteos) - alineado con el % del eje derecho */}
+        {/* Eje Y izquierdo (conteos) */}
+        <line x1={marginLeft} y1={marginTop} x2={marginLeft} y2={marginTop + plotH} stroke={AXIS} />
         {Array.from({ length: countTicks + 1 }, (_, k) => {
-          const p = (100 / countTicks) * k;       // 0,20,40,60,80,100
-          const v = (total * p) / 100;            // conteo correspondiente
-          const y = yPct(p);                       // misma Y que el eje derecho
+          const v = (yMax / countTicks) * k;
+          const y = yCount(v);
           return (
             <g key={`l${k}`}>
               <line x1={marginLeft - 4} y1={y} x2={marginLeft} y2={y} stroke={AXIS} />
