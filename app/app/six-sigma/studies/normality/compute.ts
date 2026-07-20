@@ -1,24 +1,10 @@
 // studies/normality/compute.ts
 import type { ColumnSnapshot } from "../types";
-import type { Cell } from "../../lib/types";
 import type { NormalityParams, NormalityResult } from "./types";
-import { mean, std, normCDF, normInv } from "../../lib/stats";
+// Genericos: se quedan en lib/stats
+import { mean, std, normCDF, normInv, toNumericCells } from "../../lib/stats";
 
-// Convierte celdas a numeros validos. CLAVE: descartar vacios/blancos,
-// porque Number("") === 0 inyectaria ceros y corrompe media/desv.
-function toNumeric(values: Cell[]): number[] {
-  const out: number[] = [];
-  for (const v of values) {
-    if (v === null || v === undefined) continue;
-    const s = String(v).trim();
-    if (s === "") continue;
-    const n = Number(s.replace(",", "."));
-    if (Number.isFinite(n)) out.push(n);
-  }
-  return out;
-}
-
-// --- Específico de normalidad: p-valor a partir del AD ajustado ---
+// --- Especifico de normalidad: p-valor a partir del AD ajustado ---
 function adPValue(ad: number): number {
   if (ad >= 0.6) {
     return Math.exp(1.2937 - 5.709 * ad + 0.0186 * ad * ad);
@@ -37,14 +23,14 @@ export function computeNormality(
 ): NormalityResult {
   const col = params.col ? data[params.col] : undefined;
   const colName = col?.name ?? "Column";
-  const raw = toNumeric(col?.values ?? []);
+  const raw = toNumericCells(col?.values ?? []);
 
   const sorted = [...raw].sort((a, b) => a - b);
   const n = sorted.length;
   const m = mean(sorted);
   const s = std(sorted);
 
-  // --- Anderson-Darling (movido desde lib/stats.normalityTest) ---
+  // --- Anderson-Darling ---
   let adStatistic = 0;
   let pValue = 1;
   if (n >= 3 && s > 0) {
@@ -105,4 +91,3 @@ export function computeNormality(
     xRange,
   };
 }
-
