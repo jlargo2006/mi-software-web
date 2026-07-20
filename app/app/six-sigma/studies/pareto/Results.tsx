@@ -43,7 +43,7 @@ export default function ParetoResults({
     const bandW = plotW / n;
     const barW = bandW * 0.7;
 
-    const yMax = total > 0 ? total : 1;
+    const yMax = niceMax(total > 0 ? total : 1);
 
     const xCenter = (i: number) => marginLeft + bandW * i + bandW / 2;
     const yCount = (v: number) => marginTop + plotH - (v / yMax) * plotH;
