@@ -10,13 +10,21 @@ const LINE_COLOR = "#b45309";
 const AXIS = "#374151";
 const TEXT = "#111827";
 
-// "nice" upper bound para el eje de conteos.
-function niceMax(v: number): number {
-  if (v <= 0) return 1;
-  const pow = Math.pow(10, Math.floor(Math.log10(v)));
-  const n = v / pow;
-  const step = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
-  return step * pow;
+// Escala "nice": paso redondo y tope = primer multiplo del paso >= max.
+function niceScale(max: number, targetTicks = 7) {
+  if (max <= 0) return { niceMax: 1, step: 1, ticks: 1 };
+  const rawStep = max / targetTicks;
+  const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const norm = rawStep / mag;
+  let niceStep: number;
+  if (norm <= 1) niceStep = 1;
+  else if (norm <= 2) niceStep = 2;
+  else if (norm <= 2.5) niceStep = 2.5;
+  else if (norm <= 5) niceStep = 5;
+  else niceStep = 10;
+  const step = niceStep * mag;
+  const niceMax = Math.ceil(max / step) * step;
+  return { niceMax, step, ticks: Math.round(niceMax / step) };
 }
 
 export default function ParetoResults({
@@ -43,7 +51,8 @@ export default function ParetoResults({
     const bandW = plotW / n;
     const barW = bandW * 0.7;
 
-    const yMax = niceMax(total > 0 ? total : 1);
+    // Eje izquierdo: paso redondo y tope >= total.
+    const { niceMax: yMax, ticks: countTicks } = niceScale(total > 0 ? total : 1);
 
     const xCenter = (i: number) => marginLeft + bandW * i + bandW / 2;
     const yCount = (v: number) => marginTop + plotH - (v / yMax) * plotH;
@@ -51,16 +60,15 @@ export default function ParetoResults({
 
     return {
       W, H, marginTop, marginBottom, marginLeft, marginRight,
-      plotW, plotH, bandW, barW, yMax, xCenter, yCount, yPct,
+      plotW, plotH, bandW, barW, yMax, countTicks, xCenter, yCount, yPct,
     };
   }, [bars, total]);
 
   const {
     W, H, marginTop, marginLeft, marginRight,
-    plotH, barW, yMax, xCenter, yCount, yPct,
+    plotH, barW, yMax, countTicks, xCenter, yCount, yPct,
   } = layout;
 
-  const countTicks = 5;
   const cumPoints = bars
     .map((b, i) => `${xCenter(i)},${yCount((b.cumPercent / 100) * total)}`)
     .join(" ");
