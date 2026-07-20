@@ -3,11 +3,13 @@ import type { ArtifactDefinition } from "./types";
 import { fishbone } from "./fishbone";
 import { pareto } from "./pareto";
 import { normality } from "./normality";
+import { capability } from "./capability";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
   pareto,
   normality,
+  capability,
   // ...aqui iran capability, descriptive, anova, doe, sipoc, etc.
 ];
 
