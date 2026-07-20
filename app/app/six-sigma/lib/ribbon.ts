@@ -11,8 +11,16 @@
 //  tool:null        → no real analysis wired up yet
 // ============================================================================
 
-// All tool ids that are actually implemented today
-export type ToolId = "capability" | "normality" | "descriptive" | "causeEffect" | null;
+// All tool ids that are actually implemented today.
+// Los literales documentan el motor viejo; (string & {}) admite ids del REGISTRY
+// (p.ej. "fishbone") sin colapsar los literales a `string`.
+export type ToolId =
+  | "capability"
+  | "normality"
+  | "descriptive"
+  | (string & {})
+  | null;
+
 
 export interface RibbonTool {
   id: string;              // unique id
@@ -51,7 +59,8 @@ export const PHASES: RibbonPhase[] = [
     name: "Measure",
     tools: [
       // p.93  | mpj: Measure Data Sets.mpj | mtw: Surfaceflaws.mtw
-      { id: "causeEffect", label: "Cause and Effect (Fishbone)", tool: "causeEffect", enabled: true },
+      { id: "causeEffect", label: "Cause and Effect (Fishbone)", tool: "fishbone", enabled: true },
+
 
       // p.144 | mpj: Measure Data Sets.mpj | mtw: basicstatistics.mtw
       { id: "descriptive", label: "Descriptive Statistics", tool: "descriptive", enabled: true },
