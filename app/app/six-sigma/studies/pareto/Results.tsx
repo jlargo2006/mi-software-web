@@ -43,7 +43,7 @@ export default function ParetoResults({
     const bandW = plotW / n;
     const barW = bandW * 0.7;
 
-    const yMax = niceMax(total > 0 ? Math.max(...bars.map((b) => b.count)) : 1);
+    const yMax = total > 0 ? total : 1;
 
     const xCenter = (i: number) => marginLeft + bandW * i + bandW / 2;
     const yCount = (v: number) => marginTop + plotH - (v / yMax) * plotH;
@@ -68,11 +68,11 @@ export default function ParetoResults({
   return (
     <div className="w-full overflow-auto">
       <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="mx-auto block">
-        {/* Eje Y izquierdo (conteos) */}
-        <line x1={marginLeft} y1={marginTop} x2={marginLeft} y2={marginTop + plotH} stroke={AXIS} />
+        {/* Eje Y izquierdo (conteos) - alineado con el % del eje derecho */}
         {Array.from({ length: countTicks + 1 }, (_, k) => {
-          const v = (yMax / countTicks) * k;
-          const y = yCount(v);
+          const p = (100 / countTicks) * k;       // 0,20,40,60,80,100
+          const v = (total * p) / 100;            // conteo correspondiente
+          const y = yPct(p);                       // misma Y que el eje derecho
           return (
             <g key={`l${k}`}>
               <line x1={marginLeft - 4} y1={y} x2={marginLeft} y2={y} stroke={AXIS} />
@@ -82,6 +82,7 @@ export default function ParetoResults({
             </g>
           );
         })}
+
         <text
           x={16}
           y={marginTop + plotH / 2}
