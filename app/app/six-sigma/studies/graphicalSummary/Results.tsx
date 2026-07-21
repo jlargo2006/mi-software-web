@@ -81,7 +81,6 @@ export default function GraphicalSummaryResults({
       },
       line: { color: BRAND },
       fillcolor: "rgba(0,103,77,0.15)",
-      whiskerwidth: 0.5,
       name: "",
     },
   ];
