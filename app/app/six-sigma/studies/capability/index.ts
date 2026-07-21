@@ -10,7 +10,7 @@ export const capability: AnalysisDefinition<CapabilityParams, CapabilityResult> 
   id: "capability",
   label: "Capability Study (Cp / Cpk)",
   phase: "measure", // CONFIRMAR fase real en el ribbon viejo
-  kind: "measure",
+  kind: "analysis",
   defaultParams: CAPABILITY_DEFAULT,
   referencedColumns: (p) => [p.col].filter((n): n is string => !!n),
   Controls: CapabilityControls,
