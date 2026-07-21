@@ -10,12 +10,10 @@ export default function ParetoControls({
   params,
   onChange,
   columns,
-  onRun,
 }: {
   params: ParetoParams;
   onChange: (p: ParetoParams) => void;
   columns: ColumnInfo[];
-  onRun: () => void;
 }) {
   const set = (patch: Partial<ParetoParams>) => onChange({ ...params, ...patch });
 
@@ -83,14 +81,6 @@ export default function ParetoControls({
           />
         </label>
       </div>
-
-      <button
-        onClick={onRun}
-        className="mt-1 rounded px-4 py-2 text-sm font-medium text-white"
-        style={{ backgroundColor: BRAND }}
-      >
-        Run
-      </button>
     </div>
   );
 }
