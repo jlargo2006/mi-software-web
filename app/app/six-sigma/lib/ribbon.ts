@@ -63,6 +63,11 @@ export const PHASES: RibbonPhase[] = [
       // p.144 | mpj: Measure Data Sets.mpj | mtw: basicstatistics.mtw
       { id: "descriptive", label: "Descriptive Statistics", tool: "descriptive", enabled: true },
 
+      // p.257 / 260 / 261 / 262 | mtw: Distrb1.MTW
+      // Consolidated: Histogram-with-Fit + Skewness + Kurtosis (platykurtic/leptocurtic)
+      // are all OUTPUTS of a single Graphical Summary study.
+      { id: "graphicalSummary", label: "Graphical Summary", tool: null, enabled: false },
+      
       // p.153 | mpj: Measure Data Sets.mpj | mtw: Descriptive Statistics.MTW
       { id: "normality", label: "Normality Test", tool: "normality", enabled: true },
 
@@ -115,11 +120,6 @@ export const PHASES: RibbonPhase[] = [
     tools: [
       // p.247 / p.249 | mpj: Analyze Data Sets.mpj | mtw: MVInjectionMold.mtw / CallCenter.mtw
       { id: "multiVari", label: "Multi-Vari Chart", tool: null, enabled: false },
-
-      // p.257 / 260 / 261 / 262 | mtw: Distrb1.MTW
-      // Consolidated: Histogram-with-Fit + Skewness + Kurtosis (platykurtic/leptocurtic)
-      // are all OUTPUTS of a single Graphical Summary study.
-      { id: "graphicalSummary", label: "Graphical Summary", tool: null, enabled: false },
 
       // p.272 | mtw: Die Example
       { id: "clt", label: "Sampling Distributions / CLT", tool: null, enabled: false },
