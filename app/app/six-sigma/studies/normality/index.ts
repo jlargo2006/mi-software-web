@@ -8,7 +8,7 @@ import NormalityResults from "./Results";
 
 export const normality: AnalysisDefinition<NormalityParams, NormalityResult> = {
   id: "normality",
-  label: "Normality Test",
+  label: "Normality Test (Anderson-Darling)",
   phase: "measure", // ⚠️ CONFIRMAR: ¿qué fase tenía en el ribbon viejo?
   kind: "analysis",
   defaultParams: NORMALITY_DEFAULT,
