@@ -72,10 +72,16 @@ export default function GraphicalSummaryResults({
       type: "box",
       x: values,
       orientation: "h",
-      boxpoints: false,
-      marker: { color: BRAND },
+      boxpoints: "outliers",        // solo pinta los que caen fuera de los bigotes
+      marker: {
+        color: BRAND,
+        outliercolor: "#c0392b",
+        symbol: "asterisk-open",    // '*' estilo Minitab
+        size: 8,
+      },
       line: { color: BRAND },
       fillcolor: "rgba(0,103,77,0.15)",
+      whiskerwidth: 0.5,
       name: "",
     },
   ];
@@ -186,16 +192,20 @@ export default function GraphicalSummaryResults({
               {/* Histograma + curva normal */}
               <div
                 className="border border-gray-200 rounded"
-                style={{ width: "100%", aspectRatio: "4 / 3" }}
+                style={{ width: "100%", aspectRatio: "6 / 2" }}
               >
                 <ResultChart
-                  data={histogram}
+                  data={boxplot}
                   layout={{
                     autosize: true,
-                    title: { text: `Summary Report for ${r.colName}` },
                     showlegend: false,
-                    margin: { l: 40, r: 10, t: 40, b: 30 },
-                    bargap: 0.02,
+                    margin: { l: 40, r: 10, t: 10, b: 30 },
+                    xaxis: {
+                      rangemode: "normal",   // 👈 NO forzar el 0
+                      range: [r.min, r.max], // 👈 alinea con los datos reales
+                      zeroline: false,
+                    },
+                    yaxis: { showticklabels: false, zeroline: false },
                   }}
                 />
               </div>
