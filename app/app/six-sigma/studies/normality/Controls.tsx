@@ -4,8 +4,6 @@ import React from "react";
 import type { ColumnInfo } from "../../lib/columns";
 import type { NormalityParams } from "./types";
 
-const BRAND = "#00674d";
-
 export default function NormalityControls({
   params,
   onChange,
