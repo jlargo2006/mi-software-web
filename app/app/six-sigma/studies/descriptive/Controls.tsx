@@ -6,8 +6,6 @@ import type { DescriptiveParams } from "./types";
 import type { StatKey } from "../../lib/descriptiveStats";
 import DescriptiveStatsDialog from "./StatsDialog";
 
-const BRAND = "#00674d";
-
 export default function DescriptiveControls({
   params,
   onChange,
