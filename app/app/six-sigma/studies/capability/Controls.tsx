@@ -10,12 +10,10 @@ export default function CapabilityControls({
   params,
   onChange,
   columns,
-  onRun,
 }: {
   params: CapabilityParams;
   onChange: (p: CapabilityParams) => void;
   columns: ColumnInfo[];
-  onRun: () => void;
 }) {
   const set = (patch: Partial<CapabilityParams>) =>
     onChange({ ...params, ...patch });
@@ -82,14 +80,6 @@ export default function CapabilityControls({
           />
         </label>
       </div>
-
-      <button
-        onClick={onRun}
-        className="mt-1 rounded px-4 py-2 text-sm font-medium text-white"
-        style={{ backgroundColor: BRAND }}
-      >
-        Run
-      </button>
     </div>
   );
 }
