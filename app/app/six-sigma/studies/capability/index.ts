@@ -9,8 +9,8 @@ import CapabilityResults from "./Results";
 export const capability: AnalysisDefinition<CapabilityParams, CapabilityResult> = {
   id: "capability",
   label: "Capability Study (Cp / Cpk)",
-  phase: "analyze", // ⚠️ CONFIRMAR fase real en el ribbon viejo
-  kind: "analysis",
+  phase: "measure", // CONFIRMAR fase real en el ribbon viejo
+  kind: "measure",
   defaultParams: CAPABILITY_DEFAULT,
   referencedColumns: (p) => [p.col].filter((n): n is string => !!n),
   Controls: CapabilityControls,
