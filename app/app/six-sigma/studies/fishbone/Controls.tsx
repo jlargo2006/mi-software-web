@@ -11,12 +11,10 @@ export default function FishboneControls({
   params,
   onChange,
   columns,
-  onRun,
 }: {
   params: FishboneParams;
   onChange: (p: FishboneParams) => void;
   columns: ColumnInfo[];
-  onRun: () => void;
 }) {
   const setRow = (idx: number, patch: Partial<FishboneParams["rows"][number]>) => {
     const rows = params.rows.map((r, i) => (i === idx ? { ...r, ...patch } : r));
@@ -139,14 +137,6 @@ export default function FishboneControls({
             })}
         </tbody>
       </table>
-
-      <button
-        onClick={onRun}
-        className="mt-4 rounded px-4 py-2 text-sm font-medium text-white"
-        style={{ backgroundColor: BRAND }}
-      >
-        Run
-      </button>
     </div>
   );
 }
