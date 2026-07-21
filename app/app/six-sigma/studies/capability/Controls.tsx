@@ -2,6 +2,7 @@
 "use client";
 import React from "react";
 import type { ColumnInfo } from "../../lib/columns";
+import ColumnSelect from "../../components/ColumnSelect";
 import type { CapabilityParams } from "./types";
 
 export default function CapabilityControls({
@@ -22,21 +23,13 @@ export default function CapabilityControls({
   return (
     <div className="w-full">
       <div className="mb-3 flex flex-wrap gap-4">
-        <label className="flex flex-col text-xs text-gray-600">
-          Data column
-          <select
-            value={params.col ?? ""}
-            onChange={(e) => set({ col: e.target.value || null })}
-            className="mt-1 min-w-[160px] rounded border border-gray-300 px-2 py-1 text-sm"
-          >
-            <option value="">-- select --</option>
-            {columns.map((c) => (
-              <option key={c.index} value={c.name}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <ColumnSelect
+          label="Data column"
+          value={params.col}
+          onChange={(v) => set({ col: v })}
+          columns={columns}
+          minWidth={160}
+        />
 
         <label className="flex flex-col text-xs text-gray-600">
           LSL
