@@ -298,6 +298,7 @@ export default function SixSigmaAnalyzer({
                 {activeAnalysisDef && (
                   /* Motor genérico: cualquier estudio del REGISTRY */
                   <AnalysisRunner
+                    key={`${activeTool}-${viewingId ?? "edit"}`}
                     def={activeAnalysisDef}
                     sheet={wb.data[wb.activeSheet] ?? EMPTY_SHEET}
                     mode={viewingId ? "view" : "edit"}
