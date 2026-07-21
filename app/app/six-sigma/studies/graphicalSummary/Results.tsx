@@ -181,60 +181,62 @@ export default function GraphicalSummaryResults({
         template="chart-text"
         right={<StatBlock sections={sections} />}
         center={
-          <div className="flex flex-col gap-4">
-            {/* Histograma + curva normal */}
-            <div
-              className="border border-gray-200 rounded"
-              style={{ width: "100%", aspectRatio: "4 / 3" }}
-            >
-              <ResultChart
-                data={histogram}
-                layout={{
-                  autosize: true,
-                  title: { text: `Summary Report for ${r.colName}` },
-                  showlegend: false,
-                  margin: { l: 40, r: 10, t: 40, b: 30 },
-                  bargap: 0.02,
-                }}
-              />
-            </div>
+          <div className="flex justify-center">
+            <div className="flex flex-col gap-4" style={{ width: "50%" }}>
+              {/* Histograma + curva normal */}
+              <div
+                className="border border-gray-200 rounded"
+                style={{ width: "100%", aspectRatio: "4 / 3" }}
+              >
+                <ResultChart
+                  data={histogram}
+                  layout={{
+                    autosize: true,
+                    title: { text: `Summary Report for ${r.colName}` },
+                    showlegend: false,
+                    margin: { l: 40, r: 10, t: 40, b: 30 },
+                    bargap: 0.02,
+                  }}
+                />
+              </div>
 
-            {/* Boxplot horizontal */}
-            <div
-              className="border border-gray-200 rounded"
-              style={{ width: "100%", aspectRatio: "6 / 2" }}
-            >
-              <ResultChart
-                data={boxplot}
-                layout={{
-                  autosize: true,
-                  showlegend: false,
-                  margin: { l: 40, r: 10, t: 10, b: 30 },
-                  yaxis: { showticklabels: false },
-                }}
-              />
-            </div>
+              {/* Boxplot horizontal */}
+              <div
+                className="border border-gray-200 rounded"
+                style={{ width: "100%", aspectRatio: "6 / 2" }}
+              >
+                <ResultChart
+                  data={boxplot}
+                  layout={{
+                    autosize: true,
+                    showlegend: false,
+                    margin: { l: 40, r: 10, t: 10, b: 30 },
+                    yaxis: { showticklabels: false },
+                  }}
+                />
+              </div>
 
-            {/* Intervalos de confianza (media y mediana) */}
-            <div
-              className="border border-gray-200 rounded"
-              style={{ width: "100%", aspectRatio: "6 / 2" }}
-            >
-              <ResultChart
-                data={ciData}
-                layout={{
-                  autosize: true,
-                  title: { text: `${fmt(r.confidence, 1)}% Confidence Intervals` },
-                  showlegend: false,
-                  margin: { l: 60, r: 10, t: 30, b: 30 },
-                  yaxis: {
-                    tickmode: "array",
-                    tickvals: [0, 1],
-                    ticktext: ["Median", "Mean"],
-                    range: [-0.5, 1.5],
-                  },
-                }}
-              />
+              {/* Intervalos de confianza */}
+              <div
+                className="border border-gray-200 rounded"
+                style={{ width: "100%", aspectRatio: "6 / 2" }}
+              >
+                <ResultChart
+                  data={ciData}
+                  layout={{
+                    autosize: true,
+                    title: { text: `${fmt(r.confidence, 1)}% Confidence Intervals` },
+                    showlegend: false,
+                    margin: { l: 60, r: 10, t: 30, b: 30 },
+                    yaxis: {
+                      tickmode: "array",
+                      tickvals: [0, 1],
+                      ticktext: ["Median", "Mean"],
+                      range: [-0.5, 1.5],
+                    },
+                  }}
+                />
+              </div>
             </div>
           </div>
         }
