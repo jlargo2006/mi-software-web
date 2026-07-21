@@ -1,6 +1,6 @@
 // components/AnalysisRunner.tsx
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import type { SheetData, Cell } from "../lib/types";
 import { getColumns } from "../lib/columns";
 import StudyControls from "./StudyControls";
@@ -33,13 +33,7 @@ export default function AnalysisRunner<P, R>({
   const columns = useMemo(() => getColumns(sheet), [sheet]);
   const [ran, setRan] = useState(false);
   const [frozen, setFrozen] = useState<ColumnSnapshot | null>(null);
-
-  // Reinicia el estado del Run al cambiar de estudio o de modo (edit/view).
-  useEffect(() => {
-    setRan(false);
-    setFrozen(null);
-  }, [def.id, mode]);  
-  
+ 
   const viewing = mode === "view";
 
   // Congela las columnas referenciadas por la config actual.
