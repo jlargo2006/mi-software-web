@@ -58,13 +58,13 @@ export const PHASES: RibbonPhase[] = [
     name: "Measure",
     tools: [
       // p.93  | mpj: Measure Data Sets.mpj | mtw: Surfaceflaws.mtw
-      { id: "causeEffect", label: "Cause and Effect (Fishbone)", tool: "fishbone", enabled: true },
+      { id: "causeEffect", label: "Cause and Effect", tool: "fishbone", enabled: true },
 
       // p.144 | mpj: Measure Data Sets.mpj | mtw: basicstatistics.mtw
       { id: "descriptive", label: "Descriptive Statistics", tool: "descriptive", enabled: true },
 
       // p.153 | mpj: Measure Data Sets.mpj | mtw: Descriptive Statistics.MTW
-      { id: "normality", label: "Normality Test (Anderson-Darling)", tool: "normality", enabled: true },
+      { id: "normality", label: "Normality Test", tool: "normality", enabled: true },
 
       // ---- Capability Analysis (dropdown) --------------------------------
       {
