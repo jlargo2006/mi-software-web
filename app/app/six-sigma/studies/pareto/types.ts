@@ -25,6 +25,6 @@ export interface ParetoResult {
 export const PARETO_DEFAULT: ParetoParams = {
   categoryCol: null,
   countCol: null,
-  combine: "none",
+  combine: "Combine",
   combinePercent: 95,
 };
