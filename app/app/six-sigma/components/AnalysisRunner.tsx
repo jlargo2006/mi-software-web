@@ -34,6 +34,12 @@ export default function AnalysisRunner<P, R>({
   const [ran, setRan] = useState(false);
   const [frozen, setFrozen] = useState<ColumnSnapshot | null>(null);
 
+  // Reinicia el estado del Run al cambiar de estudio o de modo (edit/view).
+  useEffect(() => {
+    setRan(false);
+    setFrozen(null);
+  }, [def.id, mode]);  
+  
   const viewing = mode === "view";
 
   // Congela las columnas referenciadas por la config actual.
