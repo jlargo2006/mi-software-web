@@ -66,7 +66,7 @@ export const PHASES: RibbonPhase[] = [
       // p.257 / 260 / 261 / 262 | mtw: Distrb1.MTW
       // Consolidated: Histogram-with-Fit + Skewness + Kurtosis (platykurtic/leptocurtic)
       // are all OUTPUTS of a single Graphical Summary study.
-      { id: "graphicalSummary", label: "Graphical Summary", tool: null, enabled: false },
+      { id: "graphicalSummary", label: "Graphical Summary", tool: "graphicalSummary", enabled: true },
       
       // p.153 | mpj: Measure Data Sets.mpj | mtw: Descriptive Statistics.MTW
       { id: "normality", label: "Normality Test", tool: "normality", enabled: true },
