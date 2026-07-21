@@ -188,7 +188,24 @@ export default function GraphicalSummaryResults({
         center={
           <div className="flex justify-center">
             <div className="flex flex-col gap-4" style={{ width: "50%" }}>
-              {/* Histograma + curva normal */}
+            {/* Histograma + curva normal */}
+            <div
+              className="border border-gray-200 rounded"
+              style={{ width: "100%", aspectRatio: "4 / 3" }}
+            >
+              <ResultChart
+                data={histogram}
+                layout={{
+                  autosize: true,
+                  title: { text: `Summary Report for ${r.colName}` },
+                  showlegend: false,
+                  margin: { l: 40, r: 10, t: 40, b: 30 },
+                  bargap: 0.02,
+                }}
+              />
+            </div>
+
+              {/* Boxplot horizontal */}
               <div
                 className="border border-gray-200 rounded"
                 style={{ width: "100%", aspectRatio: "6 / 2" }}
@@ -205,22 +222,6 @@ export default function GraphicalSummaryResults({
                       zeroline: false,
                     },
                     yaxis: { showticklabels: false, zeroline: false },
-                  }}
-                />
-              </div>
-
-              {/* Boxplot horizontal */}
-              <div
-                className="border border-gray-200 rounded"
-                style={{ width: "100%", aspectRatio: "6 / 2" }}
-              >
-                <ResultChart
-                  data={boxplot}
-                  layout={{
-                    autosize: true,
-                    showlegend: false,
-                    margin: { l: 40, r: 10, t: 10, b: 30 },
-                    yaxis: { showticklabels: false },
                   }}
                 />
               </div>
