@@ -12,12 +12,10 @@ export default function DescriptiveControls({
   params,
   onChange,
   columns,
-  onRun,
 }: {
   params: DescriptiveParams;
   onChange: (p: DescriptiveParams) => void;
   columns: ColumnInfo[];
-  onRun: () => void;
 }) {
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -59,14 +57,6 @@ export default function DescriptiveControls({
           className="rounded border border-gray-300 px-3 py-2 text-sm"
         >
           Statistics…
-        </button>
-        <button
-          onClick={onRun}
-          className="rounded px-4 py-2 text-sm font-medium text-white"
-          style={{ backgroundColor: BRAND }}
-        >
-          Run
-        </button>
       </div>
 
       {dialogOpen && (
