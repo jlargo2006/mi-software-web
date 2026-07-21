@@ -14,6 +14,8 @@ const graphicalSummary: AnalysisDefinition<
   GraphicalSummaryResult
 > = {
   id: "graphicalSummary",
+  kind: "analysis",
+  phase: "measure",
   label: "Graphical Summary",
   defaultParams: GRAPHICAL_SUMMARY_DEFAULT,
   compute: computeGraphicalSummary,
