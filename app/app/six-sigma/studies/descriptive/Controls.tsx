@@ -6,6 +6,8 @@ import type { DescriptiveParams } from "./types";
 import type { StatKey } from "../../lib/descriptiveStats";
 import DescriptiveStatsDialog from "./StatsDialog";
 
+const BRAND = "#00674d";
+
 export default function DescriptiveControls({
   params,
   onChange,
@@ -20,7 +22,11 @@ export default function DescriptiveControls({
   const selected = new Set(params.selectedColNames);
   const toggleCol = (name: string) => {
     const next = new Set(selected);
-    next.has(name) ? next.delete(name) : next.add(name);
+    if (next.has(name)) {
+      next.delete(name);
+    } else {
+      next.add(name);
+    }
     onChange({ ...params, selectedColNames: [...next] });
   };
 
