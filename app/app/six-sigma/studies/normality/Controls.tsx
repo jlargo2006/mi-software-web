@@ -10,12 +10,10 @@ export default function NormalityControls({
   params,
   onChange,
   columns,
-  onRun,
 }: {
   params: NormalityParams;
   onChange: (p: NormalityParams) => void;
   columns: ColumnInfo[];
-  onRun: () => void;
 }) {
   const set = (patch: Partial<NormalityParams>) =>
     onChange({ ...params, ...patch });
@@ -39,14 +37,6 @@ export default function NormalityControls({
           </select>
         </label>
       </div>
-
-      <button
-        onClick={onRun}
-        className="mt-1 rounded px-4 py-2 text-sm font-medium text-white"
-        style={{ backgroundColor: BRAND }}
-      >
-        Run
-      </button>
     </div>
   );
 }
