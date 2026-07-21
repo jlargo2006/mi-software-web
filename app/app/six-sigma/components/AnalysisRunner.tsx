@@ -1,6 +1,6 @@
 // components/AnalysisRunner.tsx
 "use client";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import type { SheetData, Cell } from "../lib/types";
 import { getColumns } from "../lib/columns";
 import StudyControls from "./StudyControls";
