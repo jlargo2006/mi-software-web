@@ -32,7 +32,7 @@ export interface AnalysisDefinition<P = unknown, R = unknown> extends BaseArtifa
     params: P;
     onChange: (p: P) => void;
     columns: ColumnInfo[];
-    onRun: () => void;
+//    onRun: () => void;
   }>;
 
   // Calculo puro: snapshot congelado + params -> resultado.
