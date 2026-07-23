@@ -59,43 +59,45 @@ export default function DotplotResults({
         template="chart-text"
         center={
           <div className="flex flex-col items-center gap-3">
-            {r.panels.map((panel, i) => (
-              <div
-                key={`${panel.label}-${i}`}
-                className="border border-gray-200 rounded"
-                style={{ width: "75%", height: 140 }}
-              >
-                <ResultChart
-                  data={panelTraces(panel)}
-                  layout={{
-                    autosize: true,
-                    title:
-                      i === 0
-                        ? { text: r.title }
-                        : undefined,
-                    margin: { t: i === 0 ? 40 : 10, b: 30, l: 90, r: 20 },
-                    xaxis: {
-                      title:
-                        i === r.panels.length - 1
-                          ? { text: r.xTitle }
-                          : undefined,
-                      range: [r.xStart, r.xEnd],
-                      zeroline: false,
-                    },
-                    yaxis: {
-                      title: panel.label
-                        ? { text: panel.label }
-                        : undefined,
-                      showticklabels: false,
-                      zeroline: false,
-                      range: [0, Math.max(1, panel.maxStack) + 1],
-                    },
-                    showlegend: r.showLegend && i === 0,
-                    legend: { orientation: "v", x: 1.02, y: 1 },
-                  }}
-                />
-              </div>
-            ))}
+            {r.panels.map((panel, i) => {
+              // Altura dinámica: cada punto ~14px, con mínimo y margen para título/eje.
+              const PX_PER_DOT = 14;
+              const chrome = (i === 0 ? 40 : 10) + 30; // título + eje X
+              const plotH = Math.max(1, panel.maxStack) * PX_PER_DOT;
+              const panelH = Math.max(150, plotH + chrome);
+              return (
+                <div
+                  key={`${panel.label}-${i}`}
+                  className="border border-gray-200 rounded"
+                  style={{ width: "75%", height: panelH }}
+                >
+                  <ResultChart
+                    data={panelTraces(panel)}
+                    layout={{
+                      autosize: true,
+                      title: i === 0 ? { text: r.title } : undefined,
+                      margin: { t: i === 0 ? 40 : 10, b: 30, l: 90, r: 20 },
+                      xaxis: {
+                        title:
+                          i === r.panels.length - 1
+                            ? { text: r.xTitle }
+                            : undefined,
+                        range: [r.xStart, r.xEnd],
+                        zeroline: false,
+                      },
+                      yaxis: {
+                        title: panel.label ? { text: panel.label } : undefined,
+                        showticklabels: false,
+                        zeroline: false,
+                        range: [0, Math.max(1, panel.maxStack) + 1],
+                      },
+                      showlegend: r.showLegend && i === 0,
+                      legend: { orientation: "v", x: 1.02, y: 1 },
+                    }}
+                  />
+                </div>
+              );
+            })}
           </div>
         }
       />
