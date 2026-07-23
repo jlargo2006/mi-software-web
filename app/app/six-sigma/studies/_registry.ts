@@ -7,6 +7,7 @@ import { capability } from "./capability";
 import { descriptive } from "./descriptive";
 import graphicalSummary from "./graphicalSummary";
 import histogram from "./histogram";
+import dotplot from "./dotplot";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
@@ -16,6 +17,7 @@ const ALL: ArtifactDefinition[] = [
   descriptive,
   graphicalSummary,
   histogram,
+  dotplot,
   // ...aqui iran anova, doe, sipoc, etc.
 ];
 
