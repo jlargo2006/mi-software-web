@@ -6,7 +6,7 @@ import { normality } from "./normality";
 import { capability } from "./capability";
 import { descriptive } from "./descriptive";
 import graphicalSummary from "./graphicalSummary";
-import histogram from "./studies/histogram";
+import histogram from "./histogram";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
