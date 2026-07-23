@@ -95,7 +95,7 @@ export const PHASES: RibbonPhase[] = [
           // p.158-159 | mtw: Graphing Data.MTW  (4-in-1 + granular consolidated)
           { id: "histogram", label: "Histogram", tool: "histogram", enabled: true},
           // p.160 | mtw: Graphing Data.mtw
-          { id: "dotPlot", label: "Dot Plot", tool: null, enabled: false },
+          { id: "dotplot", label: "Dotplot", tool: "dotplot", enabled: true },
           // p.161-162 | mtw: Glucose Level / Graphing Data.mtw
           { id: "boxPlot", label: "Box Plot", tool: null, enabled: false },
           // p.163-165 | mpj: Measure Data Sets.mpj | mtw: Graphing Data.mtw (jitter/ANOVA options)
