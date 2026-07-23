@@ -53,3 +53,10 @@ export function sameData(a: Cell[], b: Cell[]): boolean {
   if (a.length !== b.length) return false;
   return a.every((v, i) => String(v ?? "") === String(b[i] ?? ""));
 }
+
+export function cleanNumeric(raw: unknown[]): number[] {
+  return raw
+    .filter((v) => v !== null && v !== undefined && String(v).trim() !== "")
+    .map((v) => Number(v))
+    .filter((v) => Number.isFinite(v));
+}
