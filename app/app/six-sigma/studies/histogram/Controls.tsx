@@ -1,6 +1,7 @@
 // app/app/six-sigma/studies/histogram/Controls.tsx
 "use client";
 import React from "react";
+import type { ColumnInfo } from "../types";
 import type { HistogramParams } from "./types";
 
 export default function Controls({
@@ -10,19 +11,18 @@ export default function Controls({
 }: {
   params: HistogramParams;
   onChange: (next: HistogramParams) => void;
-  columns: string[];
+  columns: ColumnInfo[];
 }) {
-  const available = columns.filter((c) => !params.cols.includes(c));
+  const available = columns.filter((c) => !params.cols.includes(c.name));
 
-  const addCol = (c: string) => {
-    if (c && !params.cols.includes(c)) {
-      onChange({ ...params, cols: [...params.cols, c] });
+  const addCol = (name: string) => {
+    if (name && !params.cols.includes(name)) {
+      onChange({ ...params, cols: [...params.cols, name] });
     }
   };
-  const removeCol = (c: string) =>
-    onChange({ ...params, cols: params.cols.filter((x) => x !== c) });
+  const removeCol = (name: string) =>
+    onChange({ ...params, cols: params.cols.filter((x) => x !== name) });
 
-  // 4 opciones Minitab ↔ 2 booleanos
   const variant = `${params.groups ? "G" : ""}${params.fit ? "F" : ""}`;
   const setVariant = (v: string) =>
     onChange({ ...params, groups: v.includes("G"), fit: v.includes("F") });
@@ -41,8 +41,8 @@ export default function Controls({
             Select a column…
           </option>
           {available.map((c) => (
-            <option key={c} value={c}>
-              {c}
+            <option key={c.name} value={c.name}>
+              {c.name}
             </option>
           ))}
         </select>
@@ -53,16 +53,16 @@ export default function Controls({
         <div>
           <label className="block font-medium mb-1">Selected columns</label>
           <ul className="space-y-1">
-            {params.cols.map((c) => (
+            {params.cols.map((name) => (
               <li
-                key={c}
+                key={name}
                 className="flex items-center justify-between border rounded px-2 py-1"
               >
-                <span>{c}</span>
+                <span>{name}</span>
                 <button
                   type="button"
                   className="text-red-600 hover:underline"
-                  onClick={() => removeCol(c)}
+                  onClick={() => removeCol(name)}
                 >
                   remove
                 </button>
