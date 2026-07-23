@@ -35,6 +35,7 @@ export default function HistogramResults({
       {
         type: "histogram",
         x: s.values,
+        autobinx: false,              // 👈 respeta xbins, no rebinnea
         marker: { color, line: { color: "white", width: 1 } },
         xbins: { start: s.bins.start, end: s.bins.end, size: s.bins.size },
         opacity: r.groups ? 0.6 : 1,
@@ -53,6 +54,7 @@ export default function HistogramResults({
     }
     return traces;
   };
+
 
   // MODO GROUPS: un único panel con todas las columnas superpuestas
   if (r.groups) {
@@ -112,7 +114,10 @@ export default function HistogramResults({
                   layout={{
                     autosize: true,
                     title: { text: `Histogram of ${s.name}` },
-                    xaxis: { title: { text: s.name } },
+                    xaxis: {
+                      title: { text: s.name },
+                      range: [s.bins.start, s.bins.end],   // acota al rango real
+                    },
                     yaxis: { title: { text: "Frequency" } },
                     showlegend: false,
                     bargap: 0.02,
