@@ -1,7 +1,7 @@
 // app/app/six-sigma/studies/dotplot/compute.ts
 import type { ColumnSnapshot } from "../types";
 import { cleanNumeric } from "../../lib/columns";
-import { niceBins, fixedBins } from "../../lib/binning";
+import { dotBins, fixedBins } from "../../lib/binning";
 import type {
   DotplotParams,
   DotplotResult,
