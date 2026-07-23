@@ -88,7 +88,7 @@ export function computeDotplot(
   const bins =
     params.binMode === "fixed"
       ? fixedBins(allValues, Math.max(1, params.nBins))
-      : niceBins(allValues);
+      : dotBins(allValues);
 
   // Grupos distintos (orden de aparición)
   const distinctGroups: string[] = [];
