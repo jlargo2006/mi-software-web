@@ -2,11 +2,19 @@
 import type { ArtifactDefinition } from "./types";
 import { fishbone } from "./fishbone";
 import { pareto } from "./pareto";
+import { normality } from "./normality";
+import { capability } from "./capability";
+import { descriptive } from "./descriptive";
+import graphicalSummary from "./graphicalSummary";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
   pareto,
-  // ...aqui iran capability, descriptive, anova, doe, sipoc, etc.
+  normality,
+  capability,
+  descriptive,
+  graphicalSummary,
+  // ...aqui iran anova, doe, sipoc, etc.
 ];
 
 export const REGISTRY: Record<string, ArtifactDefinition> = Object.fromEntries(

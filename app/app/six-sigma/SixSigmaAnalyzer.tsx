@@ -11,7 +11,6 @@ import MenuBar from "./components/MenuBar";
 import DataGrid from "./components/DataGrid";
 import SheetTabs from "./components/SheetTabs";
 import Splitter from "./components/Splitter";
-import AnalysisPanel, { AnalysisState, EMPTY_ANALYSIS } from "./components/AnalysisPanel";
 import { getArtifact } from "./studies/_registry";
 import type { ColumnSnapshot } from "./studies/types";
 import AnalysisRunner from "./components/AnalysisRunner";
@@ -41,8 +40,7 @@ export default function SixSigmaAnalyzer({
   const [view, setView] = useState<ViewMode>("split");
   const [topPercent, setTopPercent] = useState(80);
   const [activeTool, setActiveTool] = useState<ToolId>(null);
-  const [analysis, setAnalysis] = useState<AnalysisState>(EMPTY_ANALYSIS);
-  // Params genéricos para estudios del REGISTRY (fishbone y futuros).
+  // Params genéricos para estudios del REGISTRY.
   const [artifactParams, setArtifactParams] = useState<Record<string, unknown>>({});
   const [studies, setStudies] = useState<SavedStudy[]>([]);
   const [viewingId, setViewingId] = useState<string | null>(null);
@@ -69,7 +67,6 @@ export default function SixSigmaAnalyzer({
       wb.loadWorkbook(project.workbook.data, project.workbook.order);
       setStudies((project.studies as SavedStudy[]) ?? []);
       setActiveTool(null);
-      setAnalysis(EMPTY_ANALYSIS);
       setViewingId(null);
       alert("Project imported successfully");
     } catch (err) {
@@ -90,7 +87,6 @@ export default function SixSigmaAnalyzer({
       // Point 4: an Excel has no studies -> clear them
       setStudies([]);
       setActiveTool(null);
-      setAnalysis(EMPTY_ANALYSIS);
       setViewingId(null);
     } catch (err) {
       alert("Could not read file: " + (err as Error).message);
@@ -108,11 +104,10 @@ export default function SixSigmaAnalyzer({
     wb.resetWorkbook();
     setStudies([]);
     setActiveTool(null);
-    setAnalysis(EMPTY_ANALYSIS);
     setViewingId(null);
   };
 
-  // GENERIC saveStudy: multi-column snapshot + form only when applicable
+  // GENERIC saveStudy: multi-column snapshot
   const saveStudy = (study: SaveStudyInput) => {
     setStudies((prev) => [
       {
@@ -122,10 +117,6 @@ export default function SixSigmaAnalyzer({
         params: study.params,
         results: study.results ?? {},
         snapshot: { sheetName: wb.activeSheet, cols: study.cols },
-        form:
-          study.type === "capability" || study.type === "normality"
-            ? analysis
-            : undefined,
       },
       ...prev,
     ]);
@@ -147,23 +138,14 @@ export default function SixSigmaAnalyzer({
     </button>
   );
 
-  // Study being viewed + LIVE columns resolved by NAME (N columns)
+  // Study being viewed
   const viewingStudy = studies.find((s) => s.id === viewingId) ?? null;
-  const liveCols: StudyColumn[] | null = viewingStudy
-    ? viewingStudy.snapshot.cols.map((c) => ({
-        name: c.name,
-        values: getColumnByName(
-          wb.data[viewingStudy.snapshot.sheetName] ?? EMPTY_SHEET,
-          c.name
-        ),
-      }))
-    : null;
 
   // ¿La herramienta activa es un estudio genérico del REGISTRY?
   const activeArtifact = activeTool ? getArtifact(activeTool) : undefined;
   const activeAnalysisDef =
     activeArtifact && activeArtifact.kind === "analysis" ? activeArtifact : null;
-  
+
   // Snapshot guardado (StudyColumn[]) -> ColumnSnapshot (Record por nombre) para el runner.
   const savedArtifactSnapshot: ColumnSnapshot | null =
     viewingStudy && getArtifact(viewingStudy.type)
@@ -174,12 +156,6 @@ export default function SixSigmaAnalyzer({
           ])
         )
       : null;
-  
-  // capability/normality compatibility: first column of the study (1 col)
-  const viewingSnapshotCol = viewingStudy
-    ? viewingStudy.snapshot.cols[0] ?? null
-    : null;
-  const liveValues = liveCols ? liveCols[0]?.values ?? null : null;
 
   // ---------- Insert rows/columns ----------
   const GRID_COLS = 26;
@@ -231,7 +207,6 @@ export default function SixSigmaAnalyzer({
         onSelectTool={(tool) => {
           setActiveTool(tool);
           setViewingId(null); // new analysis: leave "viewing" mode
-          setAnalysis((prev) => ({ ...prev, ran: false }));
           // Si es un estudio del registry, arranca con sus defaultParams
           const def = tool ? getArtifact(tool) : undefined;
           if (def && def.kind === "analysis") {
@@ -286,7 +261,6 @@ export default function SixSigmaAnalyzer({
                 <button
                   onClick={() => {
                     setActiveTool(s.type as ToolId);
-                    setAnalysis(s.form ?? EMPTY_ANALYSIS);
                     setArtifactParams(s.params);
                     setViewingId(s.id);
                     if (view === "grid") setView("split");
@@ -301,7 +275,6 @@ export default function SixSigmaAnalyzer({
                     if (viewingId === s.id) {
                       setViewingId(null);
                       setActiveTool(null);
-                      setAnalysis(EMPTY_ANALYSIS);
                     }
                   }}
                   className="absolute right-1 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-600"
@@ -322,9 +295,10 @@ export default function SixSigmaAnalyzer({
                 className="overflow-auto bg-white border-b border-gray-200"
                 style={{ height: view === "split" ? `${topPercent}%` : "100%" }}
               >
-                {activeAnalysisDef ? (
-                  /* Motor NUEVO genérico: cualquier estudio del REGISTRY (fishbone, …) */
+                {activeAnalysisDef && (
+                  /* Motor genérico: cualquier estudio del REGISTRY */
                   <AnalysisRunner
+                    key={`${activeTool}-${viewingId ?? "edit"}`}
                     def={activeAnalysisDef}
                     sheet={wb.data[wb.activeSheet] ?? EMPTY_SHEET}
                     mode={viewingId ? "view" : "edit"}
@@ -332,37 +306,6 @@ export default function SixSigmaAnalyzer({
                     onParamsChange={setArtifactParams}
                     savedSnapshot={savedArtifactSnapshot}
                     onSaveStudy={saveStudy}
-                  />
-                ) : (
-                  /* Motor VIEJO: descriptive / capability / normality */
-                  <AnalysisPanel
-                    tool={activeTool}
-                    sheet={wb.data[wb.activeSheet] ?? EMPTY_SHEET}
-                    state={analysis}
-                    onStateChange={setAnalysis}
-                    onSaveStudy={saveStudy}
-                    study={viewingStudy}
-                    mode={viewingId ? "view" : "edit"}
-                    snapshot={viewingSnapshotCol}
-                    liveValues={liveValues}
-                    onUpdateSnapshot={(newValues) => {
-                      if (!viewingStudy) return;
-                      setStudies((prev) =>
-                        prev.map((s) =>
-                          s.id === viewingStudy.id
-                            ? {
-                                ...s,
-                                snapshot: {
-                                  ...s.snapshot,
-                                  cols: s.snapshot.cols.map((c, i) =>
-                                    i === 0 ? { ...c, values: newValues } : c
-                                  ),
-                                },
-                              }
-                            : s
-                        )
-                      );
-                    }}
                   />
                 )}
               </div>

@@ -9,7 +9,7 @@ import FishboneResults from "./Results";
 export const fishbone: AnalysisDefinition<FishboneParams, FishboneResult> = {
   id: "fishbone",
   label: "Fishbone (Cause & Effect)",
-  phase: "analyze",
+  phase: "measure",
   kind: "analysis",
   defaultParams: FISHBONE_DEFAULT,
   referencedColumns: (p) =>

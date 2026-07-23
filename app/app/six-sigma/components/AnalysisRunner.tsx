@@ -33,7 +33,7 @@ export default function AnalysisRunner<P, R>({
   const columns = useMemo(() => getColumns(sheet), [sheet]);
   const [ran, setRan] = useState(false);
   const [frozen, setFrozen] = useState<ColumnSnapshot | null>(null);
-
+ 
   const viewing = mode === "view";
 
   // Congela las columnas referenciadas por la config actual.
@@ -80,29 +80,36 @@ export default function AnalysisRunner<P, R>({
     <div className="p-4 h-full overflow-auto">
       <h2 className="mb-3 text-lg font-semibold text-[#00674d]">{def.label}</h2>
 
-      {/* Config PROPIA del estudio, oculta en modo view */}
+      {/* Config PROPIA del estudio, oculta en modo view. Ya SIN Run. */}
       <StudyControls mode={mode}>
         <ControlsUI
           params={params}
           onChange={onParamsChange}
           columns={columns}
-          onRun={handleRun}
         />
+
+        {/* Run + Save juntos, gestionados por el runner */}
+        <div className="mt-3 flex items-center gap-2">
+          <button
+            onClick={handleRun}
+            className="rounded px-4 py-2 text-sm font-medium text-white bg-[#00674d] hover:bg-[#00513d]"
+          >
+            Run
+          </button>
+          {(viewing || ran) && (
+            <button
+              onClick={handleSave}
+              className="rounded border border-[#00674d] px-4 py-2 text-sm font-medium text-[#00674d] hover:bg-emerald-50"
+            >
+              {"\uD83D\uDCBE"} Save study
+            </button>
+          )}
+        </div>
       </StudyControls>
 
       {/* Resultados: siempre que haya datos (view) o tras Run (edit) */}
       {(viewing || ran) && data && result && (
-        <>
-          <ResultsUI data={data} params={params} result={result} />
-          <StudyControls mode={mode} boxed={false}>
-            <button
-              onClick={handleSave}
-              className="mt-3 rounded border border-[#00674d] px-4 py-2 text-sm font-medium text-[#00674d] hover:bg-emerald-50"
-            >
-              {"\uD83D\uDCBE"} Save study
-            </button>
-          </StudyControls>
-        </>
+        <ResultsUI data={data} params={params} result={result} />
       )}
     </div>
   );

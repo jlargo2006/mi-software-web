@@ -1,4 +1,3 @@
-import type { AnalysisState } from "../components/AnalysisPanel";
 import type { Cell } from "./types";
 
 // Una columna capturada en el momento de guardar (para comparar y recalcular)
@@ -20,7 +19,6 @@ export interface SavedStudy {
   params: Record<string, unknown>;  // config reproducible propia de cada tool
   results: Record<string, unknown>; // resultados guardados
   snapshot: StudySnapshot;
-  form?: AnalysisState;             // solo capability/normality lo usan
 }
 
 // Lo que un panel pasa a onSaveStudy (el padre añade id + timestamp + sheetName)

@@ -2,57 +2,36 @@
 "use client";
 import React from "react";
 import type { ColumnInfo } from "../../lib/columns";
+import ColumnSelect from "../../components/ColumnSelect";
 import type { ParetoParams } from "./types";
-
-const BRAND = "#00674d";
 
 export default function ParetoControls({
   params,
   onChange,
   columns,
-  onRun,
 }: {
   params: ParetoParams;
   onChange: (p: ParetoParams) => void;
   columns: ColumnInfo[];
-  onRun: () => void;
 }) {
   const set = (patch: Partial<ParetoParams>) => onChange({ ...params, ...patch });
 
   return (
     <div className="w-full">
       <div className="mb-3 flex flex-wrap gap-4">
-        <label className="flex flex-col text-xs text-gray-600">
-          Categories (text column)
-          <select
-            value={params.categoryCol ?? ""}
-            onChange={(e) => set({ categoryCol: e.target.value || null })}
-            className="mt-1 min-w-[180px] rounded border border-gray-300 px-2 py-1 text-sm"
-          >
-            <option value="">-- select --</option>
-            {columns.map((c) => (
-              <option key={c.index} value={c.name}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <ColumnSelect
+          label="Categories (text column)"
+          value={params.categoryCol}
+          onChange={(v) => set({ categoryCol: v })}
+          columns={columns}
+        />
 
-        <label className="flex flex-col text-xs text-gray-600">
-          Counts (number column)
-          <select
-            value={params.countCol ?? ""}
-            onChange={(e) => set({ countCol: e.target.value || null })}
-            className="mt-1 min-w-[180px] rounded border border-gray-300 px-2 py-1 text-sm"
-          >
-            <option value="">-- select --</option>
-            {columns.map((c) => (
-              <option key={c.index} value={c.name}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <ColumnSelect
+          label="Counts (number column)"
+          value={params.countCol}
+          onChange={(v) => set({ countCol: v })}
+          columns={columns}
+        />
       </div>
 
       <div className="mb-3 flex flex-wrap items-end gap-4">
@@ -83,14 +62,6 @@ export default function ParetoControls({
           />
         </label>
       </div>
-
-      <button
-        onClick={onRun}
-        className="mt-1 rounded px-4 py-2 text-sm font-medium text-white"
-        style={{ backgroundColor: BRAND }}
-      >
-        Run
-      </button>
     </div>
   );
 }

@@ -1,7 +1,19 @@
-import type { NormalityResult, CapabilityResult } from "./types";
+// lib/stats.ts
+import type { NormalityResult, CapabilityResult, Cell } from "./types";
+
+export function toNumericCells(values: Cell[]): number[] {
+  const out: number[] = [];
+  for (const v of values) {
+    if (v === null || v === undefined) continue;
+    const s = String(v).trim();
+    if (s === "") continue;
+    const n = Number(s.replace(",", "."));
+    if (Number.isFinite(n)) out.push(n);
+  }
+  return out;
+}
 
 // --- Estadística básica ---
-
 export function mean(data: number[]): number {
   if (data.length === 0) return 0;
   return data.reduce((a, b) => a + b, 0) / data.length;
