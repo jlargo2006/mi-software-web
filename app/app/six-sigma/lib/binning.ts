@@ -56,3 +56,40 @@ export function fixedBins(values: number[], nbins: number): BinResult {
   const size = (max - min) / nbins;
   return { start: min, end: max, size, nbins };
 }
+
+/**
+ * Binning específico para dotplot.
+ * Si los datos son discretos (pocos valores distintos o todos enteros),
+ * usa un bin por valor (size = paso mínimo entre valores distintos),
+ * de modo que cada valor tiene su propia columna de puntos.
+ * Si son continuos, cae al binning "nice" normal.
+ */
+export function dotBins(values: number[]): BinResult {
+  const distinct = Array.from(new Set(values)).sort((a, b) => a - b);
+  const n = distinct.length;
+
+  if (n === 1) {
+    return { start: distinct[0] - 0.5, end: distinct[0] + 0.5, size: 1, nbins: 1 };
+  }
+
+  const allInts = distinct.every((v) => Number.isInteger(v));
+
+  // paso mínimo entre valores distintos
+  let step = Infinity;
+  for (let i = 1; i < n; i++) {
+    step = Math.min(step, distinct[i] - distinct[i - 1]);
+  }
+
+  // Discreto: enteros, o pocos valores distintos (≤ 30) → un bin por valor
+  if (allInts || n <= 30) {
+    const size = allInts ? 1 : step;
+    const start = distinct[0] - size / 2;
+    const end = distinct[n - 1] + size / 2;
+    const nbins = Math.round((end - start) / size);
+    return { start, end, size, nbins };
+  }
+
+  // Continuo → binning nice normal
+  return niceBins(values);
+}
+
