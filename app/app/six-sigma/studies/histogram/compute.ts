@@ -3,6 +3,7 @@ import type { ColumnSnapshot } from "../types";
 import type { HistogramParams, HistogramResult, HistogramSeries } from "./types";
 import { niceBins, fixedBins } from "../../lib/binning";
 import { normPdf } from "../../lib/distributions";
+import { cleanNumeric } from "../../lib/columns";
 
 export function computeHistogram(
   data: ColumnSnapshot,
@@ -14,9 +15,7 @@ export function computeHistogram(
     const col = data[name];
     if (!col) continue;
 
-    const values = col.values
-      .map((v) => Number(v))
-      .filter((v) => Number.isFinite(v));
+    const values = cleanNumeric(col.values);
 
     if (values.length === 0) continue;
 
