@@ -69,7 +69,7 @@ export const PHASES: RibbonPhase[] = [
       { id: "graphicalSummary", label: "Graphical Summary", tool: "graphicalSummary", enabled: true },
       
       // p.153 | mpj: Measure Data Sets.mpj | mtw: Descriptive Statistics.MTW
-      { id: "timeseries", label: "Time Series Plot", tool: "timeseries", enabled: true },
+      { id: "normality", label: "Normality Test", tool: "normality", enabled: true },      
 
       // ---- Capability Analysis (dropdown) --------------------------------
       {
@@ -101,7 +101,7 @@ export const PHASES: RibbonPhase[] = [
           // p.163-165 | mpj: Measure Data Sets.mpj | mtw: Graphing Data.mtw (jitter/ANOVA options)
           { id: "ivp", label: "Individual Value Plot", tool: null, enabled: false },
           // p.166-167 | mtw: Graphing Data.mtw  (Lowess smoother is an option)
-          { id: "timeSeries", label: "Time Series Plot", tool: null, enabled: false },
+          { id: "timeseries", label: "Time Series Plot", tool: "timeseries", enabled: true },
         ],
       },
 
