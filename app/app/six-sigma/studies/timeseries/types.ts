@@ -13,6 +13,8 @@ export interface TimeSeriesParams {
   smoother: boolean;
   smoothDegree: number;       // Degree of smoothing (def. 0.5)
   smoothSteps: number;        // Number of steps (def. 2)
+  xTickMode: "auto" | "fixed";   // ticks del eje X
+  xTickCount: number;            // nº de ticks si fixed  
 }
 
 export const TIMESERIES_DEFAULT: TimeSeriesParams = {
@@ -25,6 +27,8 @@ export const TIMESERIES_DEFAULT: TimeSeriesParams = {
   smoother: false,
   smoothDegree: 0.5,
   smoothSteps: 2,
+  xTickMode: "auto",
+  xTickCount: 10,  
 };
 
 export interface TSLine {
