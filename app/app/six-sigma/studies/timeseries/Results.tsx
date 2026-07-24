@@ -82,7 +82,7 @@ export default function TimeSeriesResults({
                   title: { text: r.xTitle, standoff: 25 },
                   type: r.xIsCategoryTime ? "category" : "linear",
                   zeroline: false,
-                  tickangle: 45,
+                  tickangle: -45,
                   automargin: true,
                   // nº de ticks: automático o fijo
                   ...(r.xIsCategoryTime && params.xTickMode === "fixed"
