@@ -13,6 +13,7 @@ const PALETTE = [
 ];
 
 export default function TimeSeriesResults({
+  params,
   result,
 }: {
   data: ColumnSnapshot;
@@ -76,11 +77,20 @@ export default function TimeSeriesResults({
               layout={{
                 autosize: true,
                 title: { text: r.title },
-                margin: { t: 50, b: 60, l: 70, r: 30 },
+                margin: { t: 50, b: 110, l: 70, r: 30 },
                 xaxis: {
-                  title: { text: r.xTitle },
+                  title: { text: r.xTitle, standoff: 25 },
                   type: r.xIsCategoryTime ? "category" : "linear",
                   zeroline: false,
+                  tickangle: 45,
+                  automargin: true,
+                  // nº de ticks: automático o fijo
+                  ...(r.xIsCategoryTime && params.xTickMode === "fixed"
+                    ? { nticks: Math.max(2, params.xTickCount) }
+                    : {}),
+                  ...(r.xIsCategoryTime && params.xTickMode === "auto"
+                    ? { nticks: 12 }
+                    : {}),
                 },
                 yaxis: {
                   title: { text: r.yTitle },
