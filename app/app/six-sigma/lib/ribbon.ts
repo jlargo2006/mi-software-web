@@ -97,7 +97,7 @@ export const PHASES: RibbonPhase[] = [
           // p.160 | mtw: Graphing Data.mtw
           { id: "dotplot", label: "Dotplot", tool: "dotplot", enabled: true },
           // p.161-162 | mtw: Glucose Level / Graphing Data.mtw
-          { id: "boxPlot", label: "Box Plot", tool: null, enabled: false },
+          { id: "boxplot", label: "Boxplot", tool: "boxplot", enabled: true },
           // p.163-165 | mpj: Measure Data Sets.mpj | mtw: Graphing Data.mtw (jitter/ANOVA options)
           { id: "ivp", label: "Individual Value Plot", tool: null, enabled: false },
           // p.166-167 | mtw: Graphing Data.mtw  (Lowess smoother is an option)
