@@ -47,7 +47,7 @@ export default function BoxplotResults({
         marker: { color, outliercolor: color, size: 5 },
         line: { color },
         fillcolor: color + "22",
-        whiskerwidth: 0.6,
+//        whiskerwidth: 0.6,
         showlegend: false,
       } as Data;
     });
