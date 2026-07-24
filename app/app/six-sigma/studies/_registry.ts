@@ -8,6 +8,7 @@ import { descriptive } from "./descriptive";
 import graphicalSummary from "./graphicalSummary";
 import histogram from "./histogram";
 import dotplot from "./dotplot";
+import boxplot from "./boxplot";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
@@ -18,6 +19,7 @@ const ALL: ArtifactDefinition[] = [
   graphicalSummary,
   histogram,
   dotplot,
+  boxplot,
   // ...aqui iran anova, doe, sipoc, etc.
 ];
 
