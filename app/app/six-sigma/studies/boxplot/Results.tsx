@@ -84,8 +84,8 @@ export default function BoxplotResults({
                     xaxis: horizontal ? valueAxis : catAxis,
                     yaxis: horizontal ? catAxis : valueAxis,
                     showlegend: false,
-                    boxgap: 0.3,
-                    boxgroupgap: 0.3,
+//                    boxgap: 0.3,
+//                    boxgroupgap: 0.3,
                   }}
                 />
               </div>
