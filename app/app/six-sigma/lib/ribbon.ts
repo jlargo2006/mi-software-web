@@ -69,7 +69,7 @@ export const PHASES: RibbonPhase[] = [
       { id: "graphicalSummary", label: "Graphical Summary", tool: "graphicalSummary", enabled: true },
       
       // p.153 | mpj: Measure Data Sets.mpj | mtw: Descriptive Statistics.MTW
-      { id: "normality", label: "Normality Test", tool: "normality", enabled: true },
+      { id: "timeseries", label: "Time Series Plot", tool: "timeseries", enabled: true },
 
       // ---- Capability Analysis (dropdown) --------------------------------
       {
