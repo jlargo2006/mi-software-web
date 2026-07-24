@@ -171,6 +171,24 @@ export default function Controls({
               <option value="time">Time</option>
             </select>
           </div>
+
+          <div className="mt-2">
+            <label className="block font-medium mb-1">Time type</label>
+            <select
+              className="border rounded px-2 py-1 w-full"
+              value={params.timeType}
+              onChange={(e) =>
+                onChange({
+                  ...params,
+                  timeType: e.target.value as TSTimeType,
+                })
+              }
+            >
+              <option value="datetime">Date &amp; Time</option>
+              <option value="date">Date</option>
+              <option value="time">Time</option>
+            </select>
+          </div>      
         )}
       </div>
 
