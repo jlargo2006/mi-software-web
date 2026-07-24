@@ -153,42 +153,60 @@ export default function Controls({
               </option>
             ))}
         </select>
-        {params.timeCol && (
-          <div className="mt-2">
-            <label className="block font-medium mb-1">Time type</label>
-            <select
-              className="border rounded px-2 py-1 w-full"
-              value={params.timeType}
-              onChange={(e) =>
-                onChange({
-                  ...params,
-                  timeType: e.target.value as TSTimeType,
-                })
-              }
-            >
-              <option value="datetime">Date &amp; Time</option>
-              <option value="date">Date</option>
-              <option value="time">Time</option>
-            </select>
-          </div>
 
-          <div className="mt-2">
-            <label className="block font-medium mb-1">Time type</label>
-            <select
-              className="border rounded px-2 py-1 w-full"
-              value={params.timeType}
-              onChange={(e) =>
-                onChange({
-                  ...params,
-                  timeType: e.target.value as TSTimeType,
-                })
-              }
-            >
-              <option value="datetime">Date &amp; Time</option>
-              <option value="date">Date</option>
-              <option value="time">Time</option>
-            </select>
-          </div>      
+        {params.timeCol && (
+          <>
+            <div className="mt-2">
+              <label className="block font-medium mb-1">Time type</label>
+              <select
+                className="border rounded px-2 py-1 w-full"
+                value={params.timeType}
+                onChange={(e) =>
+                  onChange({
+                    ...params,
+                    timeType: e.target.value as TSTimeType,
+                  })
+                }
+              >
+                <option value="datetime">Date &amp; Time</option>
+                <option value="date">Date</option>
+                <option value="time">Time</option>
+              </select>
+            </div>
+
+            <div className="mt-2">
+              <label className="block font-medium mb-1">X axis ticks</label>
+              <div className="flex items-center gap-2">
+                <select
+                  className="border rounded px-2 py-1"
+                  value={params.xTickMode}
+                  onChange={(e) =>
+                    onChange({
+                      ...params,
+                      xTickMode: e.target.value as "auto" | "fixed",
+                    })
+                  }
+                >
+                  <option value="auto">Automatic</option>
+                  <option value="fixed">Fixed number</option>
+                </select>
+                {params.xTickMode === "fixed" && (
+                  <input
+                    type="number"
+                    min={2}
+                    className="border rounded px-2 py-1 w-20"
+                    value={params.xTickCount}
+                    onChange={(e) =>
+                      onChange({
+                        ...params,
+                        xTickCount: Number(e.target.value),
+                      })
+                    }
+                  />
+                )}
+              </div>
+            </div>
+          </>
         )}
       </div>
 
