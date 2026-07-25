@@ -106,7 +106,7 @@ export const PHASES: RibbonPhase[] = [
       },
 
       // (—) proposed – core MSA tool for the Measure phase
-      { id: "gageRR", label: "Gage R&R (MSA)", tool: null, enabled: false },
+      { id: "gagerr", label: "Gage R&R (Crossed)", tool: "gagerr", enabled: true },
       // (—) proposed
       { id: "runChart", label: "Run Chart", tool: null, enabled: false },
     ],
