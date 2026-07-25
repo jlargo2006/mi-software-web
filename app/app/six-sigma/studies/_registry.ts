@@ -10,6 +10,7 @@ import histogram from "./histogram";
 import dotplot from "./dotplot";
 import boxplot from "./boxplot";
 import timeseries from "./timeseries";
+import gagerr from "./gagerr";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
@@ -22,6 +23,7 @@ const ALL: ArtifactDefinition[] = [
   dotplot,
   boxplot,
   timeseries,
+  gagerr,
   // ...aqui iran anova, doe, sipoc, etc.
 ];
 
