@@ -27,7 +27,7 @@ const ALL: ArtifactDefinition[] = [
   timeseries,
   gagerr,
   attragreement,
-  multiVari,
+  multivari,
   // ...aqui iran anova, doe, sipoc, etc.
 ];
 
