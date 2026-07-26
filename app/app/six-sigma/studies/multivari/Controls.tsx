@@ -1,7 +1,7 @@
 // app/app/six-sigma/studies/multivari/Controls.tsx
 "use client";
 import React from "react";
-import type { ColumnInfo } from "../types";
+import type { ColumnInfo } from "../../lib/columns";
 import type { MultiVariParams } from "./types";
 
 const Select = ({
