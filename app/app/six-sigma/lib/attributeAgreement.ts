@@ -58,7 +58,6 @@ function fleiss(counts: number[][], L: number): { cat: (number | null)[]; overal
   for (const row of counts) for (let j = 0; j < L; j++) totals[j] += row[j];
   const p = totals.map((t) => t / (N * n));
 
-  const seCat = Math.sqrt(2 / (N * n * (n - 1)));
   const cat: (number | null)[] = [];
   for (let j = 0; j < L; j++) {
     const den = N * n * (n - 1) * p[j] * (1 - p[j]);
