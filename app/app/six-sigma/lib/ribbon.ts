@@ -118,7 +118,7 @@ export const PHASES: RibbonPhase[] = [
     name: "Analyse",
     tools: [
       // p.247 / p.249 | mpj: Analyze Data Sets.mpj | mtw: MVInjectionMold.mtw / CallCenter.mtw
-      { id: "multiVari", label: "Multi-Vari Chart", icon: "\u{1F4C8}", tool: "multiVari", enabled: true },
+      { id: "multiVari", label: "Multi-Vari Chart", tool: "multiVari", enabled: true },
      
       // p.272 | mtw: Die Example
       { id: "clt", label: "Sampling Distributions / CLT", tool: null, enabled: false },
