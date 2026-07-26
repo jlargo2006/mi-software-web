@@ -6,6 +6,11 @@ import { normality } from "./normality";
 import { capability } from "./capability";
 import { descriptive } from "./descriptive";
 import graphicalSummary from "./graphicalSummary";
+import histogram from "./histogram";
+import dotplot from "./dotplot";
+import boxplot from "./boxplot";
+import timeseries from "./timeseries";
+import gagerr from "./gagerr";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
@@ -14,6 +19,11 @@ const ALL: ArtifactDefinition[] = [
   capability,
   descriptive,
   graphicalSummary,
+  histogram,
+  dotplot,
+  boxplot,
+  timeseries,
+  gagerr,
   // ...aqui iran anova, doe, sipoc, etc.
 ];
 

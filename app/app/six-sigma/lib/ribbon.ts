@@ -69,7 +69,7 @@ export const PHASES: RibbonPhase[] = [
       { id: "graphicalSummary", label: "Graphical Summary", tool: "graphicalSummary", enabled: true },
       
       // p.153 | mpj: Measure Data Sets.mpj | mtw: Descriptive Statistics.MTW
-      { id: "normality", label: "Normality Test", tool: "normality", enabled: true },
+      { id: "normality", label: "Normality Test", tool: "normality", enabled: true },      
 
       // ---- Capability Analysis (dropdown) --------------------------------
       {
@@ -93,20 +93,20 @@ export const PHASES: RibbonPhase[] = [
         enabled: true,
         children: [
           // p.158-159 | mtw: Graphing Data.MTW  (4-in-1 + granular consolidated)
-          { id: "histogram", label: "Histogram", tool: null, enabled: false },
+          { id: "histogram", label: "Histogram", tool: "histogram", enabled: true},
           // p.160 | mtw: Graphing Data.mtw
-          { id: "dotPlot", label: "Dot Plot", tool: null, enabled: false },
+          { id: "dotplot", label: "Dotplot", tool: "dotplot", enabled: true },
           // p.161-162 | mtw: Glucose Level / Graphing Data.mtw
-          { id: "boxPlot", label: "Box Plot", tool: null, enabled: false },
+          { id: "boxplot", label: "Boxplot", tool: "boxplot", enabled: true },
           // p.163-165 | mpj: Measure Data Sets.mpj | mtw: Graphing Data.mtw (jitter/ANOVA options)
           { id: "ivp", label: "Individual Value Plot", tool: null, enabled: false },
           // p.166-167 | mtw: Graphing Data.mtw  (Lowess smoother is an option)
-          { id: "timeSeries", label: "Time Series Plot", tool: null, enabled: false },
+          { id: "timeseries", label: "Time Series Plot", tool: "timeseries", enabled: true },
         ],
       },
 
       // (—) proposed – core MSA tool for the Measure phase
-      { id: "gageRR", label: "Gage R&R (MSA)", tool: null, enabled: false },
+      { id: "gagerr", label: "Gage R&R (Crossed)", tool: "gagerr", enabled: true },
       // (—) proposed
       { id: "runChart", label: "Run Chart", tool: null, enabled: false },
     ],
