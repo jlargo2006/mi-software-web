@@ -274,7 +274,7 @@ export function computeAttributeAgreement(
 
   // ---------- All Appraisers vs Standard ----------
   let allVsStandard: AgreementRow | null = null;
-  let allVsStandardKappa: KappaRow[] = [];
+  const allVsStandardKappa: KappaRow[] = [];
   if (hasStandard && appraisers.length > 1) {
     let matched = 0;
     for (const s of samples) {
