@@ -80,11 +80,11 @@ function AgreementChart({
         layout={{
           autosize: true,
           title: { text: title, font: { size: 13 } },
-          margin: { t: 45, b: 60, l: 60, r: 20 },
+          margin: { t: 45, b: 60, l: 60, r: 130 },
           xaxis: { title: { text: "Appraiser" }, type: "category", automargin: true },
           yaxis: { title: { text: "Percent" } },
           showlegend: true,
-          legend: { x: 1, y: 1, xanchor: "right" },
+          legend: { x: 1.02, xanchor: "left", y: 1, yanchor: "top" },
         }}
       />
     </div>
