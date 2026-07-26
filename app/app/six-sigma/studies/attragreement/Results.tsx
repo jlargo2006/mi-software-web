@@ -16,40 +16,95 @@ const Th = ({ children }: { children?: React.ReactNode }) => (
     {children}
   </th>
 );
+
 const Td = ({ children, right }: { children?: React.ReactNode; right?: boolean }) => (
   <td className={`border border-gray-300 px-2 py-1 ${right ? "text-right" : ""}`}>
     {children}
   </td>
 );
 
-export default function AttrAgreementResults({
-  result,
-}: {
-  data: ColumnSnapshot;
-  params: AttrAgreementParams;
-  result: AttrAgreementResult;
-}) {
-  const r = result;
+const ciTxt = (row: AgreementRow) => `(${f(row.ci.lower, 2)}; ${f(row.ci.upper, 2)})`;
 
-  if (!r || !r.ok) {
-    return (
-      <div className="p-4 text-sm text-gray-600">
-        {r?.error ?? "Select the Appraiser, Sample and Rating columns."}
-      </div>
-    );
+/* ---------- gráficos (fuera del render) ---------- */
+
+function ciTraces(rows: AgreementRow[], confLabel: string): Data[] {
+  const x = rows.map((v) => v.label);
+  const traces: Data[] = [];
+
+  for (const row of rows) {
+    traces.push({
+      type: "scatter",
+      mode: "lines",
+      x: [row.label, row.label],
+      y: [row.ci.lower, row.ci.upper],
+      line: { color: "#c0392b", width: 1.5 },
+      showlegend: false,
+      hoverinfo: "skip",
+    });
   }
 
-  const confLabel = `${(r.conf * 100).toFixed(0)}% CI`;
+  traces.push({
+    type: "scatter",
+    mode: "markers",
+    x: [...x, ...x],
+    y: [...rows.map((v) => v.ci.lower), ...rows.map((v) => v.ci.upper)],
+    marker: { color: "#2980b9", symbol: "x", size: 9 },
+    name: confLabel,
+  });
 
-  const ciTxt = (row: AgreementRow) =>
-    `(${f(row.ci.lower, 2)}; ${f(row.ci.upper, 2)})`;
+  traces.push({
+    type: "scatter",
+    mode: "markers",
+    x,
+    y: rows.map((v) => v.percent),
+    marker: { color: "#2980b9", symbol: "circle", size: 10 },
+    name: "Percent",
+  });
 
-  // ---------- tabla de acuerdo ----------
-  const agreementTable = (
-    rows: AgreementRow[],
-    withLabel: boolean,
-    note: string
-  ) => (
+  return traces;
+}
+
+function AgreementChart({
+  rows,
+  title,
+  confLabel,
+}: {
+  rows: AgreementRow[];
+  title: string;
+  confLabel: string;
+}) {
+  return (
+    <div className="border border-gray-200 rounded" style={{ height: 340 }}>
+      <ResultChart
+        data={ciTraces(rows, confLabel)}
+        layout={{
+          autosize: true,
+          title: { text: title, font: { size: 13 } },
+          margin: { t: 45, b: 60, l: 60, r: 20 },
+          xaxis: { title: { text: "Appraiser" }, type: "category", automargin: true },
+          yaxis: { title: { text: "Percent" } },
+          showlegend: true,
+          legend: { x: 1, y: 1, xanchor: "right" },
+        }}
+      />
+    </div>
+  );
+}
+
+/* ---------- tablas (fuera del render) ---------- */
+
+function AgreementTable({
+  rows,
+  withLabel,
+  note,
+  confLabel,
+}: {
+  rows: AgreementRow[];
+  withLabel: boolean;
+  note: string;
+  confLabel: string;
+}) {
+  return (
     <div>
       <h5 className="font-semibold mb-1">Assessment Agreement</h5>
       <table className="border-collapse w-full">
@@ -77,16 +132,21 @@ export default function AttrAgreementResults({
       <p className="text-xs italic mt-1"># Matched: {note}</p>
     </div>
   );
+}
 
-  // ---------- tabla de kappa (bloques por tasador) ----------
-  const kappaBlocks = (blocks: KappaBlock[]) => (
+function KappaBlocksTable({ blocks }: { blocks: KappaBlock[] }) {
+  return (
     <div>
       <h5 className="font-semibold mb-1">Fleiss&rsquo; Kappa Statistics</h5>
       <table className="border-collapse w-full">
         <thead>
           <tr>
-            <Th>Appraiser</Th><Th>Response</Th><Th>Kappa</Th>
-            <Th>SE Kappa</Th><Th>Z</Th><Th>P(vs &gt; 0)</Th>
+            <Th>Appraiser</Th>
+            <Th>Response</Th>
+            <Th>Kappa</Th>
+            <Th>SE Kappa</Th>
+            <Th>Z</Th>
+            <Th>P(vs &gt; 0)</Th>
           </tr>
         </thead>
         <tbody>
@@ -106,16 +166,20 @@ export default function AttrAgreementResults({
       </table>
     </div>
   );
+}
 
-  // ---------- tabla de kappa simple ----------
-  const kappaTable = (rows: KappaRow[]) => (
+function KappaTable({ rows }: { rows: KappaRow[] }) {
+  return (
     <div>
       <h5 className="font-semibold mb-1">Fleiss&rsquo; Kappa Statistics</h5>
       <table className="border-collapse w-full">
         <thead>
           <tr>
-            <Th>Response</Th><Th>Kappa</Th><Th>SE Kappa</Th>
-            <Th>Z</Th><Th>P(vs &gt; 0)</Th>
+            <Th>Response</Th>
+            <Th>Kappa</Th>
+            <Th>SE Kappa</Th>
+            <Th>Z</Th>
+            <Th>P(vs &gt; 0)</Th>
           </tr>
         </thead>
         <tbody>
@@ -132,61 +196,48 @@ export default function AttrAgreementResults({
       </table>
     </div>
   );
+}
 
-  // ---------- gráficos ----------
-  const ciChart = (rows: AgreementRow[], title: string): Data[] => {
-    const x = rows.map((v) => v.label);
-    const traces: Data[] = [];
-    // barras de error verticales en rojo
-    rows.forEach((row, i) => {
-      traces.push({
-        type: "scatter", mode: "lines",
-        x: [row.label, row.label],
-        y: [row.ci.lower, row.ci.upper],
-        line: { color: "#c0392b", width: 1.5 },
-        showlegend: false, hoverinfo: "skip",
-      });
-    });
-    // extremos como "x" azules
-    traces.push({
-      type: "scatter", mode: "markers",
-      x: [...x, ...x],
-      y: [...rows.map((v) => v.ci.lower), ...rows.map((v) => v.ci.upper)],
-      marker: { color: "#2980b9", symbol: "x", size: 9 },
-      name: confLabel,
-    });
-    // percent como punto azul
-    traces.push({
-      type: "scatter", mode: "markers",
-      x, y: rows.map((v) => v.percent),
-      marker: { color: "#2980b9", symbol: "circle", size: 10 },
-      name: "Percent",
-    });
-    return traces;
-  };
+/* ---------- componente principal ---------- */
 
-  const Chart = ({ rows, title }: { rows: AgreementRow[]; title: string }) => (
-    <div className="border border-gray-200 rounded" style={{ height: 340 }}>
-      <ResultChart
-        data={ciChart(rows, title)}
-        layout={{
-          autosize: true,
-          title: { text: title, font: { size: 13 } },
-          margin: { t: 45, b: 60, l: 60, r: 20 },
-          xaxis: { title: { text: "Appraiser" }, type: "category", automargin: true },
-          yaxis: { title: { text: "Percent" } },
-          showlegend: true,
-          legend: { x: 1, y: 1, xanchor: "right" },
-        }}
-      />
-    </div>
-  );
+export default function AttrAgreementResults({
+  result,
+}: {
+  data: ColumnSnapshot;
+  params: AttrAgreementParams;
+  result: AttrAgreementResult;
+}) {
+  const r = result;
+
+  if (!r || !r.ok) {
+    return (
+      <div className="p-4 text-sm text-gray-600">
+        {r?.error ?? "Select the Appraiser, Sample and Rating columns."}
+      </div>
+    );
+  }
+
+  const confLabel = `${(r.conf * 100).toFixed(0)}% CI`;
 
   const charts: React.ReactNode[] = [];
   if (!r.singleTrial && r.withinAppraiser.length > 0)
-    charts.push(<Chart key="within" rows={r.withinAppraiser} title="Within Appraiser" />);
+    charts.push(
+      <AgreementChart
+        key="within"
+        rows={r.withinAppraiser}
+        title="Within Appraiser"
+        confLabel={confLabel}
+      />
+    );
   if (r.hasStandard && r.eachVsStandard.length > 0)
-    charts.push(<Chart key="vsstd" rows={r.eachVsStandard} title="Appraiser vs Standard" />);
+    charts.push(
+      <AgreementChart
+        key="vsstd"
+        rows={r.eachVsStandard}
+        title="Appraiser vs Standard"
+        confLabel={confLabel}
+      />
+    );
 
   return (
     <div className="space-y-6">
@@ -198,11 +249,13 @@ export default function AttrAgreementResults({
             {!r.singleTrial && (
               <section className="space-y-3">
                 <h4 className="font-bold text-sm">Within Appraiser</h4>
-                {agreementTable(
-                  r.withinAppraiser, true,
-                  "Appraiser agrees with him/herself across trials."
-                )}
-                {kappaBlocks(r.withinKappa)}
+                <AgreementTable
+                  rows={r.withinAppraiser}
+                  withLabel
+                  note="Appraiser agrees with him/herself across trials."
+                  confLabel={confLabel}
+                />
+                <KappaBlocksTable blocks={r.withinKappa} />
               </section>
             )}
 
@@ -210,11 +263,13 @@ export default function AttrAgreementResults({
             {r.hasStandard && (
               <section className="space-y-3">
                 <h4 className="font-bold text-sm">Each Appraiser vs Standard</h4>
-                {agreementTable(
-                  r.eachVsStandard, true,
-                  "Appraiser’s assessment across trials agrees with the known standard."
-                )}
-                {kappaBlocks(r.eachVsStandardKappa)}
+                <AgreementTable
+                  rows={r.eachVsStandard}
+                  withLabel
+                  note="Appraiser’s assessment across trials agrees with the known standard."
+                  confLabel={confLabel}
+                />
+                <KappaBlocksTable blocks={r.eachVsStandardKappa} />
               </section>
             )}
 
@@ -222,11 +277,13 @@ export default function AttrAgreementResults({
             {r.betweenAppraisers && (
               <section className="space-y-3">
                 <h4 className="font-bold text-sm">Between Appraisers</h4>
-                {agreementTable(
-                  [r.betweenAppraisers], false,
-                  "All appraisers’ assessments agree with each other."
-                )}
-                {kappaTable(r.betweenKappa)}
+                <AgreementTable
+                  rows={[r.betweenAppraisers]}
+                  withLabel={false}
+                  note="All appraisers’ assessments agree with each other."
+                  confLabel={confLabel}
+                />
+                <KappaTable rows={r.betweenKappa} />
               </section>
             )}
 
@@ -234,11 +291,13 @@ export default function AttrAgreementResults({
             {r.allVsStandard && (
               <section className="space-y-3">
                 <h4 className="font-bold text-sm">All Appraisers vs Standard</h4>
-                {agreementTable(
-                  [r.allVsStandard], false,
-                  "All appraisers’ assessments agree with the known standard."
-                )}
-                {kappaTable(r.allVsStandardKappa)}
+                <AgreementTable
+                  rows={[r.allVsStandard]}
+                  withLabel={false}
+                  note="All appraisers’ assessments agree with the known standard."
+                  confLabel={confLabel}
+                />
+                <KappaTable rows={r.allVsStandardKappa} />
               </section>
             )}
 
@@ -246,7 +305,9 @@ export default function AttrAgreementResults({
             {r.notes.length > 0 && (
               <div className="space-y-1">
                 {r.notes.map((nt, i) => (
-                  <p key={i} className="italic">* NOTE * {nt}</p>
+                  <p key={i} className="italic">
+                    * NOTE * {nt}
+                  </p>
                 ))}
               </div>
             )}
