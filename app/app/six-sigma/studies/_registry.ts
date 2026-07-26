@@ -12,6 +12,7 @@ import boxplot from "./boxplot";
 import timeseries from "./timeseries";
 import gagerr from "./gagerr";
 import attragreement from "./attragreement";
+import multivari from "./multivari";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
@@ -26,6 +27,7 @@ const ALL: ArtifactDefinition[] = [
   timeseries,
   gagerr,
   attragreement,
+  multivari,
   // ...aqui iran anova, doe, sipoc, etc.
 ];
 
