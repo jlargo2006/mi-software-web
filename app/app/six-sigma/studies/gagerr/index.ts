@@ -4,6 +4,7 @@ import Controls from "./Controls";
 import Results from "./Results";
 import { computeGageRRStudy } from "./compute";
 import { GAGERR_DEFAULT, type GageRRParams, type GageRRResult } from "./types";
+import Theory from "./Theory";
 
 const gagerr: AnalysisDefinition<GageRRParams, GageRRResult> = {
   id: "gagerr",
@@ -14,6 +15,7 @@ const gagerr: AnalysisDefinition<GageRRParams, GageRRResult> = {
   compute: computeGageRRStudy,
   Controls,
   Results,
+  Theory,
   referencedColumns: (params) =>
     [params.partCol, params.operatorCol, params.measCol].filter(
       (x): x is string => !!x
