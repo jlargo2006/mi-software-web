@@ -6,7 +6,7 @@ import { computeMultiVariStudy } from "./compute";
 import { MULTIVARI_DEFAULT, type MultiVariParams, type MultiVariResult } from "./types";
 
 const multivari: AnalysisDefinition<MultiVariParams, MultiVariResult> = {
-  id: "multivari",
+  id: "multiVari",
   kind: "analysis",
   phase: "analyze",
   label: "Multi-Vari Chart",
