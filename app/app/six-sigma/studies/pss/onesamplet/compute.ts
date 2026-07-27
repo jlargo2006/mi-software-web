@@ -1,6 +1,6 @@
 // app/app/six-sigma/studies/pss/onesamplet/compute.ts
 import type { ColumnSnapshot } from "../../types";
-import { nctCdf, tQuantile } from "./_shared/mathutil";
+import { nctCdf, tQuantile } from "../_shared/mathutil";
 import type {
   Alternative,
   Pss1SampleTParams,
