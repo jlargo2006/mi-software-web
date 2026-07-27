@@ -11,14 +11,12 @@ const Text = ({
   onChange,
   placeholder,
   hint,
-  disabled,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   hint?: string;
-  disabled?: boolean;
 }) => (
   <label className="flex flex-col gap-1 text-sm">
     <span className="font-medium">
@@ -27,10 +25,9 @@ const Text = ({
     </span>
     <input
       type="text"
-      className="border border-gray-300 rounded px-2 py-1 text-sm disabled:bg-gray-100"
+      className="border border-gray-300 rounded px-2 py-1 text-sm"
       value={value}
       placeholder={placeholder}
-      disabled={disabled}
       onChange={(e) => onChange(e.target.value)}
     />
   </label>
@@ -75,7 +72,7 @@ export default function Pss1SampleTControls({
         />
         <Text
           label="Differences"
-          hint="mean \u2212 null"
+          hint="mean − null"
           value={params.differences}
           onChange={(v) => set("differences", v)}
           placeholder="leave blank to calculate"
@@ -98,7 +95,20 @@ export default function Pss1SampleTControls({
         />
 
         <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium">Significance level (\u03b1)</span>
+          <span className="font-medium">Alternative hypothesis</span>
+          <select
+            className="border border-gray-300 rounded px-2 py-1 text-sm"
+            value={params.alternative}
+            onChange={(e) => set("alternative", e.target.value as Alternative)}
+          >
+            <option value="less">Less than</option>
+            <option value="two-sided">Not equal</option>
+            <option value="greater">Greater than</option>
+          </select>
+        </label>
+
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="font-medium">Significance level (α)</span>
           <input
             type="number"
             step="0.01"
@@ -108,19 +118,6 @@ export default function Pss1SampleTControls({
             value={params.alpha}
             onChange={(e) => set("alpha", Number(e.target.value))}
           />
-        </label>
-
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium">Alternative hypothesis</span>
-          <select
-            className="border border-gray-300 rounded px-2 py-1 text-sm"
-            value={params.alternative}
-            onChange={(e) => set("alternative", e.target.value as Alternative)}
-          >
-            <option value="two-sided">mean \u2260 null</option>
-            <option value="less">mean &lt; null</option>
-            <option value="greater">mean &gt; null</option>
-          </select>
         </label>
       </div>
 
