@@ -1,4 +1,4 @@
-// app/app/six-sigma/studies/pss1samplet/compute.ts
+// app/app/six-sigma/studies/pss/onesamplet/compute.ts
 import type { ColumnSnapshot } from "../types";
 import { nctCdf, tQuantile } from "./mathutil";
 import type {
