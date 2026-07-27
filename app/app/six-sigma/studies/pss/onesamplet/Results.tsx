@@ -2,7 +2,7 @@
 "use client";
 import React from "react";
 import type { Data } from "plotly.js";
-import type { ColumnSnapshot } from "../types";
+import type { ColumnSnapshot } from "../../types";
 import type { Pss1SampleTParams, Pss1SampleTResult } from "./types";
 import ResultChart from "../../../components/ResultChart";
 import ReportLayout from "../../../components/ReportLayout";
