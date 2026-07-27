@@ -1,11 +1,11 @@
-// app/app/six-sigma/studies/pss1samplet/Results.tsx
+// app/app/six-sigma/studies/pss/onesamplet/Results.tsx
 "use client";
 import React from "react";
 import type { Data } from "plotly.js";
 import type { ColumnSnapshot } from "../types";
 import type { Pss1SampleTParams, Pss1SampleTResult } from "./types";
-import ResultChart from "../../components/ResultChart";
-import ReportLayout from "../../components/ReportLayout";
+import ResultChart from "../../../components/ResultChart";
+import ReportLayout from "../../../components/ReportLayout";
 
 const PALETTE = [
   "#c0392b", "#2980b9", "#27ae60", "#8e44ad", "#d35400",
