@@ -28,7 +28,7 @@ const Td = ({ children, right }: { children?: React.ReactNode; right?: boolean }
 );
 
 const ALT_TEXT: Record<string, string> = {
-  "two-sided": "\u2260 null",
+  "two-sided": "≠ null",
   less: "< null",
   greater: "> null",
 };
@@ -86,7 +86,7 @@ export default function Pss1SampleTResults({
               </p>
               <p>Calculating power for mean = null + difference</p>
               <p>
-                \u03b1 = {num(r.alpha, 2)}&nbsp;&nbsp;Assumed standard deviation ={" "}
+                α = {num(r.alpha, 2)}&nbsp;&nbsp;Assumed standard deviation ={" "}
                 {num(r.sd, 4).replace(/,?0+$/, "")}
               </p>
             </div>
@@ -145,7 +145,7 @@ export default function Pss1SampleTResults({
                       showarrow: false,
                       align: "left",
                       font: { size: 10, color: "#6b7280" },
-                      text: `Assumptions<br>\u03b1 &nbsp; ${num(r.alpha, 2)}<br>StDev &nbsp; ${num(r.sd, 4).replace(/,?0+$/, "")}<br>Alternative &nbsp; ${ALT_TEXT[r.alternative]}`,
+                      text: `Assumptions<br>α &nbsp; ${num(r.alpha, 2)}<br>StDev &nbsp; ${num(r.sd, 4).replace(/,?0+$/, "")}<br>Alternative &nbsp; ${ALT_TEXT[r.alternative]}`,
                     },
                   ],
                   hovermode: "closest",
