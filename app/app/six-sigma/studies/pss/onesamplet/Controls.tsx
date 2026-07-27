@@ -1,7 +1,7 @@
 // app/app/six-sigma/studies/pss1samplet/Controls.tsx
 "use client";
 import React from "react";
-import type { ColumnInfo } from "../../lib/columns";
+import type { ColumnInfo } from "../../../lib/columns";
 import type { Alternative, Pss1SampleTParams } from "./types";
 import { parseRange } from "./compute";
 
