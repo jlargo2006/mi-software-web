@@ -29,7 +29,9 @@ const Select = ({
       value={value ?? ""}
       onChange={(e) => onChange(e.target.value === "" ? null : e.target.value)}
     >
-      <option value="">{allowNone ? "\u2014 none \u2014" : "\u2014 select \u2014"}</option>
+      <option value="">
+        {allowNone ? "\u2014 none \u2014" : "\u2014 select \u2014"}
+      </option>
       {columns.map((c) => (
         <option key={c.name} value={c.name}>
           {c.name}
@@ -71,6 +73,17 @@ export default function MultiVariControls({
   const set = <K extends keyof MultiVariParams>(k: K, v: MultiVariParams[K]) =>
     onChange({ ...params, [k]: v });
 
+  // Jerarquia efectiva, de mas externo a mas interno.
+  const hierarchy = [
+    params.factor4,
+    params.factor3,
+    params.factor2,
+    params.factor1,
+  ].filter((x): x is string => !!x);
+
+  // Un mismo campo usado en dos niveles invalida el anidamiento.
+  const duplicated = hierarchy.length !== new Set(hierarchy).size;
+
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -82,14 +95,14 @@ export default function MultiVariControls({
         />
         <Select
           label="Factor 1"
-          hint="X axis"
+          hint="innermost / X axis"
           value={params.factor1}
           onChange={(v) => set("factor1", v)}
           columns={columns}
         />
         <Select
           label="Factor 2"
-          hint="lines"
+          hint="groups Factor 1"
           value={params.factor2}
           onChange={(v) => set("factor2", v)}
           columns={columns}
@@ -97,7 +110,7 @@ export default function MultiVariControls({
         />
         <Select
           label="Factor 3"
-          hint="panels"
+          hint="groups Factor 2"
           value={params.factor3}
           onChange={(v) => set("factor3", v)}
           columns={columns}
@@ -105,7 +118,7 @@ export default function MultiVariControls({
         />
         <Select
           label="Factor 4"
-          hint="panel rows"
+          hint="outermost"
           value={params.factor4}
           onChange={(v) => set("factor4", v)}
           columns={columns}
@@ -120,16 +133,30 @@ export default function MultiVariControls({
           onChange={(v) => set("showPoints", v)}
         />
         <Check
-          label="Connect means"
-          checked={params.connectMeans}
-          onChange={(v) => set("connectMeans", v)}
-        />
-        <Check
           label="Show grand mean"
           checked={params.showGrandMean}
           onChange={(v) => set("showGrandMean", v)}
         />
+        <Check
+          label="Sort levels alphabetically"
+          checked={params.sortLevels}
+          onChange={(v) => set("sortLevels", v)}
+        />
       </div>
+
+      {hierarchy.length > 0 && (
+        <p className="text-xs text-gray-500">
+          Nesting: {hierarchy.join(" \u203A ")}
+          <span className="ml-1 text-gray-400">(outermost to innermost)</span>
+        </p>
+      )}
+
+      {duplicated && (
+        <p className="text-xs text-amber-700">
+          The same column is assigned to more than one factor. Each level of the
+          hierarchy must use a different column.
+        </p>
+      )}
     </div>
   );
 }
