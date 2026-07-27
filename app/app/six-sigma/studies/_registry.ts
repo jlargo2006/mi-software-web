@@ -13,6 +13,7 @@ import timeseries from "./timeseries";
 import gagerr from "./gagerr";
 import attragreement from "./attragreement";
 import multivari from "./multivari";
+import pss1SampleT from "./pss1samplet";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
@@ -28,6 +29,7 @@ const ALL: ArtifactDefinition[] = [
   gagerr,
   attragreement,
   multivari,
+  pss1SampleT,
   // ...aqui iran anova, doe, sipoc, etc.
 ];
 
