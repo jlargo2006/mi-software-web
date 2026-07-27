@@ -1,20 +1,21 @@
 // app/app/six-sigma/studies/multivari/types.ts
 
 export interface MultiVariParams {
-  /** Factor X: el mas interno, va en el eje horizontal. */
+  /** Factor mas interno: define las posiciones del eje X. */
   factor1: string | null;
-  /** Factor de serie: define color y linea que une medias. */
+  /** Segundo nivel (agrupa a factor1). */
   factor2: string | null;
-  /** Factor de panel (columnas). */
+  /** Tercer nivel (agrupa a factor2). */
   factor3: string | null;
-  /** Factor de panel (filas). Opcional. */
+  /** Cuarto nivel, el mas externo. Opcional. */
   factor4: string | null;
   /** Columna de respuesta numerica. */
   responseCol: string | null;
 
   showPoints: boolean;
-  connectMeans: boolean;
   showGrandMean: boolean;
+  /** Ordenar niveles alfabeticamente en lugar de por orden de aparicion. */
+  sortLevels: boolean;
 }
 
 export const MULTIVARI_DEFAULT: MultiVariParams = {
@@ -24,30 +25,39 @@ export const MULTIVARI_DEFAULT: MultiVariParams = {
   factor4: null,
   responseCol: null,
   showPoints: true,
-  connectMeans: true,
   showGrandMean: false,
+  sortLevels: false,
 };
 
-/** Una observacion individual ya clasificada. */
+/** Observacion individual situada en el eje X. */
 export interface MVPoint {
-  row: string; // nivel de factor4 ("" si no hay)
-  panel: string; // nivel de factor3 ("" si no hay)
-  series: string; // nivel de factor2 ("" si no hay)
-  x: string; // nivel de factor1
+  path: string[];
+  x: number;
   value: number;
 }
 
-/** Media de una celda (row x panel x series x x). */
-export interface MVMean {
-  row: string;
-  panel: string;
-  series: string;
-  x: string;
+/**
+ * Media de un grupo en un nivel de la jerarquia.
+ * depth 0 = nivel mas externo; depth L-1 = celda hoja.
+ */
+export interface MVGroupMean {
+  depth: number;
+  path: string[];
+  /** Clave del grupo padre; "" en el nivel mas externo. */
+  parent: string;
+  /** Centro del grupo en el eje X. */
+  x: number;
   mean: number;
   n: number;
 }
 
-/** Resumen por nivel de un factor, para la tabla lateral. */
+/** Etiqueta bajo el eje para un grupo de nivel intermedio. */
+export interface MVAxisLabel {
+  depth: number;
+  text: string;
+  x: number;
+}
+
 export interface MVFactorSummary {
   factor: string;
   levels: { label: string; n: number; mean: number; sd: number | null }[];
@@ -57,24 +67,25 @@ export interface MultiVariResult {
   ok: boolean;
   error?: string;
 
-  labels: {
-    x: string;
-    series: string | null;
-    panel: string | null;
-    row: string | null;
-    response: string;
-  };
-
-  xLevels: string[];
-  seriesLevels: string[];
-  panelLevels: string[];
-  rowLevels: string[];
+  /** Nombres de factor, de mas externo a mas interno. */
+  factorNames: string[];
+  responseName: string;
 
   points: MVPoint[];
-  means: MVMean[];
+  /** Medias de todos los niveles, ordenadas por depth ascendente. */
+  groupMeans: MVGroupMean[];
 
-  grandMean: number;
+  /** Ticks del eje X: posicion y etiqueta del factor mas interno. */
+  tickVals: number[];
+  tickText: string[];
+  /** Etiquetas de los niveles superiores, en filas bajo el eje. */
+  axisLabels: MVAxisLabel[];
+  /** Posiciones X de las lineas verticales separadoras del nivel externo. */
+  separators: number[];
+
+  xRange: [number, number];
   yRange: [number, number];
+  grandMean: number;
 
   n: number;
   missing: number;
