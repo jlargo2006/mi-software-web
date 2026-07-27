@@ -85,6 +85,7 @@ export interface MultiVariResult {
 
   xRange: [number, number];
   yRange: [number, number];
+  yRangeMeans: [number, number];
   grandMean: number;
 
   n: number;
