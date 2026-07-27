@@ -1,5 +1,5 @@
 // app/app/six-sigma/studies/pss/onesamplet/index.ts
-import type { AnalysisDefinition } from "../types";
+import type { AnalysisDefinition } from "../../types";
 import Controls from "./Controls";
 import Results from "./Results";
 import { computePss1SampleT } from "./compute";
