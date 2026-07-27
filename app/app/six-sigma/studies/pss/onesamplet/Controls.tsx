@@ -1,4 +1,4 @@
-// app/app/six-sigma/studies/pss1samplet/Controls.tsx
+// app/app/six-sigma/studies/pss/onesamplet/Controls.tsx
 "use client";
 import React from "react";
 import type { ColumnInfo } from "../../../lib/columns";
