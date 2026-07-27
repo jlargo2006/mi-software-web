@@ -65,6 +65,7 @@ export function computeMultiVariStudy(
     separators: [],
     xRange: [0, 1],
     yRange: [0, 1],
+    yRangeMeans: [0, 1],
     grandMean: 0,
     n: 0,
     missing: 0,
@@ -238,10 +239,18 @@ export function computeMultiVariStudy(
   }));
 
   /* --- rangos --- */
+  const padOf = (lo: number, hi: number): number =>
+    hi - lo === 0 ? Math.abs(hi) * 0.05 || 0.5 : (hi - lo) * 0.15;
+
   const all = points.map((p) => p.value);
-  const lo = Math.min(...all);
-  const hi = Math.max(...all);
-  const padY = hi - lo === 0 ? Math.abs(hi) * 0.05 || 0.5 : (hi - lo) * 0.15;
+  const loP = Math.min(...all);
+  const hiP = Math.max(...all);
+  const padP = padOf(loP, hiP);
+
+  const allMeans = groupMeans.map((g) => g.mean);
+  const loM = Math.min(...allMeans);
+  const hiM = Math.max(...allMeans);
+  const padM = padOf(loM, hiM);
 
   const xs = tickVals;
   const padX = 1;
@@ -279,7 +288,8 @@ export function computeMultiVariStudy(
     axisLabels,
     separators,
     xRange: [Math.min(...xs) - padX, Math.max(...xs) + padX],
-    yRange: [lo - padY, hi + padY],
+    yRange: [loP - padP, hiP + padP],
+    yRangeMeans: [loM - padM, hiM + padM],
     grandMean: mean(all),
     n: points.length,
     missing,
