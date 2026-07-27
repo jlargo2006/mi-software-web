@@ -72,6 +72,7 @@ export default function MultiVariResults({
   /* Con jerarquia, el nivel mas interno se identifica por simbolo en la leyenda
      en lugar de por etiqueta en el eje, que se solaparia. */
   const useSymbolLegend = L >= 2;
+  const yRange = params.showPoints ? r.yRange : r.yRangeMeans;
 
   /* Niveles del factor interno, en el orden en que aparecen en el eje. */
   const innerLevels: string[] = [];
@@ -276,7 +277,7 @@ export default function MultiVariResults({
                   },
                   yaxis: {
                     title: { text: r.responseName },
-                    range: r.yRange,
+                    range: yRange,
                     zeroline: false,
                   },
                   shapes,
