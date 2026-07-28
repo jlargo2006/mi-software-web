@@ -162,7 +162,7 @@ export const PHASES: RibbonPhase[] = [
         enabled: true,
         children: [
           { id: "pssT1",       label: "1-Sample t-test",             tool: "pss1SampleT", enabled: true  },
-          { id: "pssT2",       label: "2-Sample t-test",             tool: null,          enabled: false },
+          { id: "pssT2",       label: "2-Sample t-test",             tool: "pss2SampleT", enabled: true  },
           { id: "pssTPaired",  label: "Paired t-test",               tool: null,          enabled: false },
           { id: "pssEqualVar", label: "Test for Equal Variance",     tool: null,          enabled: false },
           { id: "pssAnova",    label: "One-Way ANOVA",               tool: null,          enabled: false },
