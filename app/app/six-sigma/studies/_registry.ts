@@ -35,6 +35,7 @@ const ALL: ArtifactDefinition[] = [
   pss1SampleT,
   pss2SampleT,
   pssAnova,
+  pssOneProportion,
   // ...aqui iran anova, doe, sipoc, etc.
 ];
 
