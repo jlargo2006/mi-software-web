@@ -102,8 +102,8 @@ export default function PssReport({
               <p>{hypothesisLine}</p>
               <p>{calcLine}</p>
               <p>
-                α = {num(r.alpha, 2)}&nbsp;&nbsp;Assumed standard deviation ={" "}
-                {trim(r.sd)}
+                α = {num(r.alpha, 2)}
+                {showSd && <> &nbsp;&nbsp;Assumed standard deviation = {trim(r.sd)}</>}
               </p>
               {extraHeaderLines}
             </div>
@@ -165,10 +165,8 @@ export default function PssReport({
                       font: { size: 10, color: "#6b7280" },
                       text:
                         `Assumptions<br>α &nbsp; ${num(r.alpha, 2)}` +
-                        `<br>StDev &nbsp; ${trim(r.sd)}` +
-                        (showAlternative
-                          ? `<br>Alternative &nbsp; ${altText}`
-                          : ""),
+                        (showSd ? `<br>StDev &nbsp; ${trim(r.sd)}` : "") +
+                        (showAlternative ? `<br>Alternative &nbsp; ${altText}` : ""),
                     },
                   ],
                   hovermode: "closest",
