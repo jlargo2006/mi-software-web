@@ -17,7 +17,7 @@ export interface PssBaseParams {
 export const PSS_BASE_DEFAULT: PssBaseParams = {
   sampleSizes: "",
   differences: "",
-  powerValues: "",
+  powerValues: "0.9",
   sd: "1",
   alpha: 0.05,
   alternative: "two-sided",
