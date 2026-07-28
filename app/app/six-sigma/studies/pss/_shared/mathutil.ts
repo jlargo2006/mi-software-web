@@ -221,3 +221,17 @@ export function binomSf(k: number, n: number, p: number): number {
   return Math.min(1, Math.max(0, 1 - binomCdf(k - 1, n, p)));
 }
 
+/** Cuantil de la normal estandar, por biseccion sobre normCdf. */
+export function zQuantile(a: number): number {
+  if (a <= 0) return -Infinity;
+  if (a >= 1) return Infinity;
+  let lo = -12;
+  let hi = 12;
+  for (let i = 0; i < 200; i++) {
+    const mid = (lo + hi) / 2;
+    if (normCdf(mid) < a) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
