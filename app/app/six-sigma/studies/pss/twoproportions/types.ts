@@ -18,6 +18,6 @@ export const DEFAULT_TWOPROP_PARAMS: PssTwoPropParams = {
   differences: "0.4 0.5",
   powerValues: "0.9",
   alpha: 0.05,
-  alternative: "notequal",
+  alternative: "two-sided",
   sd: "",
 };
