@@ -44,6 +44,7 @@ export default function PssFields<P extends PssBaseParams>({
   diffLabel = "Differences",
   diffHint = "mean − null",
   sdLabel = "Standard deviation",
+  showAlternative = true,
   extra,
 }: {
   params: P;
@@ -54,6 +55,8 @@ export default function PssFields<P extends PssBaseParams>({
   diffHint?: string;
   sdLabel?: string;
   /** Campos adicionales propios del estudio, en una fila aparte. */
+  /** ANOVA y otros tests omnibus no tienen hipotesis alternativa. */
+  showAlternative?: boolean;
   extra?: React.ReactNode;
 }) {
   const set = <K extends keyof P>(k: K, v: P[K]) => onChange({ ...params, [k]: v });
@@ -101,21 +104,22 @@ export default function PssFields<P extends PssBaseParams>({
           value={params.sd}
           onChange={(v) => set("sd" as keyof P, v as P[keyof P])}
         />
-
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium">Alternative hypothesis</span>
-          <select
-            className="border border-gray-300 rounded px-2 py-1 text-sm"
-            value={params.alternative}
-            onChange={(e) =>
-              set("alternative" as keyof P, e.target.value as Alternative as P[keyof P])
-            }
-          >
-            <option value="less">{ALT_LABEL.less}</option>
-            <option value="two-sided">{ALT_LABEL["two-sided"]}</option>
-            <option value="greater">{ALT_LABEL.greater}</option>
-          </select>
-        </label>
+        {showAlternative && (
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="font-medium">Alternative hypothesis</span>
+            <select
+              className="border border-gray-300 rounded px-2 py-1 text-sm"
+              value={params.alternative}
+              onChange={(e) =>
+                set("alternative" as keyof P, e.target.value as Alternative as P[keyof P])
+              }
+            >
+              <option value="less">{ALT_LABEL.less}</option>
+              <option value="two-sided">{ALT_LABEL["two-sided"]}</option>
+              <option value="greater">{ALT_LABEL.greater}</option>
+            </select>
+          </label>
+        )}
 
         <label className="flex flex-col gap-1 text-sm">
           <span className="font-medium">Significance level (α)</span>
