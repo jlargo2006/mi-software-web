@@ -43,6 +43,7 @@ export default function PssReport({
   xTitle = "Difference",
   showAlternative = true,
   showSd = true,
+  diffTransform,
   extraHeaderLines,
 }: {
   result: PssBaseResult;
@@ -57,9 +58,11 @@ export default function PssReport({
   xTitle?: string;
   showSd?: boolean;
   showAlternative?: boolean;
+  diffTransform?: (d: number) => number;
   extraHeaderLines?: React.ReactNode;
 }) {
   const r = result;
+  const tx = diffTransform ?? ((d: number) => d);
 
   if (!r || !r.ok) {
     return (
@@ -72,7 +75,7 @@ export default function PssReport({
   const traces: Data[] = r.curves.map((c, i) => ({
     type: "scatter",
     mode: "lines",
-    x: c.x,
+    x: c.x.map(tx),
     y: c.y,
     line: { color: PALETTE[i % PALETTE.length], width: 2 },
     name: String(c.n),
@@ -82,7 +85,7 @@ export default function PssReport({
   traces.push({
     type: "scatter",
     mode: "markers",
-    x: r.markers.map((m) => m.x),
+    x: r.markers.map((m) => tx(m.x)),
     y: r.markers.map((m) => m.y),
     marker: { color: "#111827", size: 7, symbol: "circle" },
     name: "Design points",
@@ -127,7 +130,7 @@ export default function PssReport({
                       <Td right>{row.n}</Td>
                       {showTarget && <Td right>{num(row.targetPower ?? NaN, 2)}</Td>}
                       <Td right>{num(row.power, showTarget ? 6 : 1)}</Td>
-                      <Td right>{num(row.difference, 5)}</Td>
+                      <Td right>{num(tx(row.difference), 5)}</Td>
                     </tr>
                   ))}
                 </tbody>
