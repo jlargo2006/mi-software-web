@@ -41,6 +41,7 @@ export default function PssReport({
   sizeHeader = "Sample Size",
   diffHeader = "Difference",
   xTitle = "Difference",
+  showAlternative = true,
   extraHeaderLines,
 }: {
   result: PssBaseResult;
@@ -53,6 +54,7 @@ export default function PssReport({
   sizeHeader?: string;
   diffHeader?: string;
   xTitle?: string;
+  showAlternative?: boolean;
   extraHeaderLines?: React.ReactNode;
 }) {
   const r = result;
@@ -161,12 +163,12 @@ export default function PssReport({
                       showarrow: false,
                       align: "left",
                       font: { size: 10, color: "#6b7280" },
-                      text: `Assumptions<br>α &nbsp; ${num(
-                        r.alpha,
-                        2
-                      )}<br>StDev &nbsp; ${trim(
-                        r.sd
-                      )}<br>Alternative &nbsp; ${altText}`,
+                      text:
+                        `Assumptions<br>α &nbsp; ${num(r.alpha, 2)}` +
+                        `<br>StDev &nbsp; ${trim(r.sd)}` +
+                        (showAlternative
+                          ? `<br>Alternative &nbsp; ${altText}`
+                          : ""),
                     },
                   ],
                   hovermode: "closest",
