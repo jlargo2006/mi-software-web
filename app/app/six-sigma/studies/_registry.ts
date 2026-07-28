@@ -15,6 +15,7 @@ import attragreement from "./attragreement";
 import multivari from "./multivari";
 import pss1SampleT from "./pss1samplet";
 import pss2SampleT from "./pss/twosamplet";
+import pssAnova from "./pss/anova";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
@@ -32,6 +33,7 @@ const ALL: ArtifactDefinition[] = [
   multivari,
   pss1SampleT,
   pss2SampleT,
+  pssAnova,
   // ...aqui iran anova, doe, sipoc, etc.
 ];
 
