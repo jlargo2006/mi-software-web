@@ -11,12 +11,18 @@ import type {
 
 /** Lo unico que cada estudio debe aportar. */
 export interface PssSpec {
-  /** Potencia del test para un tamano y una diferencia dados. */
   powerOf: (n: number, diff: number, sd: number, alpha: number, alt: Alternative) => number;
-  /** Menor tamano muestral admisible (2 en 1-sample, 2 por grupo en 2-sample). */
   minN: number;
-  /** Etiqueta usada en los mensajes de validacion. */
   sizeLabel?: string;
+  /** Los tests basados en proporciones no usan desviacion tipica. */
+  requiresSd?: boolean;
+  /** Cota superior de |diferencia|; por defecto 10 desviaciones tipicas. */
+  maxAbsDiff?: number;
+  /**
+   * false para tests exactos: su potencia es dentada en n y la biseccion
+   * no es valida. Fuerza un barrido ascendente.
+   */
+  monotoneInN?: boolean;
 }
 
 export type PssRun =
@@ -38,7 +44,7 @@ function solveDifference(
 ): number | null {
   const sign = alt === "less" ? -1 : 1;
   let lo = 0;
-  let hi = sd * SD_MULT;
+  let hi = spec.maxAbsDiff ?? sd * SD_MULT;
   if (spec.powerOf(n, sign * hi, sd, alpha, alt) < target) return null;
   for (let i = 0; i < 200; i++) {
     const mid = (lo + hi) / 2;
@@ -57,6 +63,13 @@ function solveSize(
   alpha: number,
   alt: Alternative
 ): number | null {
+  // Test exacto: potencia dentada, hay que barrer.
+  if (spec.monotoneInN === false) {
+    for (let n = spec.minN; n <= MAX_N; n++)
+      if (spec.powerOf(n, diff, sd, alpha, alt) >= target) return n;
+    return null;
+  }
+
   let lo = spec.minN;
   let hi = spec.minN;
   while (spec.powerOf(hi, diff, sd, alpha, alt) < target) {
@@ -71,6 +84,7 @@ function solveSize(
   return lo;
 }
 
+
 /**
  * Ejecuta el estudio: valida los parametros comunes, deduce cual de los tres
  * campos es la incognita y la resuelve usando la potencia del spec.
@@ -79,7 +93,7 @@ export function runPss(spec: PssSpec, params: PssBaseParams): PssRun {
   const sizeLabel = spec.sizeLabel ?? "Sample sizes";
 
   const sd = parsePositive(params.sd);
-  if (!Number.isFinite(sd) || sd <= 0)
+  if (spec.requiresSd !== false && (!Number.isFinite(sd) || sd <= 0))
     return { ok: false, error: "Standard deviation must be a positive number." };
 
   const alpha = params.alpha;
@@ -97,7 +111,7 @@ export function runPss(spec: PssSpec, params: PssBaseParams): PssRun {
 
   const filled = [pn.values.length > 0, pd.values.length > 0, pp.values.length > 0];
   const nFilled = filled.filter(Boolean).length;
-
+ 
   if (nFilled < 2)
     return {
       ok: false,
@@ -180,7 +194,8 @@ export function runPss(spec: PssSpec, params: PssBaseParams): PssRun {
 
   /* --- curvas de potencia --- */
   const sizes = [...new Set(rows.map((r) => r.n))].sort((a, b) => a - b);
-  const span = Math.max(...rows.map((r) => Math.abs(r.difference))) * 1.6;
+  const rawSpan = Math.max(...rows.map((r) => Math.abs(r.difference))) * 1.6;
+  const span = spec.maxAbsDiff ? Math.min(rawSpan, spec.maxAbsDiff) : rawSpan;
   const sign = alt === "less" ? -1 : 1;
 
   const curves: PssCurve[] = sizes.map((n) => {
