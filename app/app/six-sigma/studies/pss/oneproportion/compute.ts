@@ -1,10 +1,11 @@
 // app/app/six-sigma/studies/pss/oneproportion/compute.ts
 import type { ColumnSnapshot } from "../../types";
-import { binomCdf, binomSf, normCdf } from "../_shared/mathutil";
+import { binomCdf, binomSf, normCdf, zQuantile } from "../_shared/mathutil";
 import { emptyCore, runPss, type PssSpec } from "../_shared/engine";
 import { parsePositive, parseRange } from "../_shared/rangeParser";
 import type { Alternative } from "../_shared/types";
 import type { PssPropParams, PssPropResult, PropMethod } from "./types";
+
 
 /** Menor c con P(X >= c | p0) <= alpha. */
 function critUpper(n: number, p0: number, alpha: number): number {
@@ -45,27 +46,15 @@ function powerNormal(
   const s1 = Math.sqrt((p1 * (1 - p1)) / n);
   if (s1 <= 0) return p1 === p0 ? alpha : 1;
 
-  const zA = (a: number): number => {
-    // cuantil normal por biseccion sobre normCdf
-    let lo = -12;
-    let hi = 12;
-    for (let i = 0; i < 200; i++) {
-      const mid = (lo + hi) / 2;
-      if (normCdf(mid) < a) lo = mid;
-      else hi = mid;
-    }
-    return (lo + hi) / 2;
-  };
-
   if (alt === "greater") {
-    const c = p0 + zA(1 - alpha) * s0;
+    const c = p0 + zQuantile(1 - alpha) * s0;
     return 1 - normCdf((c - p1) / s1);
   }
   if (alt === "less") {
-    const c = p0 - zA(1 - alpha) * s0;
+    const c = p0 - zQuantile(1 - alpha) * s0;
     return normCdf((c - p1) / s1);
   }
-  const z = zA(1 - alpha / 2);
+  const z = zQuantile(1 - alpha / 2);
   const cu = p0 + z * s0;
   const cl = p0 - z * s0;
   return Math.min(1, 1 - normCdf((cu - p1) / s1) + normCdf((cl - p1) / s1));
