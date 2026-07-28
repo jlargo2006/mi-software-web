@@ -40,6 +40,10 @@ export interface AnalysisDefinition<P = unknown, R = unknown> extends BaseArtifa
 
   // UI de resultados (se pinta siempre).
   Results: React.FC<{ data: ColumnSnapshot; params: P; result: R }>;
+
+  // Pantalla teorica OPCIONAL: formulas, metodo y decisiones de calculo.
+  // Si existe, el runner muestra el boton "Theory" en la cabecera.
+  Theory?: React.FC;
 }
 
 /* ---------- Familia 2: diagramas / formularios libres ---------- */

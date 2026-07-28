@@ -11,6 +11,13 @@ import dotplot from "./dotplot";
 import boxplot from "./boxplot";
 import timeseries from "./timeseries";
 import gagerr from "./gagerr";
+import attragreement from "./attragreement";
+import multivari from "./multivari";
+import pss1SampleT from "./pss1samplet";
+import pss2SampleT from "./pss/twosamplet";
+import pssAnova from "./pss/anova";
+import pssOneProportion from "./pss/oneproportion";
+import pssTwoProportions from "./pss/twoproportions";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
@@ -24,7 +31,13 @@ const ALL: ArtifactDefinition[] = [
   boxplot,
   timeseries,
   gagerr,
-  // ...aqui iran anova, doe, sipoc, etc.
+  attragreement,
+  multivari,
+  pss1SampleT,
+  pss2SampleT,
+  pssAnova,
+  pssOneProportion,
+  pssTwoProportions,
 ];
 
 export const REGISTRY: Record<string, ArtifactDefinition> = Object.fromEntries(

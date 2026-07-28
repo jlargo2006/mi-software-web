@@ -5,6 +5,7 @@ import { DESCRIPTIVE_DEFAULT } from "./types";
 import { computeDescriptive } from "./compute";
 import DescriptiveControls from "./Controls";
 import DescriptiveResults from "./Results";
+import Theory from "./Theory";
 
 export const descriptive: AnalysisDefinition<DescriptiveParams, DescriptiveResult> = {
   id: "descriptive",
@@ -16,4 +17,5 @@ export const descriptive: AnalysisDefinition<DescriptiveParams, DescriptiveResul
   Controls: DescriptiveControls,
   compute: computeDescriptive,
   Results: DescriptiveResults,
+  Theory,
 };

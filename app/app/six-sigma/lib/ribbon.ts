@@ -107,8 +107,7 @@ export const PHASES: RibbonPhase[] = [
 
       // (—) proposed – core MSA tool for the Measure phase
       { id: "gagerr", label: "Gage R&R (Crossed)", tool: "gagerr", enabled: true },
-      // (—) proposed
-      { id: "runChart", label: "Run Chart", tool: null, enabled: false },
+      { id: "attragreement", label: "Attribute Agreement Analysis", tool: "attragreement", enabled: true },
     ],
   },
 
@@ -119,8 +118,8 @@ export const PHASES: RibbonPhase[] = [
     name: "Analyse",
     tools: [
       // p.247 / p.249 | mpj: Analyze Data Sets.mpj | mtw: MVInjectionMold.mtw / CallCenter.mtw
-      { id: "multiVari", label: "Multi-Vari Chart", tool: null, enabled: false },
-
+      { id: "multiVari", label: "Multi-Vari Chart", tool: "multiVari", enabled: true },
+     
       // p.272 | mtw: Die Example
       { id: "clt", label: "Sampling Distributions / CLT", tool: null, enabled: false },
 
@@ -162,11 +161,14 @@ export const PHASES: RibbonPhase[] = [
         tool: null,
         enabled: true,
         children: [
-          { id: "pssT1", label: "1-Sample t", tool: null, enabled: false },
-          { id: "pssT2", label: "2-Sample t", tool: null, enabled: false },
-          { id: "pssAnova", label: "One-Way ANOVA", tool: null, enabled: false },
-          { id: "pssProp1", label: "1 Proportion", tool: null, enabled: false },
-          { id: "pssProp2", label: "2 Proportions", tool: null, enabled: false },
+          { id: "pssT1",       label: "1-Sample t-test",             tool: "pss1SampleT", enabled: true  },
+          { id: "pssT2",       label: "2-Sample t-test",             tool: "pss2SampleT", enabled: true  },
+          { id: "pssTPaired",  label: "Paired t-test",               tool: null,          enabled: false },
+          { id: "pssEqualVar", label: "Test for Equal Variance",     tool: null,          enabled: false },
+          { id: "pssAnova",    label: "One-Way ANOVA",               tool: "pssAnova",    enabled: true },
+          { id: "pssSign",     label: "1-Sample Sign / Wilcoxon",    tool: null,          enabled: false },
+          { id: "pssProp1",    label: "1 Proportion",                tool: "pssOneProportion",          enabled: true },
+          { id: "pssProp2",    label: "2 Proportions",               tool: "pssTwoProportions",          enabled: true },
         ],
       },
     ],

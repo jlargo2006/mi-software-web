@@ -33,7 +33,8 @@ export default function AnalysisRunner<P, R>({
   const columns = useMemo(() => getColumns(sheet), [sheet]);
   const [ran, setRan] = useState(false);
   const [frozen, setFrozen] = useState<ColumnSnapshot | null>(null);
- 
+  const [showTheory, setShowTheory] = useState(false);
+
   const viewing = mode === "view";
 
   // Congela las columnas referenciadas por la config actual.
@@ -75,10 +76,38 @@ export default function AnalysisRunner<P, R>({
 
   const ControlsUI = def.Controls;
   const ResultsUI = def.Results;
+  const TheoryUI = def.Theory;
 
+  /* ---------- vista teórica ---------- */
+  if (showTheory && TheoryUI) {
+    return (
+      <div className="p-4 h-full overflow-auto">
+        <button
+          onClick={() => setShowTheory(false)}
+          className="mb-4 rounded border border-[#00674d] px-3 py-1.5 text-sm font-medium text-[#00674d] hover:bg-emerald-50"
+        >
+          {"\u2190"} Back
+        </button>
+        <TheoryUI />
+      </div>
+    );
+  }
+
+  /* ---------- vista normal ---------- */
   return (
     <div className="p-4 h-full overflow-auto">
-      <h2 className="mb-3 text-lg font-semibold text-[#00674d]">{def.label}</h2>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold text-[#00674d]">{def.label}</h2>
+        {TheoryUI && (
+          <button
+            onClick={() => setShowTheory(true)}
+            title="Theory and formulas for this study"
+            className="shrink-0 rounded border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            {"\u{1D453}"}  Theory
+          </button>
+        )}
+      </div>
 
       {/* Config PROPIA del estudio, oculta en modo view. Ya SIN Run. */}
       <StudyControls mode={mode}>
