@@ -27,12 +27,7 @@ export interface PssSpec {
    * Rejilla de la curva en unidades de "diferencia". Si se omite, se usa
    * el span derivado de las diferencias solicitadas.
    */
-    curveDomain: (diffs) => {
-      const m = Math.max(...diffs.map(Math.abs)) * 1.6;
-      const lo = Math.max(0.001, p0 - m) - p0;
-      const hi = Math.min(0.999, p0 + m) - p0;
-      return [lo, hi];
-    },
+  curveDomain?: (diffs: number[]) => [number, number];
 }
 
 export type PssRun =
