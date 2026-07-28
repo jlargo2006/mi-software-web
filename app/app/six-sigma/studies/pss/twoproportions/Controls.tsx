@@ -1,11 +1,11 @@
-// app/app/six-sigma/studies/pss/twoproportions/Panel.tsx
+// app/app/six-sigma/studies/pss/twoproportions/Controls.tsx
 "use client";
 import React from "react";
 import type { PssTwoPropParams } from "./types";
 import { ALT_LABEL } from "../_shared/types";
 import type { Alternative } from "../_shared/types";
 
-export default function Panel({
+export default function Controls({
   params,
   onChange,
 }: {
