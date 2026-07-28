@@ -54,6 +54,7 @@ export default function PssReport({
   sizeHeader?: string;
   diffHeader?: string;
   xTitle?: string;
+  showSd?: boolean;
   showAlternative?: boolean;
   extraHeaderLines?: React.ReactNode;
 }) {
