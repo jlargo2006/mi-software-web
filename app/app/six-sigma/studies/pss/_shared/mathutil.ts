@@ -193,4 +193,31 @@ export function ncfCdf(x: number, df1: number, df2: number, ncp: number): number
   return Math.min(1, Math.max(0, sum));
 }
 
+/* ---------- binomial ---------- */
+
+/** log de la funcion beta incompleta no hace falta: usamos betai ya presente. */
+
+/** P(X = k) con X ~ Bin(n, p), en escala logaritmica para n grande. */
+export function binomPmf(k: number, n: number, p: number): number {
+  if (k < 0 || k > n) return 0;
+  if (p <= 0) return k === 0 ? 1 : 0;
+  if (p >= 1) return k === n ? 1 : 0;
+  const logC = lgamma(n + 1) - lgamma(k + 1) - lgamma(n - k + 1);
+  return Math.exp(logC + k * Math.log(p) + (n - k) * Math.log(1 - p));
+}
+
+/** P(X <= k). Usa la relacion con la beta incompleta: exacta y O(1). */
+export function binomCdf(k: number, n: number, p: number): number {
+  const kf = Math.floor(k);
+  if (kf < 0) return 0;
+  if (kf >= n) return 1;
+  if (p <= 0) return 1;
+  if (p >= 1) return 0;
+  return Math.min(1, Math.max(0, betai(n - kf, kf + 1, 1 - p)));
+}
+
+/** P(X >= k). */
+export function binomSf(k: number, n: number, p: number): number {
+  return Math.min(1, Math.max(0, 1 - binomCdf(k - 1, n, p)));
+}
 
