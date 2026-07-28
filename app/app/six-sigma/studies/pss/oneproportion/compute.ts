@@ -125,6 +125,9 @@ export function computePssProportion(
     sizeLabel: "Sample sizes",
     requiresSd: false,
     maxAbsDiff: room * 0.999,
+    /* En proporciones el eje natural es p en (0,1), no la diferencia.
+       Cubrimos todo el rango con un margen para que no se evalue en 0 ni en 1. */
+    curveDomain: () => [1e-4 - p0, 1 - 1e-4 - p0],
     monotoneInN: params.method !== "exact",
   };
 
