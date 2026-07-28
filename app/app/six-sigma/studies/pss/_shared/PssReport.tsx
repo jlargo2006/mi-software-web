@@ -42,6 +42,7 @@ export default function PssReport({
   diffHeader = "Difference",
   xTitle = "Difference",
   showAlternative = true,
+  showSd = true,
   extraHeaderLines,
 }: {
   result: PssBaseResult;
