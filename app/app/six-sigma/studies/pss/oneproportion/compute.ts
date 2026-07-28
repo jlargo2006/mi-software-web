@@ -127,8 +127,8 @@ export function computePssProportion(
     maxAbsDiff: room * 0.999,
     monotoneInN: params.method !== "exact",
     /* El eje natural es p en (0,1); centramos en p0 sin salir del rango. */
-    curveDomain: (diffs) => {
-      const m = Math.max(...diffs.map(Math.abs)) * 1.6;
+    curveDomain: (ds) => {
+      const m = Math.max(...ds.map(Math.abs)) * 1.6;
       const lo = Math.max(0.001, p0 - m) - p0;
       const hi = Math.min(0.999, p0 + m) - p0;
       return [lo, hi];
