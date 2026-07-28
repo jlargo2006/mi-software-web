@@ -2,6 +2,8 @@
 "use client";
 import React from "react";
 import type { PssTwoPropParams } from "./types";
+import { ALT_LABEL } from "../_shared/types";
+import type { Alternative } from "../_shared/types";
 
 export default function Panel({
   params,
@@ -67,13 +69,13 @@ export default function Panel({
         <select
           className={field}
           value={params.alternative}
-          onChange={(e) =>
-            set("alternative", e.target.value as PssTwoPropParams["alternative"])
-          }
+          onChange={(e) => set("alternative", e.target.value as Alternative)}
         >
-          <option value="notequal">comparison p ≠ baseline p</option>
-          <option value="less">comparison p &lt; baseline p</option>
-          <option value="greater">comparison p &gt; baseline p</option>
+          {(Object.keys(ALT_LABEL) as Alternative[]).map((k) => (
+            <option key={k} value={k}>
+              {ALT_LABEL[k]}
+            </option>
+          ))}
         </select>
       </div>
 
