@@ -168,7 +168,7 @@ export const PHASES: RibbonPhase[] = [
           { id: "pssAnova",    label: "One-Way ANOVA",               tool: "pssAnova",    enabled: true },
           { id: "pssSign",     label: "1-Sample Sign / Wilcoxon",    tool: null,          enabled: false },
           { id: "pssProp1",    label: "1 Proportion",                tool: "pssOneProportion",          enabled: true },
-          { id: "pssProp2",    label: "2 Proportions",               tool: "pssTwoProportion",          enabled: true },
+          { id: "pssProp2",    label: "2 Proportions",               tool: "pssTwoProportions",          enabled: true },
         ],
       },
     ],
