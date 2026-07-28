@@ -18,5 +18,5 @@ export const PSSPROP_DEFAULT: PssPropParams = {
   ...PSS_BASE_DEFAULT,
   sd: "1", // no se usa; el motor lo ignora via requiresSd: false
   nullProportion: "0.5",
-  method: "exact",
+  method: "normal",
 };
