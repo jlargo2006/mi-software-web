@@ -23,6 +23,11 @@ export interface PssSpec {
    * no es valida. Fuerza un barrido ascendente.
    */
   monotoneInN?: boolean;
+  /**
+   * Rejilla de la curva en unidades de "diferencia". Si se omite, se usa
+   * el span derivado de las diferencias solicitadas.
+   */
+  curveDomain?: (diffs: number[]) => [number, number];  
 }
 
 export type PssRun =
@@ -195,19 +200,28 @@ export function runPss(spec: PssSpec, params: PssBaseParams): PssRun {
   /* --- curvas de potencia --- */
   const sizes = [...new Set(rows.map((r) => r.n))].sort((a, b) => a - b);
   const rawSpan = Math.max(...rows.map((r) => Math.abs(r.difference))) * 1.6;
-  const span = spec.maxAbsDiff ? Math.min(rawSpan, spec.maxAbsDiff) : rawSpan;
+  const clamped = spec.maxAbsDiff ? Math.min(rawSpan, spec.maxAbsDiff) : rawSpan;
+
+  /* Por defecto la curva va de 0 hacia el lado de la alternativa, como antes.
+     Un estudio puede declarar otro dominio (proporciones: todo (0,1)). */
   const sign = alt === "less" ? -1 : 1;
+  const [xLo, xHi] = spec.curveDomain
+    ? spec.curveDomain(rows.map((r) => r.difference))
+    : sign < 0
+      ? [-clamped, 0]
+      : [0, clamped];
 
   const curves: PssCurve[] = sizes.map((n) => {
     const x: number[] = [];
     const y: number[] = [];
     for (let i = 0; i <= CURVE_STEPS; i++) {
-      const d = (sign * (span * i)) / CURVE_STEPS;
+      const d = xLo + ((xHi - xLo) * i) / CURVE_STEPS;
       x.push(d);
       y.push(spec.powerOf(n, d, sd, alpha, alt));
     }
     return { n, x, y };
   });
+
 
   const markers = rows.map((r) => ({ x: r.difference, y: r.power }));
 
