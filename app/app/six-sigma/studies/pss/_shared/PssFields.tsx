@@ -55,6 +55,8 @@ export default function PssFields<P extends PssBaseParams>({
   diffLabel?: string;
   diffHint?: string;
   sdLabel?: string;
+  /** Los tests de proporciones no usan desviacion tipica. */
+  showSd?: boolean;
   /** Campos adicionales propios del estudio, en una fila aparte. */
   /** ANOVA y otros tests omnibus no tienen hipotesis alternativa. */
   showAlternative?: boolean;
