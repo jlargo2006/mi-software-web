@@ -12,7 +12,7 @@ export type PssTwoPropResult = PssCore & {
   baselineProportion: number;
 };
 
-export const DEFAULT_TWOPROP_PARAMS: PssTwoPropParams = {
+export const PSSTWOPROP_DEFAULT: PssTwoPropParams = {
   baselineProportion: "0.3",
   sampleSizes: "",
   differences: "0.4 0.5",
