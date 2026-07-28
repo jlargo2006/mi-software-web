@@ -165,7 +165,7 @@ export const PHASES: RibbonPhase[] = [
           { id: "pssT2",       label: "2-Sample t-test",             tool: "pss2SampleT", enabled: true  },
           { id: "pssTPaired",  label: "Paired t-test",               tool: null,          enabled: false },
           { id: "pssEqualVar", label: "Test for Equal Variance",     tool: null,          enabled: false },
-          { id: "pssAnova",    label: "One-Way ANOVA",               tool: null,          enabled: false },
+          { id: "pssAnova",    label: "One-Way ANOVA",               tool: "pssAnova",    enabled: true },
           { id: "pssSign",     label: "1-Sample Sign / Wilcoxon",    tool: null,          enabled: false },
           { id: "pssProp1",    label: "1 Proportion",                tool: null,          enabled: false },
           { id: "pssProp2",    label: "2 Proportions",               tool: null,          enabled: false },
