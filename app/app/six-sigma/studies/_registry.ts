@@ -17,7 +17,7 @@ import pss1SampleT from "./pss1samplet";
 import pss2SampleT from "./pss/twosamplet";
 import pssAnova from "./pss/anova";
 import pssOneProportion from "./pss/oneproportion";
-import pssTwoProportion from "./pss/twoproportions";
+import pssTwoProportions from "./pss/twoproportions";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
