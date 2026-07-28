@@ -132,6 +132,65 @@ export function nctCdf(t: number, df: number, ncp: number, N = 4000): number {
     const w = i === 0 || i === N ? 1 : i % 2 === 1 ? 4 : 2;
     sum += w * Math.exp(chi2LogPdf(v, df)) * normCdf(t * Math.sqrt(v / df) - ncp);
   }
+
+  /* ---------- distribucion F ---------- */
+
+/** CDF de la F central. */
+export function fCdf(x: number, df1: number, df2: number): number {
+  if (x <= 0) return 0;
+  return betai(df1 / 2, df2 / 2, (df1 * x) / (df1 * x + df2));
+}
+
+/** Cuantil de la F central por biseccion. */
+export function fQuantile(p: number, df1: number, df2: number): number {
+  let lo = 0;
+  let hi = 2;
+  while (fCdf(hi, df1, df2) < p && hi < 1e12) hi *= 2;
+  for (let i = 0; i < 300; i++) {
+    const mid = (lo + hi) / 2;
+    if (fCdf(mid, df1, df2) < p) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+/**
+ * CDF de la F no central: mezcla Poisson de betas incompletas.
+ *   P(F' <= x) = sum_j pois(j; ncp/2) * I_y(df1/2 + j, df2/2)
+ * La suma arranca en la moda de la Poisson y avanza en ambos sentidos con
+ * pesos en escala logaritmica, de modo que sigue siendo estable con ncp grande
+ * (la biseccion del motor llega a explorar ncp de varios miles).
+ */
+export function ncfCdf(x: number, df1: number, df2: number, ncp: number): number {
+  if (x <= 0) return 0;
+  if (ncp <= 0) return fCdf(x, df1, df2);
+
+  const lambda = ncp / 2;
+  const y = (df1 * x) / (df1 * x + df2);
+  const logW = (j: number) => -lambda + j * Math.log(lambda) - lgamma(j + 1);
+
+  const j0 = Math.max(0, Math.floor(lambda));
+  const TOL = 1e-13;
+  let sum = 0;
+
+  // Rama ascendente desde la moda.
+  for (let j = j0; j < j0 + 200000; j++) {
+    const w = Math.exp(logW(j));
+    const term = w * betai(df1 / 2 + j, df2 / 2, y);
+    sum += term;
+    if (j > j0 + 5 && w < TOL && term < TOL) break;
+  }
+  // Rama descendente.
+  for (let j = j0 - 1; j >= 0; j--) {
+    const w = Math.exp(logW(j));
+    const term = w * betai(df1 / 2 + j, df2 / 2, y);
+    sum += term;
+    if (w < TOL && term < TOL) break;
+  }
+
+  return Math.min(1, Math.max(0, sum));
+}
+
   const r = (sum * h) / 3;
   return Math.min(1, Math.max(0, r));
 }
