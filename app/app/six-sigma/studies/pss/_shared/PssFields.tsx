@@ -45,6 +45,7 @@ export default function PssFields<P extends PssBaseParams>({
   diffHint = "mean − null",
   sdLabel = "Standard deviation",
   showAlternative = true,
+  showSd = true,
   extra,
 }: {
   params: P;
@@ -98,12 +99,14 @@ export default function PssFields<P extends PssBaseParams>({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <Text
-          label={sdLabel}
-          hint="assumed"
-          value={params.sd}
-          onChange={(v) => set("sd" as keyof P, v as P[keyof P])}
-        />
+        {showSd && (
+          <Text
+            label={sdLabel}
+            hint="assumed"
+            value={params.sd}
+            onChange={(v) => set("sd" as keyof P, v as P[keyof P])}
+          />
+        )}
         {showAlternative && (
           <label className="flex flex-col gap-1 text-sm">
             <span className="font-medium">Alternative hypothesis</span>
