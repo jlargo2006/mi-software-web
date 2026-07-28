@@ -132,7 +132,9 @@ export function nctCdf(t: number, df: number, ncp: number, N = 4000): number {
     const w = i === 0 || i === N ? 1 : i % 2 === 1 ? 4 : 2;
     sum += w * Math.exp(chi2LogPdf(v, df)) * normCdf(t * Math.sqrt(v / df) - ncp);
   }
-
+  const r = (sum * h) / 3;
+  return Math.min(1, Math.max(0, r));
+}
   /* ---------- distribucion F ---------- */
 
 /** CDF de la F central. */
@@ -191,6 +193,4 @@ export function ncfCdf(x: number, df1: number, df2: number, ncp: number): number
   return Math.min(1, Math.max(0, sum));
 }
 
-  const r = (sum * h) / 3;
-  return Math.min(1, Math.max(0, r));
-}
+
