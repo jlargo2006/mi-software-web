@@ -125,10 +125,14 @@ export function computePssProportion(
     sizeLabel: "Sample sizes",
     requiresSd: false,
     maxAbsDiff: room * 0.999,
-    /* En proporciones el eje natural es p en (0,1), no la diferencia.
-       Cubrimos todo el rango con un margen para que no se evalue en 0 ni en 1. */
-    curveDomain: () => [1e-4 - p0, 1 - 1e-4 - p0],
     monotoneInN: params.method !== "exact",
+    /* El eje natural es p en (0,1); centramos en p0 sin salir del rango. */
+    curveDomain: (diffs) => {
+      const m = Math.max(...diffs.map(Math.abs)) * 1.6;
+      const lo = Math.max(0.001, p0 - m) - p0;
+      const hi = Math.min(0.999, p0 + m) - p0;
+      return [lo, hi];
+    },
   };
 
   const run = runPss(spec, {
