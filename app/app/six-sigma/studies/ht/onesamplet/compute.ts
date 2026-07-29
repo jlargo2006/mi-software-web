@@ -1,20 +1,21 @@
 // app/app/six-sigma/studies/ht/onesamplet/compute.ts
+import type { ColumnSnapshot } from "../../types";
 import { tTest1 } from "../../../lib/tTest1";
-import type { ColumnData } from "../../types";
 import type { HT1SampleTParams, HT1SampleTResult } from "./types";
 
-/** Acepta "4,9" y "4.9". */
 const num = (s: string): number => {
   const t = s.trim().replace(",", ".");
   return t === "" ? NaN : Number(t);
 };
 
 export function computeHT1SampleT(
-  params: HT1SampleTParams,
-  data: Record<string, ColumnData>
+  data: ColumnSnapshot,
+  params: HT1SampleTParams
 ): HT1SampleTResult {
   const col = params.column;
-  if (!col || !data[col]) {
+  const c = col ? data[col] : undefined;
+
+  if (!col || !c) {
     return tTest1({
       column: "",
       raw: [],
@@ -27,7 +28,7 @@ export function computeHT1SampleT(
 
   return tTest1({
     column: col,
-    raw: data[col].values,
+    raw: c.values,
     confLevel: num(params.confidenceLevel),
     performTest: params.performTest,
     mu0: num(params.hypothesizedMean),
