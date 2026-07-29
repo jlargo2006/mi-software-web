@@ -2,9 +2,9 @@
 "use client";
 import React from "react";
 import type { Data, Layout } from "plotly.js";
-import ReportLayout from "../../_shared/ReportLayout";
-import ResultChart from "../../_shared/ResultChart";
-import { niceBins, dotBins } from "../../../lib/binning";
+import ReportLayout from "../../../components/ReportLayout";
+import ResultChart from "../../../components/ResultChart";
+import { niceBins } from "../../../lib/binning";
 import { percentile, buildContext, median } from "../../../lib/statistics";
 import { ciStripTraces, ciStripLayout } from "../_shared/ciStrip";
 import { ALT_SYMBOL, type HT1SampleTParams, type HT1SampleTResult } from "./types";
@@ -31,7 +31,7 @@ export default function HT1SampleTResults({
   }
 
   const r = result;
-  const cl = f(r.confLevel, 0).replace(",", ",");
+  const cl = f(r.confLevel, 0);
   const ciHeader =
     r.ciKind === "two"
       ? `${cl}% CI for μ`
@@ -72,7 +72,6 @@ export default function HT1SampleTResults({
     },
   ];
   const histLayout: Partial<Layout> = {
-    height: 300,
     margin: { l: 60, r: 30, t: 10, b: 40 },
     xaxis: { title: { text: r.column }, range: xRange },
     yaxis: { title: { text: "Frequency" } },
@@ -96,7 +95,6 @@ export default function HT1SampleTResults({
     },
   ];
   const ivpLayout: Partial<Layout> = {
-    height: 240,
     margin: { l: 60, r: 30, t: 10, b: 40 },
     xaxis: { title: { text: r.column }, range: xRange },
     yaxis: { range: [-1, 1], visible: false, fixedrange: true },
@@ -121,7 +119,6 @@ export default function HT1SampleTResults({
     },
   ];
   const boxLayout: Partial<Layout> = {
-    height: 200,
     margin: { l: 60, r: 30, t: 10, b: 40 },
     xaxis: { title: { text: r.column }, range: xRange },
     yaxis: { visible: false, fixedrange: true },
@@ -201,7 +198,7 @@ export default function HT1SampleTResults({
               <h3 className="mb-2 text-sm font-semibold text-gray-800">
                 Histogram of {r.column}
               </h3>
-              <ResultChart data={histData} layout={histLayout} h={300} />
+              <Chart traces={histData} layout={histLayout} h={300} />
               {strip}
             </section>
           )}
@@ -211,7 +208,7 @@ export default function HT1SampleTResults({
               <h3 className="mb-2 text-sm font-semibold text-gray-800">
                 Individual Value Plot of {r.column}
               </h3>
-              <ResultChart data={ivpData} layout={ivpLayout} h={300} />
+              <Chart traces={ivpData} layout={ivpLayout} h={240} />
               {strip}
             </section>
           )}
@@ -221,9 +218,10 @@ export default function HT1SampleTResults({
               <h3 className="mb-2 text-sm font-semibold text-gray-800">
                 Boxplot of {r.column}
               </h3>
-              <ResultChart data={boxData} layout={boxLayout} h={300} />
+               <Chart traces={boxData} layout={boxLayout} h={200} />
               {strip}
             </section>
+          )}
         </div>
       }
     />
