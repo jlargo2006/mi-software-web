@@ -18,6 +18,7 @@ import pss2SampleT from "./pss/twosamplet";
 import pssAnova from "./pss/anova";
 import pssOneProportion from "./pss/oneproportion";
 import pssTwoProportions from "./pss/twoproportions";
+import ht1SampleT from "./ht/onesamplet";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
@@ -38,6 +39,7 @@ const ALL: ArtifactDefinition[] = [
   pssAnova,
   pssOneProportion,
   pssTwoProportions,
+  onesamplet,
 ];
 
 export const REGISTRY: Record<string, ArtifactDefinition> = Object.fromEntries(
