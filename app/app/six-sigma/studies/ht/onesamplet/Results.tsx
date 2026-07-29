@@ -51,14 +51,14 @@ export default function HT1SampleTResults({
   const pad = (hi - lo) * 0.12 || 1;
   const xRange: [number, number] = [lo - pad, hi + pad];
 
-  const strip = (
-    <ResultChart
-      data={ciStripTraces(r)}
-      layout={ciStripLayout(xRange)}
-      title=""
-    />
+  const Chart = ({ traces, layout, h }: { traces: Data[]; layout: object; h: number }) => (
+    <div className="border border-gray-200 rounded" style={{ height: h }}>
+      <ResultChart data={traces} layout={{ autosize: true, ...layout }} />
+    </div>
   );
 
+  const strip = <Chart traces={ciStripTraces(r)} layout={ciStripLayout(xRange)} h={90} />;
+  
   // --- Histogram ---
   const bins = niceBins(r.values);
   const histData: Data[] = [
@@ -128,101 +128,104 @@ export default function HT1SampleTResults({
   };
 
   return (
-    <ReportLayout title="1-Sample t Test">
-      {/* Descriptive Statistics */}
-      <section className="mb-6">
-        <h3 className="mb-2 text-sm font-semibold text-gray-800">
-          Descriptive Statistics
-        </h3>
-        <table className="w-full border-collapse text-sm">
-          <thead>
-            <tr className="border-b border-gray-300 text-left text-gray-600">
-              <th className="py-1 pr-4">N</th>
-              <th className="py-1 pr-4">Mean</th>
-              <th className="py-1 pr-4">StDev</th>
-              <th className="py-1 pr-4">SE Mean</th>
-              <th className="py-1">{ciHeader}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="border-b border-gray-200">
-              <td className="py-1 pr-4">{r.n}</td>
-              <td className="py-1 pr-4">{f(r.mean)}</td>
-              <td className="py-1 pr-4">{f(r.stDev)}</td>
-              <td className="py-1 pr-4">{f(r.seMean)}</td>
-              <td className="py-1">{ciText}</td>
-            </tr>
-          </tbody>
-        </table>
-        <p className="mt-2 text-xs italic text-gray-600">
-          μ: population mean of {r.column}
-        </p>
-      </section>
-
-      {/* Test */}
-      {r.performTest && (
-        <section className="mb-6">
-          <h3 className="mb-2 text-sm font-semibold text-gray-800">Test</h3>
-          <table className="mb-3 border-collapse text-sm">
-            <tbody>
-              <tr>
-                <td className="py-1 pr-6 text-gray-600">Null hypothesis</td>
-                <td className="py-1">H₀: μ = {f(r.mu0, 2)}</td>
-              </tr>
-              <tr>
-                <td className="py-1 pr-6 text-gray-600">Alternative hypothesis</td>
-                <td className="py-1">
-                  H₁: μ {ALT_SYMBOL[r.alternative]} {f(r.mu0, 2)}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <table className="border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-gray-300 text-left text-gray-600">
-                <th className="py-1 pr-6">T-Value</th>
-                <th className="py-1">P-Value</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-b border-gray-200">
-                <td className="py-1 pr-6">{f(r.tValue, 2)}</td>
-                <td className="py-1">{f(r.pValue, 3)}</td>
-              </tr>
-            </tbody>
-          </table>
-        </section>
-      )}
-
-      {params.showHistogram && (
-        <section className="mb-6">
-          <h3 className="mb-2 text-sm font-semibold text-gray-800">
-            Histogram of {r.column}
-          </h3>
-          <ResultChart data={histData} layout={histLayout} title="" />
-          {strip}
-        </section>
-      )}
-
-      {params.showIndividualValue && (
-        <section className="mb-6">
-          <h3 className="mb-2 text-sm font-semibold text-gray-800">
-            Individual Value Plot of {r.column}
-          </h3>
-          <ResultChart data={ivpData} layout={ivpLayout} title="" />
-          {strip}
-        </section>
-      )}
-
-      {params.showBoxplot && (
-        <section className="mb-6">
-          <h3 className="mb-2 text-sm font-semibold text-gray-800">
-            Boxplot of {r.column}
-          </h3>
-          <ResultChart data={boxData} layout={boxLayout} title="" />
-          {strip}
-        </section>
-      )}
-    </ReportLayout>
+    <ReportLayout
+      template="chart-text"
+      center={
+        <div className="w-full space-y-6">
+          <section className="mb-6">
+            <h3 className="mb-2 text-sm font-semibold text-gray-800">
+              Descriptive Statistics
+            </h3>
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-gray-300 text-left text-gray-600">
+                  <th className="py-1 pr-4">N</th>
+                  <th className="py-1 pr-4">Mean</th>
+                  <th className="py-1 pr-4">StDev</th>
+                  <th className="py-1 pr-4">SE Mean</th>
+                  <th className="py-1">{ciHeader}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-gray-200">
+                  <td className="py-1 pr-4">{r.n}</td>
+                  <td className="py-1 pr-4">{f(r.mean)}</td>
+                  <td className="py-1 pr-4">{f(r.stDev)}</td>
+                  <td className="py-1 pr-4">{f(r.seMean)}</td>
+                  <td className="py-1">{ciText}</td>
+                </tr>
+              </tbody>
+            </table>
+            <p className="mt-2 text-xs italic text-gray-600">
+              μ: population mean of {r.column}
+            </p>
+          </section>
+    
+          {/* Test */}
+          {r.performTest && (
+            <section className="mb-6">
+              <h3 className="mb-2 text-sm font-semibold text-gray-800">Test</h3>
+              <table className="mb-3 border-collapse text-sm">
+                <tbody>
+                  <tr>
+                    <td className="py-1 pr-6 text-gray-600">Null hypothesis</td>
+                    <td className="py-1">H₀: μ = {f(r.mu0, 2)}</td>
+                  </tr>
+                  <tr>
+                    <td className="py-1 pr-6 text-gray-600">Alternative hypothesis</td>
+                    <td className="py-1">
+                      H₁: μ {ALT_SYMBOL[r.alternative]} {f(r.mu0, 2)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <table className="border-collapse text-sm">
+                <thead>
+                  <tr className="border-b border-gray-300 text-left text-gray-600">
+                    <th className="py-1 pr-6">T-Value</th>
+                    <th className="py-1">P-Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-gray-200">
+                    <td className="py-1 pr-6">{f(r.tValue, 2)}</td>
+                    <td className="py-1">{f(r.pValue, 3)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </section>
+          )}
+    
+          {params.showHistogram && (
+            <section className="mb-6">
+              <h3 className="mb-2 text-sm font-semibold text-gray-800">
+                Histogram of {r.column}
+              </h3>
+              <ResultChart data={histData} layout={histLayout} h={300} />
+              {strip}
+            </section>
+          )}
+    
+          {params.showIndividualValue && (
+            <section className="mb-6">
+              <h3 className="mb-2 text-sm font-semibold text-gray-800">
+                Individual Value Plot of {r.column}
+              </h3>
+              <ResultChart data={ivpData} layout={ivpLayout} h={300} />
+              {strip}
+            </section>
+          )}
+    
+          {params.showBoxplot && (
+            <section className="mb-6">
+              <h3 className="mb-2 text-sm font-semibold text-gray-800">
+                Boxplot of {r.column}
+              </h3>
+              <ResultChart data={boxData} layout={boxLayout} h={300} />
+              {strip}
+            </section>
+        </div>
+      }
+    />
   );
 }
