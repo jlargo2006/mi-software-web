@@ -61,7 +61,6 @@ export function ciStripTraces(r: TTest1Model): Data[] {
 /** Layout de la banda: sin eje Y, eje X compartido con la gráfica de arriba. */
 export function ciStripLayout(range: [number, number]): Partial<Layout> {
   return {
-    height: 90,
     margin: { l: 60, r: 30, t: 8, b: 34 },
     xaxis: { range, zeroline: false, showgrid: false },
     yaxis: {
