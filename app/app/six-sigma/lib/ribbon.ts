@@ -131,7 +131,7 @@ export const PHASES: RibbonPhase[] = [
         enabled: true,
         children: [
           // p.302 | mtw: Exh_Stat.MTW
-          { id: "t1Sample", label: "1-Sample t-test", tool: null, enabled: false },
+          { id: "t1Sample", label: "1-Sample t-test", tool: "onesamplet", enabled: true },
           // p.313-314 / 327 | mtw: Furnace.MTW / 2 sample unequal variance
           // Single test; Equal vs Unequal variance is an option inside the study.
           { id: "t2Sample", label: "2-Sample t-test", tool: null, enabled: false },
