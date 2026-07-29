@@ -39,7 +39,7 @@ const ALL: ArtifactDefinition[] = [
   pssAnova,
   pssOneProportion,
   pssTwoProportions,
-  onesamplet,
+  ht1SampleT,
 ];
 
 export const REGISTRY: Record<string, ArtifactDefinition> = Object.fromEntries(
