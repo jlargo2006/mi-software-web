@@ -5,7 +5,19 @@ import type { TTest1Model } from "../../../lib/tTest1";
 const GREEN = "#00674d";
 const RED = "#d92b2b";
 
-/** Segmento de IC + media + Hâ‚€, para pintar bajo cada grÃ¡fica. */
+/**
+ * Etiquetas en mini-HTML de Plotly (NO Unicode crudo).
+ *
+ * Plotly renderiza el texto de las trazas en SVG y no compone diacrÃ­ticos
+ * combinantes: "x\u0304" (x + U+0304) sale como un cuadrito. Usamos por tanto
+ * <span style="text-decoration:overline"> â€” soportado por Plotly â€” y entidades
+ * numÃ©ricas para la griega y el subÃ­ndice.
+ */
+const LBL_MEAN = '<span style="text-decoration:overline">x</span>';
+const LBL_H0 = "H<sub>0</sub>";
+const SYM_MU = "&#956;"; // Î¼
+
+/** Segmento de IC + media + H0, para pintar bajo cada grÃ¡fica. */
 export function ciStripTraces(r: TTest1Model): Data[] {
   const lo = Number.isFinite(r.ciLow) ? r.ciLow : r.mean;
   const hi = Number.isFinite(r.ciHigh) ? r.ciHigh : r.mean;
@@ -43,17 +55,17 @@ export function ciStripTraces(r: TTest1Model): Data[] {
         symbol: "line-ns-open",
         line: { width: 3 },
       },
-      text: ["xÌ„"],
+      text: [LBL_MEAN],
       textposition: "top center",
       textfont: { color: GREEN, size: 12 },
-      name: "xÌ„",
-      hovertemplate: "xÌ„ = %{x}<extra></extra>",
+      name: "Media",
+      hovertemplate: `Media = %{x}<extra></extra>`,
       showlegend: false,
     },
   ];
 
   if (r.performTest) {
-    // --- Hâ‚€: cÃ­rculo no relleno con cruz + etiqueta abajo ---
+    // --- H0: cÃ­rculo no relleno con cruz + etiqueta abajo ---
     traces.push({
       type: "scatter",
       mode: "text+markers",
@@ -65,11 +77,11 @@ export function ciStripTraces(r: TTest1Model): Data[] {
         symbol: "circle-cross-open",
         line: { width: 2 },
       },
-      text: ["Hâ‚€"],
+      text: [LBL_H0],
       textposition: "bottom center",
       textfont: { color: RED, size: 12 },
-      name: "Hâ‚€",
-      hovertemplate: "Hâ‚€: Î¼ = %{x}<extra></extra>",
+      name: "H0",
+      hovertemplate: `${LBL_H0}: ${SYM_MU} = %{x}<extra></extra>`,
       showlegend: false,
     });
   }
@@ -83,7 +95,7 @@ export function ciStripLayout(range: [number, number]): Partial<Layout> {
     margin: { l: 60, r: 30, t: 8, b: 34 },
     xaxis: { range, zeroline: false, showgrid: false },
     yaxis: {
-      // Rango holgado para que las etiquetas xÌ„ (arriba) y Hâ‚€ (abajo) no se recorten.
+      // Rango holgado para que las etiquetas (arriba y abajo) no se recorten.
       range: [-1.6, 1.6],
       visible: false,
       fixedrange: true,
