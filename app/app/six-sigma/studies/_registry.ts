@@ -13,7 +13,7 @@ import timeseries from "./timeseries";
 import gagerr from "./gagerr";
 import attragreement from "./attragreement";
 import multivari from "./multivari";
-import pss1SampleT from "./pss1samplet";
+import pss1SampleT from "./pss/onesamplet";
 import pss2SampleT from "./pss/twosamplet";
 import pssAnova from "./pss/anova";
 import pssOneProportion from "./pss/oneproportion";
