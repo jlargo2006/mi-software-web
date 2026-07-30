@@ -3,13 +3,15 @@ import type { Data, Layout } from "plotly.js";
 import type { TTest1Model } from "../../../lib/tTest1";
 
 const GREEN = "#00674d";
+const RED = "#d92b2b";
 
-/** Segmento de IC + media + H₀, para pintar bajo cada gráfica. */
+/** Segmento de IC + media + Hâ‚€, para pintar bajo cada grÃ¡fica. */
 export function ciStripTraces(r: TTest1Model): Data[] {
   const lo = Number.isFinite(r.ciLow) ? r.ciLow : r.mean;
   const hi = Number.isFinite(r.ciHigh) ? r.ciHigh : r.mean;
 
   const traces: Data[] = [
+    // --- Barra del intervalo ---
     {
       type: "scatter",
       mode: "lines",
@@ -19,38 +21,55 @@ export function ciStripTraces(r: TTest1Model): Data[] {
       hoverinfo: "skip",
       showlegend: false,
     },
+    // --- Topes de los extremos (serifas cortas) ---
     {
       type: "scatter",
       mode: "markers",
       x: [lo, hi],
       y: [0, 0],
-      marker: { color: GREEN, size: 10, symbol: "line-ns-open" },
+      marker: { color: GREEN, size: 10, symbol: "line-ns-open", line: { width: 2 } },
       hoverinfo: "skip",
       showlegend: false,
     },
+    // --- Media: segmento vertical + etiqueta arriba ---
     {
       type: "scatter",
-      mode: "markers",
+      mode: "text+markers",
       x: [r.mean],
       y: [0],
-      marker: { color: GREEN, size: 11, symbol: "circle" },
-      name: "X̄",
-      hovertemplate: "X̄ = %{x}<extra></extra>",
+      marker: {
+        color: GREEN,
+        size: 20,
+        symbol: "line-ns-open",
+        line: { width: 3 },
+      },
+      text: ["xÌ„"],
+      textposition: "top center",
+      textfont: { color: GREEN, size: 12 },
+      name: "xÌ„",
+      hovertemplate: "xÌ„ = %{x}<extra></extra>",
       showlegend: false,
     },
   ];
 
   if (r.performTest) {
+    // --- Hâ‚€: cÃ­rculo no relleno con cruz + etiqueta abajo ---
     traces.push({
       type: "scatter",
       mode: "text+markers",
       x: [r.mu0],
       y: [0],
-      marker: { color: "#d92b2b", size: 12, symbol: "circle" },
-      text: ["H₀"],
-      textposition: "top center",
-      textfont: { color: "#d92b2b", size: 11 },
-      hovertemplate: "H₀ = %{x}<extra></extra>",
+      marker: {
+        color: RED,
+        size: 14,
+        symbol: "circle-cross-open",
+        line: { width: 2 },
+      },
+      text: ["Hâ‚€"],
+      textposition: "bottom center",
+      textfont: { color: RED, size: 12 },
+      name: "Hâ‚€",
+      hovertemplate: "Hâ‚€: Î¼ = %{x}<extra></extra>",
       showlegend: false,
     });
   }
@@ -58,13 +77,14 @@ export function ciStripTraces(r: TTest1Model): Data[] {
   return traces;
 }
 
-/** Layout de la banda: sin eje Y, eje X compartido con la gráfica de arriba. */
+/** Layout de la banda: sin eje Y, eje X compartido con la grÃ¡fica de arriba. */
 export function ciStripLayout(range: [number, number]): Partial<Layout> {
   return {
     margin: { l: 60, r: 30, t: 8, b: 34 },
     xaxis: { range, zeroline: false, showgrid: false },
     yaxis: {
-      range: [-1, 1],
+      // Rango holgado para que las etiquetas xÌ„ (arriba) y Hâ‚€ (abajo) no se recorten.
+      range: [-1.6, 1.6],
       visible: false,
       fixedrange: true,
     },
