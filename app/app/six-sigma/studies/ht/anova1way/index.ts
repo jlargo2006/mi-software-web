@@ -20,6 +20,7 @@ const htAnova1Way: AnalysisDefinition<Anova1WayParams, Anova1WayResult> = {
   compute: computeAnova1WayStudy,
   Controls,
   Results,
+  Theory,
   referencedColumns: anova1WayColumns,
 };
 
