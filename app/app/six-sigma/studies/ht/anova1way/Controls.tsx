@@ -4,6 +4,10 @@ import React from "react";
 import type { ColumnInfo } from "../../../lib/columns";
 import type { Anova1WayParams, DataFormat } from "./types";
 
+const ALPHA = "\u03B1";
+const ELLIPSIS = "\u2026";
+const MINUS = "\u2212";
+
 export default function Controls({
   params,
   onChange,
@@ -17,7 +21,7 @@ export default function Controls({
 
   const columnOptions = (
     <>
-      <option value="">Select a columnâ€¦</option>
+      <option value="">{"Select a column" + ELLIPSIS}</option>
       {columns.map((c) => (
         <option key={c.name} value={c.name}>
           {c.name}
@@ -126,7 +130,7 @@ export default function Controls({
                 title="Remove this level"
                 className="px-2 py-1 border rounded text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50"
               >
-                âˆ’
+                {MINUS}
               </button>
             </div>
           ))}
@@ -146,7 +150,9 @@ export default function Controls({
 
       {/* ---- Opciones ---- */}
       <div className="border-t pt-3">
-        <label className="block font-medium mb-1">Significance level (Î±)</label>
+        <label className="block font-medium mb-1">
+          Significance level ({ALPHA})
+        </label>
         <input
           type="text"
           className="border rounded px-2 py-1 w-24"
