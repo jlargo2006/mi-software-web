@@ -2,6 +2,7 @@
 import type { AnalysisDefinition } from "../../types";
 import Controls from "./Controls";
 import Results from "./Results";
+import Theory from "./Theory";
 import { computeAnova1WayStudy } from "./compute";
 import {
   ANOVA1WAY_DEFAULT,
