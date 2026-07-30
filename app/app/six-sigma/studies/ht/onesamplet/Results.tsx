@@ -4,7 +4,7 @@ import React from "react";
 import type { Data, Layout } from "plotly.js";
 import ReportLayout from "../../../components/ReportLayout";
 import ResultChart from "../../../components/ResultChart";
-import { niceBins } from "../../../lib/binning";
+import { resolutionBins } from "../../../lib/binning";
 import { ciStripTraces, ciStripLayout } from "../_shared/ciStrip";
 import { ALT_SYMBOL, type HT1SampleTParams, type HT1SampleTResult } from "./types";
 
@@ -67,7 +67,7 @@ export default function HT1SampleTResults({
   const strip = <Chart traces={ciStripTraces(r)} layout={ciStripLayout(xRange)} h={90} />;
   
   // --- Histogram ---
-  const bins = niceBins(r.values);
+  const bins = resolutionBins(r.values);
   const histData: Data[] = [
     {
       type: "histogram",
