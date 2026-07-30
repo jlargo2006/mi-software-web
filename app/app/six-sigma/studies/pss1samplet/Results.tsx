@@ -3,10 +3,10 @@
 import React from "react";
 import type { Data } from "plotly.js";
 import type { ColumnSnapshot } from "../../types";
-import ResultChart from "../../../components/ResultChart";
-import ReportLayout from "../../../components/ReportLayout";
-import { niceBins } from "../../../lib/binning";
-import { percentile, buildContext, median } from "../../../lib/statistics";
+import ResultChart from "../../components/ResultChart";
+import ReportLayout from "../../components/ReportLayout";
+import { niceBins } from "../../lib/binning";
+import { percentile, buildContext, median } from "../../lib/statistics";
 import { ciStripTraces, ciStripLayout } from "../_shared/ciStrip";
 import { ALT_SYMBOL, type HT1SampleTParams, type HT1SampleTResult } from "./types";
 
