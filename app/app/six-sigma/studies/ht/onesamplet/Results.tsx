@@ -5,7 +5,6 @@ import type { Data, Layout } from "plotly.js";
 import ReportLayout from "../../../components/ReportLayout";
 import ResultChart from "../../../components/ResultChart";
 import { niceBins } from "../../../lib/binning";
-import { percentile, buildContext, median } from "../../../lib/statistics";
 import { ciStripTraces, ciStripLayout } from "../_shared/ciStrip";
 import { ALT_SYMBOL, type HT1SampleTParams, type HT1SampleTResult } from "./types";
 
@@ -101,14 +100,11 @@ export default function HT1SampleTResults({
   };
 
   // --- Boxplot (cuartiles Minitab vía percentile) ---
-  const ctx = buildContext(r.values);
+  // --- Boxplot ---
   const boxData: Data[] = [
     {
       type: "box",
       x: r.values,
-      q1: [percentile(ctx, 0.25)],
-      median: [median(ctx)],
-      q3: [percentile(ctx, 0.75)],
       boxpoints: "outliers",
       marker: { color: GREEN },
       line: { color: GREEN },
@@ -118,6 +114,7 @@ export default function HT1SampleTResults({
       showlegend: false,
     },
   ];
+
   const boxLayout: Partial<Layout> = {
     margin: { l: 60, r: 30, t: 10, b: 40 },
     xaxis: { title: { text: r.column }, range: xRange },
