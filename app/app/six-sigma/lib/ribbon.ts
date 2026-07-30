@@ -144,7 +144,7 @@ export const PHASES: RibbonPhase[] = [
           //   - 2+ samples, Non-normal  → Levene's test
           { id: "equalVar", label: "Test for Equal Variance", tool: null, enabled: false },
           // p.356 | mtw: ANOVA.MTW
-          { id: "anova", label: "One-Way ANOVA", tool: null, enabled: false },
+          { id: "anova", label: "One-Way ANOVA", tool: "htAnova1Way", enabled: true },
           // p.382 | mtw: DISTRIB1.MTW
           { id: "sign", label: "1-Sample Sign / Wilcoxon (Median)", tool: null, enabled: false },
           // p.396 | mtw: Var_Comp.mtw
