@@ -43,7 +43,7 @@ export function ciStripTraces(r: TTest1Model): Data[] {
   if (r.performTest) {
     traces.push({
       type: "scatter",
-      mode: "markers+text",
+      mode: "text+markers",
       x: [r.mu0],
       y: [0],
       marker: { color: "#d92b2b", size: 12, symbol: "circle" },
