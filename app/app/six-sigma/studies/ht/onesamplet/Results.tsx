@@ -10,6 +10,20 @@ import { ALT_SYMBOL, type HT1SampleTParams, type HT1SampleTResult } from "./type
 
 const GREEN = "#00674d";
 
+const Chart = ({
+  traces,
+  layout,
+  h,
+}: {
+  traces: Data[];
+  layout: Partial<Layout>;
+  h: number;
+}) => (
+  <div className="border border-gray-200 rounded" style={{ height: h }}>
+    <ResultChart data={traces} layout={{ autosize: true, ...layout }} />
+  </div>
+);
+
 /** Formato con coma decimal. */
 const f = (v: number, dec = 4): string =>
   Number.isFinite(v) ? v.toFixed(dec).replace(".", ",") : "—";
@@ -49,12 +63,6 @@ export default function HT1SampleTResults({
   const hi = Math.max(...r.values, r.performTest ? r.mu0 : -Infinity, r.ciHigh || -Infinity);
   const pad = (hi - lo) * 0.12 || 1;
   const xRange: [number, number] = [lo - pad, hi + pad];
-
-  const Chart = ({ traces, layout, h }: { traces: Data[]; layout: object; h: number }) => (
-    <div className="border border-gray-200 rounded" style={{ height: h }}>
-      <ResultChart data={traces} layout={{ autosize: true, ...layout }} />
-    </div>
-  );
 
   const strip = <Chart traces={ciStripTraces(r)} layout={ciStripLayout(xRange)} h={90} />;
   
