@@ -1,356 +1,362 @@
 // app/app/six-sigma/studies/ht/anova1way/Theory.tsx
-"use client";
-import React, { useState } from "react";
+//
+// IMPORTANTE / IMPORTANT:
+// Este archivo es ASCII puro. Todo caracter no ASCII (tildes, griegas,
+// subindices, simbolos matematicos) se escribe SIEMPRE como escape \uXXXX
+// dentro de una cadena JavaScript, nunca como caracter literal en el JSX.
+// Motivo: la cadena de build servia el archivo como Latin-1 y los literales
+// UTF-8 aparecian como mojibake (p.ej. "columnÃ¢â‚¬Â¦", "(ÃŽÂ±)").
+//
+// Tabla de escapes usados:
+//   \u00e1 a-acute      \u00e9 e-acute      \u00ed i-acute
+//   \u00f3 o-acute      \u00fa u-acute      \u00f1 enye
+//   \u00bf inv.question \u00b7 middot       \u2014 em-dash
+//   \u2026 ellipsis     \u2212 minus        \u00b2 superscript 2
+//   \u03b1 alpha        \u03bc mu           \u03c3 sigma        \u03c4 tau
+//   \u03b5 epsilon      \u03a3 Sigma        \u221a sqrt
+//   \u2264 le           \u2265 ge           \u007e tilde (ASCII)
+//   \u2080..\u2089 subindices 0..9
+//   \u1d62 subindice i  \u2c7c subindice j  \u2096 subindice k
+//   \u0304 macron combinante (para x-bar)
 
-type Lang = "es" | "en";
+import React from "react";
 
-const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <section className="space-y-2">
-    <h3 className="font-bold text-base text-[#00674d] border-b border-gray-200 pb-1">
-      {title}
-    </h3>
-    <div className="space-y-2 text-sm leading-relaxed">{children}</div>
-  </section>
-);
+/* ------------------------------------------------------------------ */
+/* Constantes de simbolos                                              */
+/* ------------------------------------------------------------------ */
 
-const Formula = ({ children }: { children: React.ReactNode }) => (
-  <div className="my-2 px-4 py-3 bg-gray-50 border-l-4 border-[#00674d] font-serif text-base overflow-x-auto">
-    {children}
-  </div>
-);
-
-const Frac = ({ num, den }: { num: React.ReactNode; den: React.ReactNode }) => (
-  <span className="inline-flex flex-col align-middle text-center mx-1">
-    <span className="border-b border-gray-700 px-2 pb-0.5">{num}</span>
-    <span className="px-2 pt-0.5">{den}</span>
-  </span>
-);
-
-const Sqrt = ({ children }: { children: React.ReactNode }) => (
-  <span className="inline-flex items-center align-middle">
-    <span className="text-lg">{"\u221A"}</span>
-    <span className="border-t border-gray-700 pt-0.5 px-1">{children}</span>
-  </span>
-);
-
-const V = ({ children }: { children: React.ReactNode }) => (
-  <span className="italic">{children}</span>
-);
-const Sub = ({ children }: { children: React.ReactNode }) => (
-  <sub className="text-[0.7em]">{children}</sub>
-);
-const Sup = ({ children }: { children: React.ReactNode }) => (
-  <sup className="text-[0.7em]">{children}</sup>
-);
-const Note = ({ children }: { children: React.ReactNode }) => (
-  <div className="my-2 px-3 py-2 bg-amber-50 border-l-4 border-amber-400 text-sm">
-    {children}
-  </div>
-);
-
-const MU = "\u03BC";
-const ALPHA = "\u03B1";
-const SIGMA = "\u03C3";
-const PM = "\u00B1";
-const MINUS = "\u2212";
-const SUM = "\u2211";
-const XBAR = "x\u0304";
-const XBARBAR = "x\u0305\u0305";
+const ALPHA = "\u03b1";
+const MU = "\u03bc";
+const SIGMA = "\u03c3";
+const TAU = "\u03c4";
+const EPS = "\u03b5";
+const SUM = "\u03a3";
+const SQRT = "\u221a";
+const LE = "\u2264";
 const GE = "\u2265";
-const NEQ = "\u2260";
-const DOT = "\u00B7";
-const IN = "\u2208";
+const MINUS = "\u2212";
+const SUP2 = "\u00b2";
+const EMDASH = "\u2014";
 
-const FormulaSS = () => (
-  <Formula>
-    <div className="space-y-3">
-      <div>
-        SS<Sub>Factor</Sub> = {SUM}<Sub><V>i</V></Sub> <V>n</V><Sub><V>i</V></Sub>{" "}
-        ({XBAR}<Sub><V>i</V></Sub> {MINUS} {XBARBAR})<Sup>2</Sup>
-        <span className="ml-4">
-          DF = <V>k</V> {MINUS} 1
-        </span>
-      </div>
-      <div>
-        SS<Sub>Error</Sub> = {SUM}<Sub><V>i</V></Sub> {SUM}<Sub><V>j</V></Sub>{" "}
-        (<V>x</V><Sub><V>ij</V></Sub> {MINUS} {XBAR}<Sub><V>i</V></Sub>)<Sup>2</Sup>
-        <span className="ml-4">
-          DF = <V>N</V> {MINUS} <V>k</V>
-        </span>
-      </div>
-      <div>
-        SS<Sub>Total</Sub> = SS<Sub>Factor</Sub> + SS<Sub>Error</Sub>
-        <span className="ml-4">
-          DF = <V>N</V> {MINUS} 1
-        </span>
-      </div>
-    </div>
-  </Formula>
+const SUB0 = "\u2080";
+const SUB1 = "\u2081";
+const SUB2 = "\u2082";
+const SUBI = "\u1d62";
+const SUBJ = "\u2c7c";
+const SUBK = "\u2096";
+
+/** x con macron: "x" + U+0304. En HTML normal compone correctamente. */
+const XBAR = "x\u0304";
+
+/* Derivados de uso frecuente */
+const H0 = "H" + SUB0;
+const H1 = "H" + SUB1;
+const MU0 = MU + SUB0;
+const MUI = MU + SUBI;
+const XBARI = XBAR + SUBI;
+const XIJ = "x" + SUBI + SUBJ;
+const NI = "n" + SUBI;
+const SIGMA2 = SIGMA + SUP2;
+
+/* ------------------------------------------------------------------ */
+/* Componentes de presentacion                                         */
+/* ------------------------------------------------------------------ */
+
+const H = ({ children }: { children: React.ReactNode }) => (
+  <h3 className="text-sm font-semibold text-gray-900 mt-5 mb-2">{children}</h3>
 );
 
-const FormulaF = () => (
-  <Formula>
-    <V>F</V> ={" "}
-    <Frac
-      num={<>MS<Sub>Factor</Sub></>}
-      den={<>MS<Sub>Error</Sub></>}
-    />
-    <span className="mx-4">
-      MS = <Frac num={<>SS</>} den={<>DF</>} />
-    </span>
-    <span className="mx-4">
-      <V>S</V> = <Sqrt>MS<Sub>Error</Sub></Sqrt>
-    </span>
-  </Formula>
+const P = ({ children }: { children: React.ReactNode }) => (
+  <p className="text-sm text-gray-700 leading-relaxed mb-2">{children}</p>
 );
 
-const FormulaCI = () => (
-  <Formula>
-    {MU}<Sub><V>i</V></Sub> {IN} {XBAR}<Sub><V>i</V></Sub> {PM} <V>t</V>
-    <Sub>1{MINUS}{ALPHA}/2, <V>N</V>{MINUS}<V>k</V></Sub> {DOT}{" "}
-    <Frac num={<><V>S</V></>} den={<Sqrt><V>n</V><Sub><V>i</V></Sub></Sqrt>} />
-  </Formula>
-);
-
-const ES = () => (
-  <div className="space-y-5">
-    <Section title="QuÃ© contrasta">
-      <p>
-        El ANOVA de un factor compara las medias de <V>k</V> grupos definidos por un
-        Ãºnico factor. En lugar de hacer todas las comparaciones dos a dos, contrasta de
-        una sola vez si existe alguna diferencia, evitando la inflaciÃ³n del error de
-        tipo I que producirÃ­a una baterÃ­a de tests <V>t</V>.
-      </p>
-      <p>
-        H{"\u2080"}: {MU}<Sub>1</Sub> = {MU}<Sub>2</Sub> = {"\u2026"} ={" "}
-        {MU}<Sub><V>k</V></Sub> frente a H{"\u2081"}: no todas las medias son iguales.
-      </p>
-      <Note>
-        Rechazar H{"\u2080"} indica que <em>al menos una</em> media difiere, pero no
-        cuÃ¡l. Identificarlas requiere comparaciones mÃºltiples (Tukey, Dunnett).
-      </Note>
-    </Section>
-
-    <Section title="DescomposiciÃ³n de la variabilidad">
-      <p>
-        La variabilidad total se reparte en la debida al factor (entre grupos) y la
-        residual (dentro de los grupos):
-      </p>
-      <FormulaSS />
-      <p>
-        {XBAR}<Sub><V>i</V></Sub> es la media del grupo <V>i</V>, {XBARBAR} la media
-        global, <V>N</V> el total de observaciones y <V>k</V> el nÃºmero de niveles.
-      </p>
-    </Section>
-
-    <Section title="EstadÃ­stico de contraste">
-      <FormulaF />
-      <p>
-        Bajo H{"\u2080"} ambos cuadrados medios estiman la misma varianza {SIGMA}
-        <Sup>2</Sup> y <V>F</V> vale aproximadamente 1. Si las medias difieren,
-        MS<Sub>Factor</Sub> crece y <V>F</V> aumenta. El <V>p</V>-valor es el Ã¡rea de
-        la cola derecha de la <V>F</V> con (<V>k</V>{MINUS}1, <V>N</V>{MINUS}<V>k</V>)
-        grados de libertad.
-      </p>
-    </Section>
-
-    <Section title="Resumen del modelo">
-      <p>
-        <V>S</V> es la desviaciÃ³n estÃ¡ndar agrupada, estimaciÃ³n de {SIGMA} en las
-        unidades de la respuesta. R{"\u00B2"} = SS<Sub>Factor</Sub>/SS<Sub>Total</Sub>{" "}
-        es la fracciÃ³n de variabilidad explicada por el factor. R{"\u00B2"}(ajustado)
-        penaliza el nÃºmero de niveles y R{"\u00B2"}(pred) se obtiene del PRESS, midiendo
-        capacidad predictiva sobre datos no usados en el ajuste.
-      </p>
-    </Section>
-
-    <Section title="Intervalos de confianza de las medias">
-      <FormulaCI />
-      <Note>
-        Punto clave: el intervalo de cada grupo usa la desviaciÃ³n <strong>agrupada</strong>{" "}
-        <V>S</V> y los grados de libertad del <strong>error</strong> (<V>N</V>{MINUS}
-        <V>k</V>), no la desviaciÃ³n del grupo con <V>n</V><Sub><V>i</V></Sub>{MINUS}1.
-        Con grupos del mismo tamaÃ±o esto hace que todos los intervalos tengan idÃ©ntica
-        amplitud. Es el motivo habitual de discrepancia al reproducir la tabla a mano.
-      </Note>
-    </Section>
-
-    <Section title="Supuestos">
-      <ul className="list-disc pl-5 space-y-1">
-        <li>Observaciones independientes.</li>
-        <li>Residuos aproximadamente normales.</li>
-        <li>
-          Varianzas iguales entre grupos. Regla prÃ¡ctica: aceptable si la mayor
-          desviaciÃ³n no supera el doble de la menor.
-        </li>
-      </ul>
-      <p>
-        Si las varianzas difieren claramente, el ANOVA de Welch no exige
-        homocedasticidad. Con diseÃ±os balanceados el test es bastante robusto.
-      </p>
-    </Section>
-
-    <Section title="Ejemplo resuelto">
-      <p>
-        Tres turnos, ocho medidas de COV (ppm) cada uno, {ALPHA} = 0,05:
-      </p>
-      <p className="font-mono text-xs">
-        {XBAR}: 39,50 {DOT} 34,63 {DOT} 28,00 {" | "} {XBARBAR} = 34,04 {DOT}{" "}
-        <V>N</V> = 24 {DOT} <V>k</V> = 3
-      </p>
-      <p className="font-mono text-xs">
-        SS<Sub>Factor</Sub> = 533,1 (DF 2) {DOT} SS<Sub>Error</Sub> = 795,9 (DF 21){" "}
-        {DOT} SS<Sub>Total</Sub> = 1329,0
-      </p>
-      <p className="font-mono text-xs">
-        MS: 266,54 y 37,90 {DOT} <V>F</V> = 266,54/37,90 = 7,03 {DOT} <V>p</V> = 0,005
-      </p>
-      <p className="font-mono text-xs">
-        <V>S</V> = {"\u221A"}37,90 = 6,1562 {DOT} R{"\u00B2"} = 533,1/1329,0 = 40,11%
-      </p>
-      <p className="font-mono text-xs">
-        IC turno 1: 39,50 {PM} 2,0796 {DOT} 6,1562/{"\u221A"}8 = (34,97; 44,03)
-      </p>
-      <p>
-        Como <V>p</V> = 0,005 {"<"} 0,05 se rechaza H{"\u2080"}: los turnos no producen
-        la misma emisiÃ³n media. Los intervalos del turno 1 y del turno 3 no se solapan,
-        lo que sugiere que ahÃ­ estÃ¡ la diferencia principal.
-      </p>
-    </Section>
+const F = ({ children }: { children: React.ReactNode }) => (
+  <div className="my-3 px-3 py-2 bg-gray-50 border-l-2 border-gray-300 font-mono text-[13px] text-gray-800 whitespace-pre overflow-x-auto">
+    {children}
   </div>
 );
 
-const EN = () => (
-  <div className="space-y-5">
-    <Section title="What it tests">
-      <p>
-        One-way ANOVA compares the means of <V>k</V> groups defined by a single factor.
-        Rather than running every pairwise comparison, it tests in one step whether any
-        difference exists, avoiding the type I error inflation that a battery of{" "}
-        <V>t</V> tests would produce.
-      </p>
-      <p>
-        H{"\u2080"}: {MU}<Sub>1</Sub> = {MU}<Sub>2</Sub> = {"\u2026"} ={" "}
-        {MU}<Sub><V>k</V></Sub> against H{"\u2081"}: not all means are equal.
-      </p>
-      <Note>
-        Rejecting H{"\u2080"} says <em>at least one</em> mean differs, not which one.
-        Identifying them requires multiple comparisons (Tukey, Dunnett).
-      </Note>
-    </Section>
-
-    <Section title="Variability decomposition">
-      <p>
-        Total variability splits into a factor part (between groups) and a residual part
-        (within groups):
-      </p>
-      <FormulaSS />
-      <p>
-        {XBAR}<Sub><V>i</V></Sub> is the mean of group <V>i</V>, {XBARBAR} the grand
-        mean, <V>N</V> the total number of observations and <V>k</V> the number of
-        levels.
-      </p>
-    </Section>
-
-    <Section title="Test statistic">
-      <FormulaF />
-      <p>
-        Under H{"\u2080"} both mean squares estimate the same variance {SIGMA}
-        <Sup>2</Sup> and <V>F</V> is close to 1. When means differ,
-        MS<Sub>Factor</Sub> grows and <V>F</V> increases. The <V>p</V>-value is the
-        right tail area of the <V>F</V> distribution with (<V>k</V>{MINUS}1,{" "}
-        <V>N</V>{MINUS}<V>k</V>) degrees of freedom.
-      </p>
-    </Section>
-
-    <Section title="Model summary">
-      <p>
-        <V>S</V> is the pooled standard deviation, an estimate of {SIGMA} in response
-        units. R{"\u00B2"} = SS<Sub>Factor</Sub>/SS<Sub>Total</Sub> is the fraction of
-        variability explained by the factor. R{"\u00B2"}(adj) penalises the number of
-        levels, and R{"\u00B2"}(pred) comes from PRESS, measuring predictive ability on
-        data not used to fit the model.
-      </p>
-    </Section>
-
-    <Section title="Confidence intervals for the means">
-      <FormulaCI />
-      <Note>
-        Key point: each group interval uses the <strong>pooled</strong> standard
-        deviation <V>S</V> and the <strong>error</strong> degrees of freedom
-        (<V>N</V>{MINUS}<V>k</V>), not the group standard deviation with{" "}
-        <V>n</V><Sub><V>i</V></Sub>{MINUS}1. With equal group sizes this makes every
-        interval the same width. It is the usual source of mismatch when reproducing the
-        table by hand.
-      </Note>
-    </Section>
-
-    <Section title="Assumptions">
-      <ul className="list-disc pl-5 space-y-1">
-        <li>Independent observations.</li>
-        <li>Approximately normal residuals.</li>
-        <li>
-          Equal variances across groups. Rule of thumb: acceptable if the largest
-          standard deviation is no more than twice the smallest.
-        </li>
-      </ul>
-      <p>
-        If variances clearly differ, Welch ANOVA does not require homoscedasticity. With
-        balanced designs the test is fairly robust.
-      </p>
-    </Section>
-
-    <Section title="Worked example">
-      <p>
-        Three shifts, eight VOC measurements (ppm) each, {ALPHA} = 0.05:
-      </p>
-      <p className="font-mono text-xs">
-        {XBAR}: 39.50 {DOT} 34.63 {DOT} 28.00 {" | "} {XBARBAR} = 34.04 {DOT}{" "}
-        <V>N</V> = 24 {DOT} <V>k</V> = 3
-      </p>
-      <p className="font-mono text-xs">
-        SS<Sub>Factor</Sub> = 533.1 (DF 2) {DOT} SS<Sub>Error</Sub> = 795.9 (DF 21){" "}
-        {DOT} SS<Sub>Total</Sub> = 1329.0
-      </p>
-      <p className="font-mono text-xs">
-        MS: 266.54 and 37.90 {DOT} <V>F</V> = 266.54/37.90 = 7.03 {DOT} <V>p</V> = 0.005
-      </p>
-      <p className="font-mono text-xs">
-        <V>S</V> = {"\u221A"}37.90 = 6.1562 {DOT} R{"\u00B2"} = 533.1/1329.0 = 40.11%
-      </p>
-      <p className="font-mono text-xs">
-        Shift 1 CI: 39.50 {PM} 2.0796 {DOT} 6.1562/{"\u221A"}8 = (34.97, 44.03)
-      </p>
-      <p>
-        Since <V>p</V> = 0.005 {"<"} 0.05, reject H{"\u2080"}: shifts do not produce the
-        same mean emission. The intervals for shift 1 and shift 3 do not overlap,
-        suggesting that is where the main difference lies.
-      </p>
-    </Section>
-  </div>
+const Li = ({ children }: { children: React.ReactNode }) => (
+  <li className="text-sm text-gray-700 leading-relaxed mb-1">{children}</li>
 );
 
-export default function HTAnova1WayTheory() {
-  const [lang, setLang] = useState<Lang>("es");
+/* ------------------------------------------------------------------ */
+/* Bloques de formulas (cadenas ASCII con escapes)                     */
+/* ------------------------------------------------------------------ */
 
+const FML_HYP =
+  H0 +
+  ":  " +
+  MU +
+  SUB1 +
+  " = " +
+  MU +
+  SUB2 +
+  " = ... = " +
+  MU +
+  SUBK +
+  "      (todas las medias son iguales)\n" +
+  H1 +
+  ":  al menos una " +
+  MUI +
+  " es distinta";
+
+const FML_MODEL =
+  XIJ +
+  " = " +
+  MU +
+  " + " +
+  TAU +
+  SUBI +
+  " + " +
+  EPS +
+  SUBI +
+  SUBJ +
+  "        " +
+  EPS +
+  SUBI +
+  SUBJ +
+  " ~ N(0, " +
+  SIGMA2 +
+  ")";
+
+const FML_SS =
+  "SS_Total = SS_Factor + SS_Error\n\n" +
+  "SS_Factor = " +
+  SUM +
+  SUBI +
+  " " +
+  NI +
+  " (" +
+  XBARI +
+  " " +
+  MINUS +
+  " " +
+  XBAR +
+  ")" +
+  SUP2 +
+  "          DF = k " +
+  MINUS +
+  " 1\n" +
+  "SS_Error  = " +
+  SUM +
+  SUBI +
+  " " +
+  SUM +
+  SUBJ +
+  " (" +
+  XIJ +
+  " " +
+  MINUS +
+  " " +
+  XBARI +
+  ")" +
+  SUP2 +
+  "         DF = N " +
+  MINUS +
+  " k\n" +
+  "SS_Total  = " +
+  SUM +
+  SUBI +
+  " " +
+  SUM +
+  SUBJ +
+  " (" +
+  XIJ +
+  " " +
+  MINUS +
+  " " +
+  XBAR +
+  ")" +
+  SUP2 +
+  "          DF = N " +
+  MINUS +
+  " 1";
+
+const FML_MS =
+  "MS_Factor = SS_Factor / (k " +
+  MINUS +
+  " 1)\n" +
+  "MS_Error  = SS_Error  / (N " +
+  MINUS +
+  " k)";
+
+const FML_F =
+  "F = MS_Factor / MS_Error        ~  F(k" +
+  MINUS +
+  "1, N" +
+  MINUS +
+  "k)   bajo " +
+  H0 +
+  "\n\n" +
+  "p = P( F(k" +
+  MINUS +
+  "1, N" +
+  MINUS +
+  "k) " +
+  GE +
+  " F_obs )";
+
+const FML_SUMMARY =
+  "S         = " +
+  SQRT +
+  "MS_Error                  (desviaci\u00f3n agrupada)\n" +
+  "R-sq      = SS_Factor / SS_Total\n" +
+  "R-sq(adj) = 1 " +
+  MINUS +
+  " MS_Error / ( SS_Total / (N" +
+  MINUS +
+  "1) )\n" +
+  "R-sq(pred)= 1 " +
+  MINUS +
+  " PRESS / SS_Total";
+
+const FML_CI =
+  XBARI +
+  " \u00b1 t(1" +
+  MINUS +
+  ALPHA +
+  "/2; N" +
+  MINUS +
+  "k) \u00b7 S / " +
+  SQRT +
+  NI;
+
+/* ------------------------------------------------------------------ */
+/* Componente                                                          */
+/* ------------------------------------------------------------------ */
+
+export default function Theory() {
   return (
-    <div className="space-y-4">
-      <div className="flex justify-end gap-1">
-        {(["es", "en"] as Lang[]).map((l) => (
-          <button
-            key={l}
-            onClick={() => setLang(l)}
-            className={`px-3 py-1 text-xs rounded border ${
-              lang === l
-                ? "bg-[#00674d] text-white border-[#00674d]"
-                : "bg-white text-gray-600 border-gray-300"
-            }`}
-          >
-            {l.toUpperCase()}
-          </button>
-        ))}
-      </div>
-      {lang === "es" ? <ES /> : <EN />}
+    <div className="max-w-3xl">
+      <h2 className="text-base font-bold text-gray-900 mb-1">One-Way ANOVA</h2>
+      <p className="text-xs text-gray-500 mb-4">
+        {"An\u00e1lisis de la varianza con un factor"}
+      </p>
+
+      <P>
+        {"El ANOVA de un factor compara las medias de "}
+        <strong>k</strong>
+        {" grupos (niveles del factor) para decidir si las diferencias observadas entre ellas son mayores de lo que cabr\u00eda esperar por la variabilidad natural del proceso."}
+      </P>
+
+      <H>{"Hip\u00f3tesis"}</H>
+      <F>{FML_HYP}</F>
+      <P>
+        {"N\u00f3tese que " + H1 + " no indica "}
+        <em>{"cu\u00e1l"}</em>
+        {" media difiere. Si se rechaza " +
+          H0 +
+          ", hace falta un an\u00e1lisis de comparaciones m\u00faltiples (Tukey, Dunnett) para identificar qu\u00e9 pares son significativamente distintos."}
+      </P>
+
+      <H>{"Modelo"}</H>
+      <F>{FML_MODEL}</F>
+      <P>
+        {"donde " +
+          XIJ +
+          " es la observaci\u00f3n j del nivel i, " +
+          MU +
+          " la media global, " +
+          TAU +
+          SUBI +
+          " el efecto del nivel i y " +
+          EPS +
+          SUBI +
+          SUBJ +
+          " el error aleatorio. El modelo asume una "}
+        <strong>{"\u00fanica"}</strong>
+        {" varianza " +
+          SIGMA2 +
+          " com\u00fan a todos los niveles: es la hip\u00f3tesis de igualdad de varianzas."}
+      </P>
+
+      <H>{"Descomposici\u00f3n de la variabilidad"}</H>
+      <P>
+        {"La suma de cuadrados total se reparte en la parte explicada por el factor y la parte no explicada (error):"}
+      </P>
+      <F>{FML_SS}</F>
+      <P>
+        {"SS_Factor mide cu\u00e1nto se separan las medias de grupo de la media global; SS_Error mide la dispersi\u00f3n dentro de cada grupo. Cada suma se convierte en media cuadr\u00e1tica dividiendo por sus grados de libertad:"}
+      </P>
+      <F>{FML_MS}</F>
+
+      <H>{"Estad\u00edstico de contraste"}</H>
+      <F>{FML_F}</F>
+      <P>
+        {"MS_Error estima " + SIGMA2 + " siempre; MS_Factor estima " + SIGMA2 + " "}
+        <em>{"solo si " + H0 + " es cierta"}</em>
+        {". Por eso un cociente F pr\u00f3ximo a 1 es compatible con " +
+          H0 +
+          ", y valores grandes la ponen en duda. El contraste es siempre de cola derecha."}
+      </P>
+      <P>
+        <strong>{"Decisi\u00f3n:"}</strong>
+        {" si p " + LE + " " + ALPHA + " se rechaza " + H0 + " y se concluye que no todas las medias son iguales."}
+      </P>
+
+      <H>{"Resumen del modelo"}</H>
+      <F>{FML_SUMMARY}</F>
+      <P>
+        <strong>S</strong>
+        {" es la desviaci\u00f3n t\u00edpica agrupada, la mejor estimaci\u00f3n de la variabilidad interna del proceso. "}
+        <strong>R-sq</strong>
+        {" es la proporci\u00f3n de variabilidad explicada por el factor. "}
+        <strong>R-sq(adj)</strong>
+        {" penaliza el n\u00famero de niveles y permite comparar modelos distintos. "}
+        <strong>R-sq(pred)</strong>
+        {" se obtiene por validaci\u00f3n cruzada dejando fuera una observaci\u00f3n cada vez; si es mucho menor que R-sq, el modelo est\u00e1 sobreajustado."}
+      </P>
+
+      <H>{"Intervalos de confianza de las medias"}</H>
+      <F>{FML_CI}</F>
+      <P>
+        {"Un detalle importante: el intervalo de cada nivel se construye con la desviaci\u00f3n "}
+        <strong>{"agrupada"}</strong>
+        {" S y con los grados de libertad del "}
+        <strong>{"error"}</strong>
+        {" (N " +
+          MINUS +
+          " k), no con la desviaci\u00f3n y el tama\u00f1o de ese grupo por separado. Al usar la informaci\u00f3n de todas las muestras, los intervalos son m\u00e1s estrechos y " +
+          EMDASH +
+          "si el dise\u00f1o est\u00e1 balanceado" +
+          EMDASH +
+          " todos tienen la misma amplitud. Esto es v\u00e1lido precisamente porque el modelo asume varianza com\u00fan."}
+      </P>
+
+      <H>{"Supuestos"}</H>
+      <ul className="list-disc pl-5 mb-2">
+        <Li>
+          <strong>{"Independencia."}</strong>
+          {" Las observaciones no deben estar correlacionadas. Es el supuesto m\u00e1s cr\u00edtico y no se arregla a posteriori: depende de c\u00f3mo se recogieron los datos (aleatorizaci\u00f3n)."}
+        </Li>
+        <Li>
+          <strong>{"Normalidad de los residuos."}</strong>
+          {" El ANOVA es bastante robusto frente a desviaciones moderadas, sobre todo con muestras equilibradas y n " +
+            GE +
+            " 10 por grupo."}
+        </Li>
+        <Li>
+          <strong>{"Igualdad de varianzas."}</strong>
+          {" Si las varianzas difieren mucho (regla pr\u00e1ctica: la mayor m\u00e1s del doble de la menor en desviaci\u00f3n t\u00edpica), el F pierde validez. En ese caso conviene el test de Welch, que no asume varianzas iguales."}
+        </Li>
+      </ul>
+      <P>
+        {"Los gr\u00e1ficos de intervalos, de valores individuales y el diagrama de caja ayudan a valorar visualmente tanto las diferencias entre medias como la homogeneidad de la dispersi\u00f3n y la presencia de valores at\u00edpicos."}
+      </P>
+
+      <H>{"Interpretaci\u00f3n pr\u00e1ctica"}</H>
+      <P>
+        {"Significaci\u00f3n estad\u00edstica no equivale a relevancia industrial. Con muestras grandes, diferencias irrelevantes resultan significativas; con muestras peque\u00f1as, diferencias importantes pueden pasar desapercibidas. Conviene siempre acompa\u00f1ar el p-valor con la magnitud de las diferencias entre medias y con los intervalos de confianza, y juzgarlas frente a la tolerancia o al criterio t\u00e9cnico del proceso."}
+      </P>
+
+      <p className="text-xs text-gray-400 mt-6">
+        {"Ejemplo de referencia: ppm VOC versus Shift " +
+          EMDASH +
+          " k = 3, N = 24, F = 7,03, p = 0,005, R-sq = 40,11 % (" +
+          MU0 +
+          " no aplica en ANOVA)."}
+      </p>
     </div>
   );
 }
