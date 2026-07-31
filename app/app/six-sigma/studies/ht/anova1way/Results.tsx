@@ -294,7 +294,7 @@ const eLo = Math.min(...eAll);
 const eHi = Math.max(...eAll);
 const eSize = (eHi - eLo) / nb || 1;
 
-const histData: Data[] = [
+const histogram: Data[] = [
   {
     type: "histogram",
     x: eAll,
