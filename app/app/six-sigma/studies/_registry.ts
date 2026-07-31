@@ -13,11 +13,13 @@ import timeseries from "./timeseries";
 import gagerr from "./gagerr";
 import attragreement from "./attragreement";
 import multivari from "./multivari";
-import pss1SampleT from "./pss1samplet";
+import pss1SampleT from "./pss/onesamplet";
 import pss2SampleT from "./pss/twosamplet";
 import pssAnova from "./pss/anova";
 import pssOneProportion from "./pss/oneproportion";
 import pssTwoProportions from "./pss/twoproportions";
+import ht1SampleT from "./ht/onesamplet";
+import htAnova1Way from "./ht/anova1way";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
@@ -38,6 +40,8 @@ const ALL: ArtifactDefinition[] = [
   pssAnova,
   pssOneProportion,
   pssTwoProportions,
+  ht1SampleT,
+  htAnova1Way,
 ];
 
 export const REGISTRY: Record<string, ArtifactDefinition> = Object.fromEntries(

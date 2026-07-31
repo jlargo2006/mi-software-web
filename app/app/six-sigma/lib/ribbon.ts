@@ -131,7 +131,7 @@ export const PHASES: RibbonPhase[] = [
         enabled: true,
         children: [
           // p.302 | mtw: Exh_Stat.MTW
-          { id: "t1Sample", label: "1-Sample t-test", tool: null, enabled: false },
+          { id: "t1Sample", label: "1-Sample t-test", tool: "ht1SampleT", enabled: true },
           // p.313-314 / 327 | mtw: Furnace.MTW / 2 sample unequal variance
           // Single test; Equal vs Unequal variance is an option inside the study.
           { id: "t2Sample", label: "2-Sample t-test", tool: null, enabled: false },
@@ -144,7 +144,7 @@ export const PHASES: RibbonPhase[] = [
           //   - 2+ samples, Non-normal  → Levene's test
           { id: "equalVar", label: "Test for Equal Variance", tool: null, enabled: false },
           // p.356 | mtw: ANOVA.MTW
-          { id: "anova", label: "One-Way ANOVA", tool: null, enabled: false },
+          { id: "anova", label: "One-Way ANOVA", tool: "htAnova1Way", enabled: true },
           // p.382 | mtw: DISTRIB1.MTW
           { id: "sign", label: "1-Sample Sign / Wilcoxon (Median)", tool: null, enabled: false },
           // p.396 | mtw: Var_Comp.mtw
