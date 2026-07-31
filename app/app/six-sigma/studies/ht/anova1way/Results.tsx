@@ -288,17 +288,22 @@ export default function Anova1WayResults({
     yaxis: resAxis,
   };
 
-  // 3) Histograma de residuos.
-  const histogram: Data[] = [
-    {
-      type: "histogram",
-      x: eAll,
-      nbinsx: Math.max(5, Math.ceil(Math.sqrt(eAll.length)) + 2),
-      marker: { color: "rgba(0,103,77,0.55)", line: { color: GREEN, width: 1 } },
-      hovertemplate: `${resLabel}: %{x}<br>Frequency = %{y}<extra></extra>`,
-      showlegend: false,
-    },
-  ];
+// --- Histogram of residuals ---
+const nb = Math.max(5, Math.ceil(Math.sqrt(eAll.length)) + 2);
+const eLo = Math.min(...eAll);
+const eHi = Math.max(...eAll);
+const eSize = (eHi - eLo) / nb || 1;
+
+const histData: Data[] = [
+  {
+    type: "histogram",
+    x: eAll,
+    xbins: { start: eLo, end: eHi + eSize, size: eSize },
+    marker: { color: "rgba(0,103,77,0.55)", line: { color: GREEN, width: 1 } },
+    hovertemplate: `${resLabel}: %{x}<br>Frequency = %{y}<extra></extra>`,
+    showlegend: false,
+  },
+];
 
   const histLayout: Partial<Layout> = {
     title: { text: "Histogram", font: { size: 12 } },
