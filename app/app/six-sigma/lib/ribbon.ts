@@ -134,7 +134,7 @@ export const PHASES: RibbonPhase[] = [
           { id: "t1Sample", label: "1-Sample t-test", tool: "ht1SampleT", enabled: true },
           // p.313-314 / 327 | mtw: Furnace.MTW / 2 sample unequal variance
           // Single test; Equal vs Unequal variance is an option inside the study.
-          { id: "t2Sample", label: "2-Sample t-test", tool: null, enabled: false },
+          { id: "t2Sample", label: "2-Sample t-test", tool: "htTwoSampleT", enabled: true },
           // p.332 | mtw: EXH_STAT Delta.MTW
           { id: "tPaired", label: "Paired t-test", tool: null, enabled: false },
           // p.346 / 375 | mtw: EXH_AOV.MTW
