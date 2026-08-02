@@ -93,35 +93,37 @@ export default function EqVarResults({
   const pad = (hi - lo) * 0.08 || 1;
 
   const boxLayout: Partial<Layout> = {
-    margin: { l: 60, r: 30, t: 30, b: 45 },
+    margin: { l: 110, r: 30, t: 30, b: 45 },
     showlegend: false,
     plot_bgcolor: "white",
     xaxis: {
-      title: { text: r.factorName || "Sample" },
-      type: "category",
-      categoryorder: "array",
-      categoryarray: names,
-      gridcolor: GRID,
-    },
-    yaxis: {
       title: { text: r.responseName || "Value" },
       range: [lo - pad, hi + pad] as [number, number],
       gridcolor: GRID,
       zeroline: false,
+    },
+    yaxis: {
+      title: { text: r.factorName || "Sample" },
+      type: "category",
+      categoryorder: "array",
+      categoryarray: [...names].reverse(),
+      gridcolor: GRID,
     },
   };
 
   const boxData: Data[] = r.groups.map((g) => ({
     type: "box",
     name: g.name,
-    y: g.values,
+    x: g.values,
+    orientation: "h",
     boxpoints: "outliers",
     quartilemethod: "inclusive",
-    marker: { color: GREEN },
+    marker: { color: GREEN, symbol: "asterisk-open", size: 7 },
     line: { color: GREEN },
     fillcolor: "rgba(0,103,77,0.15)",
     showlegend: false,
   }));
+
 
   // --- Grafico de intervalos de comparacion multiple ---
   // Se dibujan los intervalos MC (no los de Bonferroni de la tabla):
