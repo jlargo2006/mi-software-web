@@ -433,7 +433,7 @@ export function computeEqVar(
   // Restriccion de equivalencia: sum(h_i) = z * sqrt(sum a_i^2)
   const hTotal = zMC * Math.sqrt(aAll.reduce((s, v) => s + v * v, 0));
   // Reparto proporcional a sqrt(a_i) (calibrado contra Minitab)
-  const wAll = aAll.map((v) => Math.sqrt(v));
+  const wAll = aAll;                     // antes: aAll.map((v) => Math.sqrt(v))
   const wSum = wAll.reduce((s, v) => s + v, 0);
 
   const out: EqVarGroupResult[] = groups.map((g, i) => {
