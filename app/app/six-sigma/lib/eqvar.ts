@@ -426,14 +426,21 @@ export function computeEqVar(
   // alpha. Es la propiedad que anuncia el pie de la grafica de Minitab.
   const zMC = normQuantile(1 - opts.alpha / 2);
   const vAll = parts.map((p) => bonettVar(p.n, p.g4));
-  const vSum = Math.sqrt(vAll.reduce((a, v) => a + v, 0));
+  const cAll = parts.map((p) => p.n / (p.n - zMC));
+
+  // a_i en escala log-varianza (mismo factor c que usa el IC de Bonett)
+  const aAll = parts.map((_, i) => cAll[i] * Math.sqrt(vAll[i]));
+  // Restriccion de equivalencia: sum(h_i) = z * sqrt(sum a_i^2)
+  const hTotal = zMC * Math.sqrt(aAll.reduce((s, v) => s + v * v, 0));
+  // Reparto proporcional a sqrt(a_i) (calibrado contra Minitab)
+  const wAll = aAll.map((v) => Math.sqrt(v));
+  const wSum = wAll.reduce((s, v) => s + v, 0);
 
   const out: EqVarGroupResult[] = groups.map((g, i) => {
     const p = parts[i];
     const ci = bonettCI(g.values, individualLevel);
-    const c = p.n / (p.n - zMC);
-    const center = Math.log(c * p.s2);
-    const h = vSum > 0 ? (zMC * vAll[i]) / vSum : 0;
+    const center = Math.log(cAll[i] * p.s2);
+    const h = wSum > 0 ? (hTotal * wAll[i]) / wSum : 0;
     return {
       name: g.name,
       n: p.n,
