@@ -142,7 +142,7 @@ export const PHASES: RibbonPhase[] = [
           //   - 2 samples,  Normal      → F-test
           //   - >2 samples, Normal      → Bartlett's test
           //   - 2+ samples, Non-normal  → Levene's test
-          { id: "equalVar", label: "Test for Equal Variance", tool: null, enabled: false },
+          { id: "equalVar", label: "Test for Equal Variance", tool: "htEqVar", enabled: true },
           // p.356 | mtw: ANOVA.MTW
           { id: "anova", label: "One-Way ANOVA", tool: "htAnova1Way", enabled: true },
           // p.382 | mtw: DISTRIB1.MTW
