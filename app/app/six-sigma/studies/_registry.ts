@@ -21,6 +21,7 @@ import pssTwoProportions from "./pss/twoproportions";
 import ht1SampleT from "./ht/onesamplet";
 import htAnova1Way from "./ht/anova1way";
 import htTwoSampleT from "./ht/twosamplet";
+import htEqVar from "./ht/eqvar";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
@@ -44,6 +45,7 @@ const ALL: ArtifactDefinition[] = [
   ht1SampleT,
   htAnova1Way,
   htTwoSampleT,
+  htEqVar,
 ];
 
 export const REGISTRY: Record<string, ArtifactDefinition> = Object.fromEntries(
