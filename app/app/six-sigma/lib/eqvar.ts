@@ -27,12 +27,14 @@
 //    autoconsistente desvia 0,006-0,044 respecto a Minitab en k=2 y hasta
 //    un orden de magnitud con k=3. Usar Levene para la decision formal.
 
-// Resultados verificados:
+// Resultados verificados (BTU.In vs Damper):
 //    StDev        3,0198680 / 2,7670195   (Minitab 3,01987 / 2,76702)
 //    IC Bonf. 1   (2,25901; 4,27664)      exacto
 //    IC Bonf. 2   (2,27551; 3,52261)      exacto
+//    Curtosis g4  3,74279 / 2,63932
 //    Levene       0,0000231 -> p = 0,996178   (Minitab 0,00 / 0,996)
-//    Comp. mult.  p = 0,58698             (Minitab 0,586; desvia 0,001)
+//    Comp. mult.  p = 0,592               (Minitab 0,586; ver nota 3)
+
 
 import { fPValue } from "./fdist";
 
@@ -438,11 +440,13 @@ export function computeEqVar(
   const mc = multipleComparisons(parts);
   const lev = leveneTest(groups.map((g) => g.values));
 
-  // --- Intervalos de comparacion multiple, para el grafico ---
-  // Construidos por EQUIVALENCIA con el test: las semianchuras en escala
-  // logaritmica se reparten como h_i = z * v_i / sqrt(sum v), de modo que
-  // dos intervalos se solapan si y solo si el par no es significativo a
-  // alpha. Es la propiedad que anuncia el pie de la grafica de Minitab.
+  // --- Intervalos de comparacion multiple ---
+  // Semianchuras h_i en escala log-varianza, con la restriccion de
+  // equivalencia sum(h_i) = z * sqrt(sum a_i^2), donde a_i = c_i * sqrt(v_i).
+  // Eso garantiza que "los intervalos se solapan" <=> "no significativo".
+  // El reparto interno es proporcional a a_i (recalibrado con k=3,
+  // ppm defective); solo afecta al aspecto visual, no al criterio.
+
   const zMC = normQuantile(1 - opts.alpha / 2);
   const vAll = parts.map((p) => bonettVar(p.n, p.g4));
   const cAll = parts.map((p) => p.n / (p.n - zMC));
@@ -451,7 +455,7 @@ export function computeEqVar(
   const aAll = parts.map((_, i) => cAll[i] * Math.sqrt(vAll[i]));
   // Restriccion de equivalencia: sum(h_i) = z * sqrt(sum a_i^2)
   const hTotal = zMC * Math.sqrt(aAll.reduce((s, v) => s + v * v, 0));
-  // Reparto proporcional a sqrt(a_i) (calibrado contra Minitab)
+  // Reparto proporcional a a_i (recalibrado con k=3, ppm defective)
   const wAll = aAll;                     // antes: aAll.map((v) => Math.sqrt(v))
   const wSum = wAll.reduce((s, v) => s + v, 0);
 
