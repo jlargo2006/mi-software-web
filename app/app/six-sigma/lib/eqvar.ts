@@ -16,14 +16,17 @@
 //
 //    El factor c multiplica TAMBIEN al error estandar, no solo al centro.
 //
-// 2) La curtosis g4 se calcula respecto a una MEDIA RECORTADA con proporcion
-//    1/(2*sqrt(n-4)), y el recorte es FRACCIONARIO E INTERPOLADO. Con recorte
-//    entero (3 o 4 observaciones) el grupo 1 falla en el tercer decimal.
+// 2) La curtosis g4 usa la MEDIA RECORTADA en el numerador y la MEDIA
+//    ORDINARIA en el denominador. El recorte es fraccionario e interpolado,
+//    con proporcion 1/(2*sqrt(n-4)), pero SOLO si esa proporcion es < 0,25
+//    (n >= 8); por debajo degenera hacia la mediana y los IC fallan.
+//    Verificado exacto en: Damper (n=40/50), Supplier (n=5, k=3),
+//    ppm defective (n=17..25, k=3), Temp x Oxygen (n=3, k=6).
 //
-// 3) El p-valor de comparaciones multiples sale de la version AUTOCONSISTENTE
-//    del estadistico de Bonett: como c depende de z, se resuelve |T(z)| = z
-//    por biseccion y p = 2*(1 - Phi(z*)).
-//
+// 3) El p-valor de comparaciones multiples NO esta resuelto. La version
+//    autoconsistente desvia 0,006-0,044 respecto a Minitab en k=2 y hasta
+//    un orden de magnitud con k=3. Usar Levene para la decision formal.
+
 // Resultados verificados:
 //    StDev        3,0198680 / 2,7670195   (Minitab 3,01987 / 2,76702)
 //    IC Bonf. 1   (2,25901; 4,27664)      exacto
@@ -225,12 +228,27 @@ function trimmedMean(values: number[], prop: number): number {
   return den > 0 ? num / den : median(x);
 }
 
-/** Curtosis de Bonett, calculada respecto a la media recortada. */
+/**
+ * Proporcion de recorte de Bonett. La formula 1/(2*sqrt(n-4)) degenera en
+ * muestras pequenas (n=5 -> 0,5, que recorta hasta la mediana). VERIFICADO
+ * contra Minitab: con n=5 NO hay recorte. Se aplica solo si prop < 0,25,
+ * es decir a partir de n = 8.
+ */
+function trimProportion(n: number): number {
+  if (n <= 4) return 0;
+  const p = 1 / (2 * Math.sqrt(n - 4));
+  return p < 0.25 ? p : 0;
+}
+
+/**
+ * Curtosis de Bonett. VERIFICADO contra Minitab en 4 datasets:
+ * media RECORTADA en el numerador y media ORDINARIA en el denominador.
+ * Usar la recortada en ambos falla en grupos con atipicos (Damper 1).
+ */
 function bonettKurtosis(values: number[]): number {
   const n = values.length;
   const m = mean(values);
-  const prop = n > 4 ? 1 / (2 * Math.sqrt(n - 4)) : 0;
-  const tm = trimmedMean(values, prop);
+  const tm = trimmedMean(values, trimProportion(n));
   let num = 0;
   let den = 0;
   for (const x of values) {
@@ -239,6 +257,7 @@ function bonettKurtosis(values: number[]): number {
   }
   return den > 0 ? (n * num) / (den * den) : NaN;
 }
+
 
 /** Varianza asintotica del log de la varianza (parte sin el factor c). */
 function bonettVar(n: number, g4: number): number {
@@ -396,13 +415,13 @@ export function computeEqVar(
   if (groups.length < 2) {
     return { ...base, error: "At least two levels with data are required." };
   }
-  const small = groups.find((g) => g.values.length < 5);
+  const small = groups.find((g) => g.values.length < 3);
   if (small) {
     return {
       ...base,
       error:
         `Level "${small.name}" has ${small.values.length} observations. ` +
-        "The Bonett method needs at least 5 per level.",
+        "At least 3 per level are required.",
     };
   }
 
