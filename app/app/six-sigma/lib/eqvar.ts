@@ -5,10 +5,10 @@
 // test de comparaciones multiples de Bonett.
 //
 // ---------------------------------------------------------------------------
-// DETALLES CALIBRADOS CONTRA MINITAB (ejemplo BTU.In vs Damper)
+// DETALLES CALIBRADOS CONTRA MINITAB
 // ---------------------------------------------------------------------------
 // 1) Los IC NO son chi-cuadrado. El metodo clasico sqrt((n-1)s2/chi2) da
-//    (2,4065; 4,0273) para el grupo 1, frente al (2,25901; 4,27664) real.
+//    (2,4065; 4,0273) para Damper 1, frente al (2,25901; 4,27664) real.
 //    Minitab usa BONETT, robusto frente a no normalidad:
 //
 //      sigma en sqrt( exp( ln(c*s2) +- z * c * sqrt( (g4 - (n-3)/n)/(n-1) ) ) )
@@ -16,25 +16,56 @@
 //
 //    El factor c multiplica TAMBIEN al error estandar, no solo al centro.
 //
-// 2) La curtosis g4 usa la MEDIA RECORTADA en el numerador y la MEDIA
-//    ORDINARIA en el denominador. El recorte es fraccionario e interpolado,
-//    con proporcion 1/(2*sqrt(n-4)), pero SOLO si esa proporcion es < 0,25
-//    (n >= 8); por debajo degenera hacia la mediana y los IC fallan.
-//    Verificado exacto en: Damper (n=40/50), Supplier (n=5, k=3),
-//    ppm defective (n=17..25, k=3), Temp x Oxygen (n=3, k=6).
+// 2) La curtosis g4 de los IC usa la MEDIA RECORTADA en el numerador y la
+//    MEDIA ORDINARIA en el denominador. El recorte es fraccionario e
+//    interpolado, con proporcion 1/(2*sqrt(n-4)), pero SOLO si esa proporcion
+//    es <= 0,25 (es decir n >= 8); por debajo degenera hacia la mediana.
+//    OJO: el tope es <= y no <, porque con n = 8 la proporcion vale
+//    exactamente 0,25 y SI debe aplicarse (calibrado con ppm VOC vs Shift).
 //
-// 3) El p-valor de comparaciones multiples NO esta resuelto. La version
-//    autoconsistente desvia 0,006-0,044 respecto a Minitab en k=2 y hasta
-//    un orden de magnitud con k=3. Usar Levene para la decision formal.
-
-// Resultados verificados (BTU.In vs Damper):
-//    StDev        3,0198680 / 2,7670195   (Minitab 3,01987 / 2,76702)
-//    IC Bonf. 1   (2,25901; 4,27664)      exacto
-//    IC Bonf. 2   (2,27551; 3,52261)      exacto
-//    Curtosis g4  3,74279 / 2,63932
-//    Levene       0,0000231 -> p = 0,996178   (Minitab 0,00 / 0,996)
-//    Comp. mult.  p = 0,592               (Minitab 0,586; ver nota 3)
-
+// 3) El p-valor de comparaciones multiples tiene DOS RAMAS segun k:
+//
+//    k = 2  -> inversion de la ecuacion de Bonett para dos varianzas. Se
+//              busca la raiz positiva z* de
+//                L(z) = ln(n1/n2) + ln((n2-z)/(n1-z)) - z*SE + ln(s1Â²/s2Â²)
+//              con SE basado en la curtosis AGRUPADA del par, y
+//                p = 2 * P(Z > z*)
+//              Los grupos se ordenan por varianza DESCENDENTE; sin ese orden
+//              el resultado no es simetrico y falla.
+//
+//    k > 2  -> varianzas V_i por grupo a partir de las b_ij por pares y
+//              p_ij = P(R_k >= sqrt(2)|Z_ij|) con R_k el rango de k normales
+//              estandar. El p global es el minimo. La formula de V_i divide
+//              por (k-1)(k-2), que es 0 si k = 2: la rama k = 2 es
+//              obligatoria, no una optimizacion.
+//
+//    En AMBAS ramas g_i = (n_i - 3)/n_i  (NO n_i/(n_i - 3)).
+//
+// ---------------------------------------------------------------------------
+// RESULTADOS VERIFICADOS (exactos a 3 decimales frente a Minitab)
+// ---------------------------------------------------------------------------
+//   BTU.In vs Damper (k=2, n=40/50)
+//     StDev      3,0198680 / 2,7670195      (Minitab 3,01987 / 2,76702)
+//     IC Bonf.   (2,25901; 4,27664) / (2,27551; 3,52261)   exactos
+//     g4 IC      3,74279 / 2,63932
+//     Levene     0,0000231 -> p = 0,996178  (Minitab 0,00 / 0,996)
+//     Comp.mult. g4 par = 3,246392, SE = 0,326484, z* = 0,544096
+//                p = 0,586375               (Minitab 0,586)
+//   Clor.Lev_Post vs Distributor (k=2, n=40/50)
+//     z* = 1,321620 -> p = 0,186295         (Minitab 0,186)
+//     Levene p = 0,304
+//   Data vs Supplier (k=3, n=5)
+//     IC (0,120375; 3,08781) / (0,082028; 0,98401) / (0,132427; 2,52819)
+//     Comp.mult. p = 0,392730               (Minitab 0,393)
+//     Levene 0,5928 -> p = 0,568174         (Minitab 0,59 / 0,568)
+//   ppm VOC vs Shift (k=3, n=8)
+//     Comp.mult. p = 0,747717               (Minitab 0,748)
+//     Levene p = 0,44
+//   ppm defective (k=3, n=17/20/25) y Temp x Oxygen (k=6, n=3): IC exactos.
+//
+// NOTA de validez: Minitab advierte que el p-valor de comparaciones multiples
+// puede no ser fiable si algun grupo tiene n < 20. Se expone la bandera
+// `mcSmallSample` para que la UI muestre el aviso.
 
 import { fPValue } from "./fdist";
 
@@ -49,7 +80,7 @@ export interface EqVarGroupResult {
   /** Intervalo de comparacion multiple, para el grafico. */
   mcLo: number;
   mcHi: number;
-  /** Curtosis usada por Bonett (diagnostico). */
+  /** Curtosis usada por Bonett en el IC (diagnostico). */
   kurtosis: number;
   values: number[];
 }
@@ -68,8 +99,13 @@ export interface EqVarModel {
 
   /** Comparaciones multiples (Bonett). Solo p-valor, como Minitab. */
   mcPValue: number;
-  /** Estadistico de Bonett en el punto autoconsistente (diagnostico). */
+  /**
+   * Diagnostico: con k = 2 es la raiz z* de la ecuacion de Bonett; con k > 2
+   * es el |Z_ij| del par mas extremo. Minitab no lo imprime.
+   */
   mcStatistic: number;
+  /** true si algun grupo tiene n < 20 (p-valor de MC posiblemente no valido). */
+  mcSmallSample: boolean;
 
   leveneStatistic: number;
   levenePValue: number;
@@ -89,6 +125,7 @@ export const EMPTY_EQVAR: EqVarModel = {
   groups: [],
   mcPValue: NaN,
   mcStatistic: NaN,
+  mcSmallSample: false,
   leveneStatistic: NaN,
   levenePValue: NaN,
   leveneDf1: 0,
@@ -199,6 +236,37 @@ function normSF(z: number): number {
   return 0.5 * erfc(z / Math.SQRT2);
 }
 
+/** Funcion de distribucion de la normal estandar. */
+function normCDF(z: number): number {
+  return 0.5 * erfc(-z / Math.SQRT2);
+}
+
+/** Densidad de la normal estandar. */
+function normPDF(z: number): number {
+  return Math.exp((-z * z) / 2) / Math.sqrt(2 * Math.PI);
+}
+
+/**
+ * Cola superior del RANGO de k normales estandar independientes (df = inf),
+ * es decir P(R_k >= q). Se integra
+ *   P(R_k < q) = k * integral phi(z) * [Phi(z) - Phi(z - q)]^(k-1) dz
+ * por Simpson sobre [-9, 9]. Verificado contra scipy a 3e-16.
+ */
+function studentizedRangeSF(q: number, k: number): number {
+  if (!(q > 0) || k < 2) return 1;
+  const lo = -9;
+  const hi = 9;
+  const m = 2000; // par
+  const h = (hi - lo) / m;
+  const f = (z: number) => normPDF(z) * (normCDF(z) - normCDF(z - q)) ** (k - 1);
+  let sum = f(lo) + f(hi);
+  for (let i = 1; i < m; i++) {
+    sum += f(lo + i * h) * (i % 2 ? 4 : 2);
+  }
+  const cdf = (k * sum * h) / 3;
+  return Math.min(1, Math.max(0, 1 - cdf));
+}
+
 /**
  * Media recortada con proporcion FRACCIONARIA e interpolada.
  * Recorta k = prop*n observaciones por cola; la parte fraccionaria se aplica
@@ -232,20 +300,27 @@ function trimmedMean(values: number[], prop: number): number {
 
 /**
  * Proporcion de recorte de Bonett. La formula 1/(2*sqrt(n-4)) degenera en
- * muestras pequenas (n=5 -> 0,5, que recorta hasta la mediana). VERIFICADO
- * contra Minitab: con n=5 NO hay recorte. Se aplica solo si prop < 0,25,
+ * muestras pequenas (n = 5 -> 0,5, que recorta hasta la mediana). VERIFICADO
+ * contra Minitab: con n = 5 NO hay recorte. Se aplica solo si prop <= 0,25,
  * es decir a partir de n = 8.
+ *
+ * El tope es <= y NO <: con n = 8 la proporcion vale exactamente 0,25 y debe
+ * aplicarse. Con < estricto, ppm VOC vs Shift daba 0,663 en vez de 0,748.
+ *
+ * Valores: n=3 -> 0 | n=5 -> 0 | n=8 -> 0,250 | n=17 -> 0,139 | n=20 -> 0,125
+ *          n=25 -> 0,109 | n=40 -> 0,083 | n=50 -> 0,074
  */
 function trimProportion(n: number): number {
   if (n <= 4) return 0;
   const p = 1 / (2 * Math.sqrt(n - 4));
-  return p < 0.25 ? p : 0;
+  return p <= 0.25 ? p : 0;
 }
 
 /**
- * Curtosis de Bonett. VERIFICADO contra Minitab en 4 datasets:
- * media RECORTADA en el numerador y media ORDINARIA en el denominador.
- * Usar la recortada en ambos falla en grupos con atipicos (Damper 1).
+ * Curtosis de Bonett para UN grupo (la que usan los IC). VERIFICADO contra
+ * Minitab en 4 datasets: media RECORTADA en el numerador y media ORDINARIA
+ * en el denominador. Usar la recortada en ambos falla en grupos con
+ * atipicos (Damper 1: 3,5139 en vez de 3,7428).
  */
 function bonettKurtosis(values: number[]): number {
   const n = values.length;
@@ -260,6 +335,26 @@ function bonettKurtosis(values: number[]): number {
   return den > 0 ? (n * num) / (den * den) : NaN;
 }
 
+/**
+ * Curtosis AGRUPADA de un PAR de grupos, la que usa el test de comparaciones
+ * multiples (distinta de la de los IC):
+ *
+ *   g4_ij = (ni+nj) * [ sum(y_il - m_i)^4 + sum(y_jl - m_j)^4 ]
+ *           / [ (ni-1)siÂ² + (nj-1)sjÂ² ]Â²
+ *
+ * con m_i la media recortada de cada grupo.
+ */
+function pooledKurtosis(a: number[], b: number[]): number {
+  const na = a.length;
+  const nb = b.length;
+  const ma = trimmedMean(a, trimProportion(na));
+  const mb = trimmedMean(b, trimProportion(nb));
+  let num = 0;
+  for (const x of a) num += (x - ma) ** 4;
+  for (const x of b) num += (x - mb) ** 4;
+  const den = (na - 1) * variance(a) + (nb - 1) * variance(b);
+  return den > 0 ? ((na + nb) * num) / (den * den) : NaN;
+}
 
 /** Varianza asintotica del log de la varianza (parte sin el factor c). */
 function bonettVar(n: number, g4: number): number {
@@ -326,42 +421,55 @@ function leveneTest(groups: number[][]): {
 }
 
 // --------------------------------------------------------------------------
-// Comparaciones multiples de Bonett (version autoconsistente)
+// Comparaciones multiples de Bonett
 // --------------------------------------------------------------------------
 
 /**
- * Estadistico de Bonett para dos grupos, evaluado en z.
- * Como c = n/(n-z) depende de z, el estadistico tambien.
+ * Rama k = 2. Invierte la ecuacion de Bonett para dos varianzas.
+ *
+ * IMPORTANTE: los grupos se ordenan por varianza DESCENDENTE antes de
+ * resolver. La ecuacion no es simetrica al orden; con Damper invertido el
+ * resultado pasaba de 0,586 a 1,000.
+ *
+ * L(z) tiene un polo en z = min(n1, n2), donde vuelve a +infinito. Por eso el
+ * bracket se expande desde 0,5 y se detiene en el primer cambio de signo, en
+ * lugar de usar min(n1,n2) como extremo superior.
  */
-function bonettStatAt(
-  a: { n: number; s2: number; g4: number },
-  b: { n: number; s2: number; g4: number },
-  z: number
-): number {
-  const ca = a.n / (a.n - z);
-  const cb = b.n / (b.n - z);
-  const va = bonettVar(a.n, a.g4);
-  const vb = bonettVar(b.n, b.g4);
-  return (Math.log(ca * a.s2) - Math.log(cb * b.s2)) / Math.sqrt(va + vb);
-}
-
-/** Resuelve |T(z)| = z por biseccion y devuelve el p-valor bilateral. */
 function bonettMCTwoGroups(
-  a: { n: number; s2: number; g4: number },
-  b: { n: number; s2: number; g4: number }
+  ga: number[],
+  gb: number[]
 ): { p: number; stat: number } {
-  const f = (z: number) => Math.abs(bonettStatAt(a, b, z)) - z;
-  let lo = 1e-9;
-  let hi = 5;
-  if (f(lo) < 0) {
-    // Varianzas practicamente identicas: p ~ 1.
-    const s = Math.abs(bonettStatAt(a, b, 0));
-    return { p: 2 * normSF(s), stat: s };
+  let a = ga;
+  let b = gb;
+  if (variance(a) < variance(b)) {
+    a = gb;
+    b = ga;
   }
-  while (f(hi) > 0 && hi < 50) hi *= 2;
+  const n1 = a.length;
+  const n2 = b.length;
+  const s1 = variance(a);
+  const s2 = variance(b);
+  const g4 = pooledKurtosis(a, b);
+  const se = Math.sqrt(
+    (g4 - (n1 - 3) / n1) / (n1 - 1) + (g4 - (n2 - 3) / n2) / (n2 - 1)
+  );
+  if (!Number.isFinite(se) || se <= 0) return { p: NaN, stat: NaN };
+
+  const L = (z: number) =>
+    Math.log(n1 / n2) + Math.log((n2 - z) / (n1 - z)) - z * se + Math.log(s1 / s2);
+
+  const eps = 1e-12;
+  if (L(eps) <= 0) return { p: 1, stat: 0 }; // varianzas practicamente iguales
+
+  const cap = Math.min(n1, n2) * 0.999;
+  let hi = 0.5;
+  while (hi < cap && L(hi) > 0) hi *= 1.6;
+  if (L(hi) > 0) return { p: 0, stat: Infinity };
+
+  let lo = eps;
   for (let i = 0; i < 200; i++) {
     const mid = (lo + hi) / 2;
-    if (f(mid) > 0) lo = mid;
+    if (L(mid) > 0) lo = mid;
     else hi = mid;
   }
   const zStar = (lo + hi) / 2;
@@ -369,30 +477,64 @@ function bonettMCTwoGroups(
 }
 
 /**
- * Con mas de dos grupos, el p-valor de comparaciones multiples es el minimo
- * de los p por pares ajustado por Bonferroni (k*(k-1)/2 comparaciones),
- * acotado a 1. Con k = 2 se reduce al par unico, que es el caso calibrado.
+ * Rama k > 2. Varianzas V_i por grupo a partir de las b_ij por pares, y
+ * p_ij por el rango de k normales estandar. El p global es el minimo.
+ *
+ *   b_ij = (g4_ij - g_i)/(n_i - 1) + (g4_ij - g_j)/(n_j - 1)
+ *   V_i  = [ (k-1) * sum_{j!=i} b_ij - sum_{j<l} b_jl ] / ((k-1)(k-2))
+ *   Z_ij = (ln s_iÂ² - ln s_jÂ²) / sqrt(V_i + V_j)
+ *   p_ij = P(R_k >= sqrt(2) * |Z_ij|)
  */
-function multipleComparisons(
-  parts: { n: number; s2: number; g4: number }[]
-): { p: number; stat: number } {
-  const k = parts.length;
-  if (k < 2) return { p: NaN, stat: NaN };
-  if (k === 2) return bonettMCTwoGroups(parts[0], parts[1]);
+function bonettMCMultiGroups(groups: number[][]): { p: number; stat: number } {
+  const k = groups.length;
+  const n = groups.map((g) => g.length);
+  const s2 = groups.map((g) => variance(g));
 
-  const m = (k * (k - 1)) / 2;
-  let best = Infinity;
+  // b_ij simetrica
+  const b: number[][] = Array.from({ length: k }, () => new Array(k).fill(0));
+  let total = 0;
+  for (let i = 0; i < k; i++) {
+    for (let j = i + 1; j < k; j++) {
+      const g4 = pooledKurtosis(groups[i], groups[j]);
+      const v =
+        (g4 - (n[i] - 3) / n[i]) / (n[i] - 1) +
+        (g4 - (n[j] - 3) / n[j]) / (n[j] - 1);
+      b[i][j] = v;
+      b[j][i] = v;
+      total += v;
+    }
+  }
+
+  const V = new Array(k).fill(0);
+  for (let i = 0; i < k; i++) {
+    let rowSum = 0;
+    for (let j = 0; j < k; j++) if (j !== i) rowSum += b[i][j];
+    V[i] = ((k - 1) * rowSum - total) / ((k - 1) * (k - 2));
+  }
+
+  let best = 1;
   let bestStat = NaN;
   for (let i = 0; i < k; i++) {
     for (let j = i + 1; j < k; j++) {
-      const r = bonettMCTwoGroups(parts[i], parts[j]);
-      if (r.p < best) {
-        best = r.p;
-        bestStat = r.stat;
+      const den = V[i] + V[j];
+      if (!(den > 0)) continue;
+      const z = (Math.log(s2[i]) - Math.log(s2[j])) / Math.sqrt(den);
+      const p = studentizedRangeSF(Math.SQRT2 * Math.abs(z), k);
+      if (p < best) {
+        best = p;
+        bestStat = Math.abs(z);
       }
     }
   }
-  return { p: Math.min(1, best * m), stat: bestStat };
+  return { p: best, stat: bestStat };
+}
+
+function multipleComparisons(groups: number[][]): { p: number; stat: number } {
+  const k = groups.length;
+  if (k < 2) return { p: NaN, stat: NaN };
+  // La formula de V_i divide por (k-1)(k-2) = 0 si k = 2: rama obligatoria.
+  if (k === 2) return bonettMCTwoGroups(groups[0], groups[1]);
+  return bonettMCMultiGroups(groups);
 }
 
 // --------------------------------------------------------------------------
@@ -437,26 +579,23 @@ export function computeEqVar(
     g4: bonettKurtosis(g.values),
   }));
 
-  const mc = multipleComparisons(parts);
+  const mc = multipleComparisons(groups.map((g) => g.values));
   const lev = leveneTest(groups.map((g) => g.values));
 
-  // --- Intervalos de comparacion multiple ---
-  // Semianchuras h_i en escala log-varianza, con la restriccion de
-  // equivalencia sum(h_i) = z * sqrt(sum a_i^2), donde a_i = c_i * sqrt(v_i).
-  // Eso garantiza que "los intervalos se solapan" <=> "no significativo".
-  // El reparto interno es proporcional a a_i (recalibrado con k=3,
-  // ppm defective); solo afecta al aspecto visual, no al criterio.
-
+  // --- Intervalos de comparacion multiple, para el grafico ---
+  // Construidos por EQUIVALENCIA con el test: las semianchuras h_i en escala
+  // log-varianza cumplen sum(h_i) = z * sqrt(sum a_iÂ²), con a_i = c_i*sqrt(v_i),
+  // de modo que dos intervalos se solapan si y solo si el par no es
+  // significativo a alpha. Es la propiedad que anuncia el pie de la grafica.
+  // El reparto interno es proporcional a a_i (recalibrado con k = 3, ppm
+  // defective); solo afecta al aspecto visual, no al criterio.
   const zMC = normQuantile(1 - opts.alpha / 2);
   const vAll = parts.map((p) => bonettVar(p.n, p.g4));
   const cAll = parts.map((p) => p.n / (p.n - zMC));
 
-  // a_i en escala log-varianza (mismo factor c que usa el IC de Bonett)
   const aAll = parts.map((_, i) => cAll[i] * Math.sqrt(vAll[i]));
-  // Restriccion de equivalencia: sum(h_i) = z * sqrt(sum a_i^2)
   const hTotal = zMC * Math.sqrt(aAll.reduce((s, v) => s + v * v, 0));
-  // Reparto proporcional a a_i (recalibrado con k=3, ppm defective)
-  const wAll = aAll;                     // antes: aAll.map((v) => Math.sqrt(v))
+  const wAll = aAll;
   const wSum = wAll.reduce((s, v) => s + v, 0);
 
   const out: EqVarGroupResult[] = groups.map((g, i) => {
@@ -486,6 +625,7 @@ export function computeEqVar(
     groups: out,
     mcPValue: mc.p,
     mcStatistic: mc.stat,
+    mcSmallSample: parts.some((p) => p.n < 20),
     leveneStatistic: lev.statistic,
     levenePValue: lev.pValue,
     leveneDf1: lev.df1,
