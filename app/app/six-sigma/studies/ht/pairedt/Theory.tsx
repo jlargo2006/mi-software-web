@@ -110,7 +110,7 @@ const ES = () => (
     <Section title="Qu\u00e9 contrasta">
       <p>
         El test <V>t</V> pareado compara dos mediciones tomadas sobre las{" "}
-        <strong>mismas unidades experimentales</strong>: antes y despu&eacute;s de un
+        <strong>mismas unidades experimentales</strong>: antes y después de un
         cambio, dos instrumentos sobre la misma pieza, dos operarios midiendo el
         mismo lote. Cada observaci&oacute;n de una muestra tiene su gemela en la otra.
       </p>
