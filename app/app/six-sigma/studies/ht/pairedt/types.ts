@@ -36,7 +36,7 @@ export const HTPAIREDT_DEFAULT: HTPairedTParams = {
 /** Simbolo de H1 para cabeceras y leyendas. */
 export const ALT_SYMBOL: Record<Alternative, string> = {
   less: "<",
-  "two-sided": "!=",
+  "two-sided": "\u2260",
   greater: ">",
 };
 
