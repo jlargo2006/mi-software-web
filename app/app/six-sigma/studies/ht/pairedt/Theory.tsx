@@ -110,7 +110,7 @@ const ES = () => (
     <Section title="Qu\u00e9 contrasta">
       <p>
         El test <V>t</V> pareado compara dos mediciones tomadas sobre las{" "}
-        <strong>mismas unidades experimentales</strong>: antes y despuÃ©s de un
+        <strong>mismas unidades experimentales</strong>: antes y despu&eacute;s de un
         cambio, dos instrumentos sobre la misma pieza, dos operarios midiendo el
         mismo lote. Cada observaci&oacute;n de una muestra tiene su gemela en la otra.
       </p>
@@ -118,7 +118,7 @@ const ES = () => (
         No es un test de dos muestras aplicado a datos parecidos: al restar dentro
         de cada par se elimina la variabilidad entre unidades, que suele ser la
         fuente de ruido dominante. Por eso el test pareado detecta diferencias que
-        un test de dos muestras independientes dejarÃ­a pasar.
+        un test de dos muestras independientes dejar&aacute; pasar.
       </p>
       <p>
         H{"\u2080"}: {MU}<Sub><V>d</V></Sub> = {MU}<Sub>0</Sub> frente a
@@ -133,10 +133,10 @@ const ES = () => (
         El procedimiento reduce el problema a un test <V>t</V> de una muestra sobre
         las diferencias. Toda la inferencia usa {DBAR} y{" "}
         <V>s</V><Sub><V>d</V></Sub>; las desviaciones de cada muestra por separado
-        son solo descriptivas y no intervienen en el cÃ¡lculo.
+        son solo descriptivas y no intervienen en el c&iacute;¡lculo.
       </p>
       <Note>
-        Consecuencia prÃ¡ctica: el emparejamiento es <strong>por fila</strong>. Si
+        Consecuencia pr&iacute;¡ctica: el emparejamiento es <strong>por fila</strong>. Si
         falta un dato en cualquiera de las dos columnas, la fila entera se
         descarta. No se pueden rellenar huecos ni reordenar las columnas de forma
         independiente.
@@ -146,9 +146,9 @@ const ES = () => (
     <Section title="Estad\u00edstico de contraste">
       <FormulaT />
       <p>
-        El <V>p</V>-valor es el Ã¡rea de la cola (o de las dos colas, con el valor
+        El <V>p</V>-valor es el &iacute;¡rea de la cola (o de las dos colas, con el valor
         absoluto) de la <V>t</V> con <V>n</V>{"\u2212"}1 grados de libertad, donde{" "}
-        <V>n</V> es el nÃºmero de <strong>pares</strong>, no el de observaciones.
+        <V>n</V> es el n&uacute;mero de <strong>pares</strong>, no el de observaciones.
       </p>
     </Section>
 
@@ -156,7 +156,7 @@ const ES = () => (
       <FormulaCI />
       <p>
         Con hip&oacute;tesis bilateral se muestra un intervalo de dos lados. Con hip&oacute;tesis
-        unilateral se muestra una Ãºnica cota, en el mismo sentido que H{"\u2081"}.
+        unilateral se muestra una &uacute;nica cota, en el mismo sentido que H{"\u2081"}.
         El intervalo y el test son coherentes: si {MU}<Sub>0</Sub> queda fuera del
         intervalo, el test rechaza al mismo nivel {ALPHA}.
       </p>
@@ -164,15 +164,15 @@ const ES = () => (
 
     <Section title="Supuestos">
       <ul className="list-disc pl-5 space-y-1">
-        <li>Los pares son independientes entre sÃ­.</li>
+        <li>Los pares son independientes entre s&iacute;­.</li>
         <li>
           Las <strong>diferencias</strong> son aproximadamente normales. No hace
           falta que lo sean las dos muestras originales.
         </li>
-        <li>Sin atÃ­picos que dominen {DBAR} y <V>s</V><Sub><V>d</V></Sub>.</li>
+        <li>Sin at&iacute;­picos que dominen {DBAR} y <V>s</V><Sub><V>d</V></Sub>.</li>
       </ul>
       <Note>
-        Las tres grÃ¡ficas del informe se construyen sobre las diferencias, no sobre
+        Las tres gr&iacute;¡ficas del informe se construyen sobre las diferencias, no sobre
         las muestras originales, precisamente porque el supuesto de normalidad se
         aplica a ellas.
       </Note>
@@ -198,12 +198,12 @@ const ES = () => (
       <p>
         Como <V>p</V> = 0,009 {"<"} 0,05 se rechaza H{"\u2080"}: Mat-B da valores
         significativamente mayores que Mat-A. El intervalo, enteramente negativo,
-        dice lo mismo y ademÃ¡s acota la magnitud: entre 0,13 y 0,69 unidades.
+        dice lo mismo y adem&iacute;¡s acota la magnitud: entre 0,13 y 0,69 unidades.
       </p>
       <Note>
         Las medias marginales, 10,630 y 11,040, difieren en 0,410, pero sus
         desviaciones rondan 2,5. Un test de dos muestras independientes sobre estos
-        mismos datos no serÃ­a significativo: la seÃ±al solo aparece al emparejar.
+        mismos datos no ser&aacute; significativo: la se&iacute;±al solo aparece al emparejar.
       </Note>
     </Section>
   </div>
