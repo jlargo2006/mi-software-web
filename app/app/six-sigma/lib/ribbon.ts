@@ -136,7 +136,7 @@ export const PHASES: RibbonPhase[] = [
           // Single test; Equal vs Unequal variance is an option inside the study.
           { id: "t2Sample", label: "2-Sample t-test", tool: "htTwoSampleT", enabled: true },
           // p.332 | mtw: EXH_STAT Delta.MTW
-          { id: "tPaired", label: "Paired t-test", tool: null, enabled: false },
+          { id: "tPaired", label: "Paired t-test", tool: "htPairedT", enabled: true },
           // p.346 / 375 | mtw: EXH_AOV.MTW
           // Test for Equal Variance. The correct statistic depends on the data:
           //   - 2 samples,  Normal      → F-test
