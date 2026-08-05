@@ -85,7 +85,7 @@ export default function HTPairedTResults({
     values: d,
     nMissing: r.droppedRows,
     mean: r.meanDiff,
-    stDev: r.stDevDiff,
+    stDev: r.sdDiff,
     seMean: r.seDiff,
   };
 
