@@ -7,7 +7,7 @@ import ResultChart from "../../../components/ResultChart";
 import { resolutionBins } from "../../../lib/binning";
 import { ciStripTraces, ciStripLayout } from "../_shared/ciStrip";
 import { ALT_SYMBOL, type HTPairedTParams, type HTPairedTResult } from "./types";
-import type { TTest1Model } from "@/.../lib/tTest1";
+import type { TTest1Model } from "../../../lib/tTest1";
 
 const GREEN = "#00674d";
 
