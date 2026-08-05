@@ -127,16 +127,16 @@ const ES = () => (
       </p>
     </Section>
 
-    <Section title="Reducci\u00f3n a una muestra">
+    <Section title="Reducci&oacute;n a una muestra">
       <FormulaD />
       <p>
         El procedimiento reduce el problema a un test <V>t</V> de una muestra sobre
         las diferencias. Toda la inferencia usa {DBAR} y{" "}
         <V>s</V><Sub><V>d</V></Sub>; las desviaciones de cada muestra por separado
-        son solo descriptivas y no intervienen en el c&iacute;¡lculo.
+        son solo descriptivas y no intervienen en el c&aacute;lculo.
       </p>
       <Note>
-        Consecuencia pr&iacute;¡ctica: el emparejamiento es <strong>por fila</strong>. Si
+        Consecuencia pr&aacute;ctica: el emparejamiento es <strong>por fila</strong>. Si
         falta un dato en cualquiera de las dos columnas, la fila entera se
         descarta. No se pueden rellenar huecos ni reordenar las columnas de forma
         independiente.
@@ -146,7 +146,7 @@ const ES = () => (
     <Section title="Estad\u00edstico de contraste">
       <FormulaT />
       <p>
-        El <V>p</V>-valor es el &iacute;¡rea de la cola (o de las dos colas, con el valor
+        El <V>p</V>-valor es el &aacute;rea de la cola (o de las dos colas, con el valor
         absoluto) de la <V>t</V> con <V>n</V>{"\u2212"}1 grados de libertad, donde{" "}
         <V>n</V> es el n&uacute;mero de <strong>pares</strong>, no el de observaciones.
       </p>
@@ -172,7 +172,7 @@ const ES = () => (
         <li>Sin at&iacute;­picos que dominen {DBAR} y <V>s</V><Sub><V>d</V></Sub>.</li>
       </ul>
       <Note>
-        Las tres gr&iacute;¡ficas del informe se construyen sobre las diferencias, no sobre
+        Las tres gr&aacute;ficas del informe se construyen sobre las diferencias, no sobre
         las muestras originales, precisamente porque el supuesto de normalidad se
         aplica a ellas.
       </Note>
@@ -198,7 +198,7 @@ const ES = () => (
       <p>
         Como <V>p</V> = 0,009 {"<"} 0,05 se rechaza H{"\u2080"}: Mat-B da valores
         significativamente mayores que Mat-A. El intervalo, enteramente negativo,
-        dice lo mismo y adem&iacute;¡s acota la magnitud: entre 0,13 y 0,69 unidades.
+        dice lo mismo y adem&aacute;s acota la magnitud: entre 0,13 y 0,69 unidades.
       </p>
       <Note>
         Las medias marginales, 10,630 y 11,040, difieren en 0,410, pero sus
