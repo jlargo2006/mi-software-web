@@ -27,7 +27,7 @@ const Chart = ({
 
 /** Formato con coma decimal. */
 const f = (v: number, dec = 4): string =>
-  Number.isFinite(v) ? v.toFixed(dec).replace(".", ",") : "â€”";
+  Number.isFinite(v) ? v.toFixed(dec).replace(".", ",") : "-";
 
 export default function HTPairedTResults({
   result,
@@ -39,14 +39,14 @@ export default function HTPairedTResults({
   if (!result.ok) {
     return (
       <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-        {result.error ?? "Selecciona dos columnas para ejecutar el anÃ¡lisis."}
+        {result.error ?? "Selecciona dos columnas para ejecutar el an&aacute;lisis."}
       </div>
     );
   }
 
   const r = result;
   const cl = f(r.confLevel, 0);
-  const DIFF = "Î¼_difference";
+  const DIFF = "mu_difference";
 
   const ciHeader =
     r.ciKind === "two"
@@ -58,8 +58,8 @@ export default function HTPairedTResults({
     r.ciKind === "two"
       ? `(${f(r.ciLow, 3)}; ${f(r.ciHigh, 3)})`
       : r.ciKind === "lower"
-        ? `(${f(r.ciLow, 3)}; âˆž)`
-        : `(-âˆž; ${f(r.ciHigh, 3)})`;
+        ? `(${f(r.ciLow, 3)}; Inf)`
+        : `(-Inf; ${f(r.ciHigh, 3)})`;
 
   const d = r.differences;
 
@@ -102,7 +102,7 @@ export default function HTPairedTResults({
       x: d,
       xbins: { start: bins.start, end: bins.end, size: bins.size },
       marker: { color: GREEN, line: { color: "#ffffff", width: 1 } },
-      hovertemplate: "[%{x}] â€” %{y}<extra></extra>",
+      hovertemplate: "[%{x}] - %{y}<extra></extra>",
       showlegend: false,
     },
   ];
@@ -255,12 +255,12 @@ export default function HTPairedTResults({
                 <tbody>
                   <tr>
                     <td className="py-1 pr-6 text-gray-600">Null hypothesis</td>
-                    <td className="py-1">Hâ‚€: {DIFF} = {f(r.mu0, 2)}</td>
+                    <td className="py-1">H0: {DIFF} = {f(r.mu0, 2)}</td>
                   </tr>
                   <tr>
                     <td className="py-1 pr-6 text-gray-600">Alternative hypothesis</td>
                     <td className="py-1">
-                      Hâ‚: {DIFF} {ALT_SYMBOL[r.alternative]} {f(r.mu0, 2)}
+                      H1: {DIFF} {ALT_SYMBOL[r.alternative]} {f(r.mu0, 2)}
                     </td>
                   </tr>
                 </tbody>
