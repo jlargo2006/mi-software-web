@@ -107,12 +107,12 @@ const FormulaCI = () => (
 
 const ES = () => (
   <div className="space-y-5">
-    <Section title="QuÃ© contrasta">
+    <Section title="Qu\u00e9 contrasta">
       <p>
         El test <V>t</V> pareado compara dos mediciones tomadas sobre las{" "}
         <strong>mismas unidades experimentales</strong>: antes y despuÃ©s de un
         cambio, dos instrumentos sobre la misma pieza, dos operarios midiendo el
-        mismo lote. Cada observaciÃ³n de una muestra tiene su gemela en la otra.
+        mismo lote. Cada observaci&oacute;n de una muestra tiene su gemela en la otra.
       </p>
       <p>
         No es un test de dos muestras aplicado a datos parecidos: al restar dentro
@@ -127,7 +127,7 @@ const ES = () => (
       </p>
     </Section>
 
-    <Section title="ReducciÃ³n a una muestra">
+    <Section title="Reducci\u00f3n a una muestra">
       <FormulaD />
       <p>
         El procedimiento reduce el problema a un test <V>t</V> de una muestra sobre
@@ -143,7 +143,7 @@ const ES = () => (
       </Note>
     </Section>
 
-    <Section title="EstadÃ­stico de contraste">
+    <Section title="Estad\u00edstico de contraste">
       <FormulaT />
       <p>
         El <V>p</V>-valor es el Ã¡rea de la cola (o de las dos colas, con el valor
@@ -155,7 +155,7 @@ const ES = () => (
     <Section title="Intervalo y cotas de confianza">
       <FormulaCI />
       <p>
-        Con hipÃ³tesis bilateral se muestra un intervalo de dos lados. Con hipÃ³tesis
+        Con hip&oacute;tesis bilateral se muestra un intervalo de dos lados. Con hip&oacute;tesis
         unilateral se muestra una Ãºnica cota, en el mismo sentido que H{"\u2081"}.
         El intervalo y el test son coherentes: si {MU}<Sub>0</Sub> queda fuera del
         intervalo, el test rechaza al mismo nivel {ALPHA}.
