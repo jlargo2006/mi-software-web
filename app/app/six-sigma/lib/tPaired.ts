@@ -77,8 +77,8 @@ export interface TPairedModel {
 export interface TPairedInput {
   colX: string;
   colY: string;
-  rawX: readonly (number | null | undefined)[];
-  rawY: readonly (number | null | undefined)[];
+  rawX: readonly (number | string | null | undefined)[];
+  rawY: readonly (number | string | null | undefined)[];
   confLevel: number;
   performTest: boolean;
   mu0: number;
@@ -97,6 +97,18 @@ function stDev(v: readonly number[]): number {
   let ss = 0;
   for (const x of v) ss += (x - m) ** 2;
   return Math.sqrt(ss / (n - 1));
+}
+
+/**
+ * Celda cruda -> numero. Acepta coma decimal, igual que la entrada de
+ * parametros. Devuelve NaN si la celda esta vacia o no es numerica; la fila
+ * se descartara entera en tPaired().
+ */
+function cellNum(c: number | string | null | undefined): number {
+  if (typeof c === "number") return c;
+  if (typeof c !== "string") return NaN;
+  const t = c.trim().replace(",", ".");
+  return t === "" ? NaN : Number(t);
 }
 
 /** log Gamma (Lanczos). */
@@ -277,10 +289,9 @@ export function tPaired(input: TPairedInput): TPairedModel {
   const pairs: { x: number; y: number }[] = [];
   let dropped = 0;
   for (let i = 0; i < rows; i++) {
-    const a = rawX[i];
-    const b = rawY[i];
-    if (typeof a === "number" && Number.isFinite(a) &&
-        typeof b === "number" && Number.isFinite(b)) {
+    const a = cellNum(rawX[i]);
+    const b = cellNum(rawY[i]);
+    if (Number.isFinite(a) && Number.isFinite(b)) {
       pairs.push({ x: a, y: b });
     } else {
       dropped++;
