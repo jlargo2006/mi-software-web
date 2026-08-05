@@ -30,7 +30,7 @@ export default function HT1SampleTControls({
           value={params.column ?? ""}
           onChange={(e) => set("column", e.target.value || null)}
         >
-          <option value="">Select a column…</option>
+          <option value="">Select a column...</option>
           {columns.map((c) => (
             <option key={c.name} value={c.name}>
               {c.name}
