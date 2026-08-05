@@ -184,11 +184,11 @@ const ES = () => (
         {MU}<Sub>0</Sub> = 0, {ALPHA} = 0,05, bilateral:
       </p>
       <p className="font-mono text-xs">
-        {DBAR} = {"\u2212"}0,410 Â· <V>s</V><Sub><V>d</V></Sub> = 0,387 Â· SE ={" "}
+        {DBAR} = {"\u2212"}0,410 {"\u00b7"} <V>s</V><Sub><V>d</V></Sub> = 0,387 {"\u00b7"} SE ={" "}
         0,387/{"\u221A"}10 = 0,122
       </p>
       <p className="font-mono text-xs">
-        <V>t</V> = {"\u2212"}0,410/0,122 = {"\u2212"}3,35 Â· df = 9 Â·{" "}
+        <V>t</V> = {"\u2212"}0,410/0,122 = {"\u2212"}3,35 {"\u00b7"} df = 9 {"\u00b7"}{" "}
         <V>p</V> = 0,009
       </p>
       <p className="font-mono text-xs">
@@ -288,11 +288,11 @@ const EN = () => (
         {MU}<Sub>0</Sub> = 0, {ALPHA} = 0.05, two-sided:
       </p>
       <p className="font-mono text-xs">
-        {DBAR} = {"\u2212"}0.410 Â· <V>s</V><Sub><V>d</V></Sub> = 0.387 Â· SE ={" "}
+        {DBAR} = {"\u2212"}0,410 {"\u00b7"} <V>s</V><Sub><V>d</V></Sub> = 0,387 {"\u00b7"} SE ={" "}
         0.387/{"\u221A"}10 = 0.122
       </p>
       <p className="font-mono text-xs">
-        <V>t</V> = {"\u2212"}0.410/0.122 = {"\u2212"}3.35 Â· df = 9 Â·{" "}
+        <V>t</V> = {"\u2212"}0,410/0,122 = {"\u2212"}3,35 {"\u00b7"} df = 9 {"\u00b7"}{" "}
         <V>p</V> = 0.009
       </p>
       <p className="font-mono text-xs">
