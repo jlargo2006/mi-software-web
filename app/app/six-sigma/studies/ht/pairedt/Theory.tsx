@@ -143,7 +143,7 @@ const ES = () => (
       </Note>
     </Section>
 
-    <Section title="Estad\u00edstico de contraste">
+    <Section title="Estad&iacute;stico de contraste">
       <FormulaT />
       <p>
         El <V>p</V>-valor es el &aacute;rea de la cola (o de las dos colas, con el valor
