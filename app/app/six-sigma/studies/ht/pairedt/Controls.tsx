@@ -33,7 +33,7 @@ export default function HTPairedTControls({
           value={params.columnX ?? ""}
           onChange={(e) => set("columnX", e.target.value || null)}
         >
-          <option value="">Select a columnâ€¦</option>
+          <option value="">Select a column...</option>
           {columns.map((c) => (
             <option key={c.name} value={c.name}>
               {c.name}
@@ -49,7 +49,7 @@ export default function HTPairedTControls({
           value={params.columnY ?? ""}
           onChange={(e) => set("columnY", e.target.value || null)}
         >
-          <option value="">Select a columnâ€¦</option>
+          <option value="">Select a column...</option>
           {columns.map((c) => (
             <option key={c.name} value={c.name}>
               {c.name}
