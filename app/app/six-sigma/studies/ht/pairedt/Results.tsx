@@ -7,6 +7,7 @@ import ResultChart from "../../../components/ResultChart";
 import { resolutionBins } from "../../../lib/binning";
 import { ciStripTraces, ciStripLayout } from "../_shared/ciStrip";
 import { ALT_SYMBOL, type HTPairedTParams, type HTPairedTResult } from "./types";
+import type { TTest1Model } from "@/.../lib/tTest1";
 
 const GREEN = "#00674d";
 
@@ -76,7 +77,22 @@ export default function HTPairedTResults({
   const pad = (hi - lo) * 0.12 || 1;
   const xRange: [number, number] = [lo - pad, hi + pad];
 
-  const strip = <Chart traces={ciStripTraces(r)} layout={ciStripLayout(xRange)} h={90} />;
+    // Un paired t-test es un one-sample t sobre las diferencias, asi que la
+  // franja de IC se reutiliza tal cual pasandole un modelo equivalente.
+  const stripModel: TTest1Model = {
+    ...r,
+    column: "Difference",
+    values: d,
+    nMissing: r.droppedRows,
+    mean: r.meanDiff,
+    stDev: r.stDevDiff,
+    seMean: r.seDiff,
+  };
+
+  const strip = (
+    <Chart traces={ciStripTraces(stripModel)} layout={ciStripLayout(xRange)} h={90} />
+  );
+
 
   // --- Histogram of differences ---
   const bins = resolutionBins(d);
