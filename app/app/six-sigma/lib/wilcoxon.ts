@@ -2,7 +2,7 @@
 import type {
   WilcoxonAlternative,
   WilcoxonCIKind,
-  WilcoxonModel,
+  HTWilcoxonResult,
 } from "../studies/ht/wilcoxon/types";
 
 export interface WilcoxonInput {
@@ -14,6 +14,9 @@ export interface WilcoxonInput {
   performTest: boolean;
   performCI: boolean;
 }
+
+/** Limite practico para el calculo O(n^2) de los promedios de Walsh. */
+export const WALSH_MAX_N = 4000;
 
 /**
  * Celda cruda -> numero. Acepta coma decimal. NaN si esta vacia o no es
@@ -76,8 +79,8 @@ function normalInv(p: number): number {
   );
 }
 
-/** Mediana de un array ya ordenado. */
-function medianSorted(s: readonly number[]): number {
+/** Mediana de una secuencia ya ordenada. */
+function medianSorted(s: readonly number[] | Float64Array): number {
   const n = s.length;
   if (n === 0) return NaN;
   const h = n >> 1;
@@ -97,8 +100,8 @@ function quantileMinitab(s: readonly number[], p: number): number {
 }
 
 /**
- * Rangos promediados para empates (midranks), sobre un array de valores.
- * Devuelve el rango de cada elemento en su posicion original.
+ * Rangos promediados para empates (midranks). Devuelve el rango de cada
+ * elemento en su posicion original y el termino de correccion por empates.
  */
 function midranks(v: readonly number[]): { ranks: number[]; tieTerm: number } {
   const n = v.length;
@@ -122,12 +125,11 @@ function midranks(v: readonly number[]): { ranks: number[]; tieTerm: number } {
 
 /**
  * Promedios de Walsh (x_i + x_j)/2 con i <= j, ordenados.
- * Son n(n+1)/2 valores: 125.250 para n=500. Coste O(n^2) en memoria.
+ * Son n(n+1)/2 valores: 125.250 para n=500. Coste O(n^2) en tiempo y memoria.
  */
 function walshAverages(s: readonly number[]): Float64Array {
   const n = s.length;
-  const m = (n * (n + 1)) / 2;
-  const w = new Float64Array(m);
+  const w = new Float64Array((n * (n + 1)) / 2);
   let k = 0;
   for (let i = 0; i < n; i++) {
     for (let j = i; j < n; j++) w[k++] = (s[i] + s[j]) / 2;
@@ -136,12 +138,7 @@ function walshAverages(s: readonly number[]): Float64Array {
   return w;
 }
 
-/** Limite practico para el calculo O(n^2) de los promedios de Walsh. */
-export const WALSH_MAX_N = 4000;
-
-export function wilcoxonSignedRank(
-  input: WilcoxonInput
-): WilcoxonModel | { error: string } {
+export function wilcoxonSignedRank(input: WilcoxonInput): HTWilcoxonResult {
   const { column, raw, eta0, alternative, confLevel } = input;
 
   // --- 1. Limpieza -------------------------------------------------------
@@ -153,11 +150,25 @@ export function wilcoxonSignedRank(
     else nMissing++;
   }
   const n = values.length;
-  if (n < 1) return { error: "The selected column has no numeric data." };
+
+  if (n < 1) {
+    return { ok: false, error: "Select a column to run the analysis." };
+  }
   if (n > WALSH_MAX_N) {
     return {
+      ok: false,
       error: `The Hodges-Lehmann estimator is limited to ${WALSH_MAX_N} observations (this column has ${n}).`,
     };
+  }
+
+  // Validaciones de parametros: van despues de la limpieza para que, con la
+  // columna aun sin elegir, el usuario vea "Select a column" y no un aviso
+  // sobre la mediana hipotetica (que es NaN por construccion al abrir).
+  if (input.performTest && !Number.isFinite(eta0)) {
+    return { ok: false, error: "The hypothesized median is not a valid number." };
+  }
+  if (input.performCI && !(confLevel > 0 && confLevel < 100)) {
+    return { ok: false, error: "The confidence level must be between 0 and 100." };
   }
 
   const sorted = [...values].sort((a, b) => a - b);
@@ -179,7 +190,7 @@ export function wilcoxonSignedRank(
   let pValue = NaN;
   let tiesCorrected = false;
 
-  if (nTest > 0) {
+  if (input.performTest && nTest > 0) {
     const abs = diffs.map(Math.abs);
     const { ranks, tieTerm } = midranks(abs);
     let wPlus = 0;
@@ -188,8 +199,7 @@ export function wilcoxonSignedRank(
 
     const mean = (nTest * (nTest + 1)) / 4;
     // Varianza con correccion por empates en |d|.
-    const varW =
-      (nTest * (nTest + 1) * (2 * nTest + 1)) / 24 - tieTerm / 48;
+    const varW = (nTest * (nTest + 1) * (2 * nTest + 1)) / 24 - tieTerm / 48;
     tiesCorrected = tieTerm > 0;
 
     zValue = varW > 0 ? (wPlus - mean) / Math.sqrt(varW) : NaN;
@@ -205,15 +215,20 @@ export function wilcoxonSignedRank(
   }
 
   // --- 4. Estimador puntual e intervalo ----------------------------------
-  // Ojo: la columna "Median" del informe de Minitab es Hodges-Lehmann,
-  // la mediana de los promedios de Walsh, NO la mediana muestral.
+  // Ojo: la columna "Median" del informe de Minitab es Hodges-Lehmann, la
+  // mediana de los promedios de Walsh, NO la mediana muestral. En reparto
+  // asimetrico ambas difieren de forma bien visible.
   const walsh = walshAverages(sorted);
   const m = walsh.length;
-  const hodgesLehmann = medianSorted(Array.from(walsh) as number[]);
+  const hodgesLehmann = medianSorted(walsh);
   const sampleMedian = medianSorted(sorted);
 
   const ciKind: WilcoxonCIKind =
-    alternative === "two-sided" ? "two" : alternative === "greater" ? "lower" : "upper";
+    alternative === "two-sided"
+      ? "two"
+      : alternative === "greater"
+        ? "lower"
+        : "upper";
 
   let ciLow = -Infinity;
   let ciHigh = Infinity;
@@ -228,7 +243,8 @@ export function wilcoxonSignedRank(
     const k = Math.max(0, Math.floor(mu - normalInv(1 - tail) * sd));
     if (ciKind !== "upper") ciLow = walsh[Math.min(k, m - 1)];
     if (ciKind !== "lower") ciHigh = walsh[Math.max(0, m - 1 - k)];
-    // Confianza efectivamente alcanzada con ese k entero.
+    // Confianza realmente alcanzada con ese k entero: la distribucion es
+    // discreta, asi que rara vez coincide con el nivel pedido.
     const zEff = sd > 0 ? (mu - k) / sd : 0;
     const oneTail = 1 - normalCdf(zEff);
     achievedConf = (1 - (ciKind === "two" ? 2 * oneTail : oneTail)) * 100;
@@ -238,12 +254,13 @@ export function wilcoxonSignedRank(
   const q1 = quantileMinitab(sorted, 0.25);
   const q3 = quantileMinitab(sorted, 0.75);
   const iqr = q3 - q1;
-  const loFenceLimit = q1 - 1.5 * iqr;
-  const hiFenceLimit = q3 + 1.5 * iqr;
-  const inside = sorted.filter((v) => v >= loFenceLimit && v <= hiFenceLimit);
-  const outliers = sorted.filter((v) => v < loFenceLimit || v > hiFenceLimit);
+  const loLimit = q1 - 1.5 * iqr;
+  const hiLimit = q3 + 1.5 * iqr;
+  const inside = sorted.filter((v) => v >= loLimit && v <= hiLimit);
+  const outliers = sorted.filter((v) => v < loLimit || v > hiLimit);
 
   return {
+    ok: true,
     column,
     values,
     nMissing,
@@ -270,7 +287,9 @@ export function wilcoxonSignedRank(
       median: sampleMedian,
       q3,
       lowerFence: inside.length ? inside[0] : sorted[0],
-      upperFence: inside.length ? inside[inside.length - 1] : sorted[sorted.length - 1],
+      upperFence: inside.length
+        ? inside[inside.length - 1]
+        : sorted[sorted.length - 1],
       outliers,
     },
   };
