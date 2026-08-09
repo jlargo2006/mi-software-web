@@ -146,7 +146,8 @@ export const PHASES: RibbonPhase[] = [
           // p.356 | mtw: ANOVA.MTW
           { id: "anova", label: "One-Way ANOVA", tool: "htAnova1Way", enabled: true },
           // p.382 | mtw: DISTRIB1.MTW
-          { id: "sign", label: "1-Sample Sign / Wilcoxon (Median)", tool: null, enabled: false },
+          { id: "sign", label: "1-Sample Sign (Median)", tool: null, enabled: false },
+          { id: "wilcoxon", label: "1-Sample Wilcoxon (Median)", tool: "htWilcoxon", enabled: true },
           // p.396 | mtw: Var_Comp.mtw
           { id: "varComp", label: "Variance Comparison", tool: null, enabled: false },
           // (—) proposed – attribute data hypothesis test
