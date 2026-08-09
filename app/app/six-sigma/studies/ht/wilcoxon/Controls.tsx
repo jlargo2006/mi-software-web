@@ -1,32 +1,36 @@
 // app/app/six-sigma/studies/ht/wilcoxon/Controls.tsx
 "use client";
 import React from "react";
+import type { ColumnInfo } from "../../../lib/columns";
 import {
   ALT_LABEL,
-  type HTWilcoxonParams,
   type WilcoxonAlternative,
+  type HTWilcoxonParams,
 } from "./types";
+
+const label = "block text-sm font-medium text-gray-700 mb-1";
+const field =
+  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-[#00674d] focus:outline-none focus:ring-1 focus:ring-[#00674d]";
+const check = "h-4 w-4 rounded border-gray-300 text-[#00674d] focus:ring-[#00674d]";
 
 export default function HTWilcoxonControls({
   params,
-  setParams,
+  onChange,
   columns,
 }: {
   params: HTWilcoxonParams;
-  setParams: (p: HTWilcoxonParams) => void;
-  columns: { name: string }[];
+  onChange: (p: HTWilcoxonParams) => void;
+  columns: ColumnInfo[];
 }) {
-  const set = <K extends keyof HTWilcoxonParams>(
-    k: K,
-    v: HTWilcoxonParams[K]
-  ) => setParams({ ...params, [k]: v });
+  const set = <K extends keyof HTWilcoxonParams>(k: K, v: HTWilcoxonParams[K]) =>
+    onChange({ ...params, [k]: v });
 
   return (
-    <div className="space-y-4 text-sm">
+    <div className="space-y-4">
       <div>
-        <label className="mb-1 block font-medium text-gray-700">Sample</label>
+        <label className={label}>Sample</label>
         <select
-          className="w-full rounded border border-gray-300 px-2 py-1"
+          className={field}
           value={params.column}
           onChange={(e) => set("column", e.target.value)}
         >
@@ -37,101 +41,102 @@ export default function HTWilcoxonControls({
             </option>
           ))}
         </select>
+        <p className="mt-1 text-xs text-gray-500">
+          Empty or non-numeric cells are dropped.
+        </p>
       </div>
 
-      <div className="flex items-center gap-2">
-        <input
-          id="wx-test"
-          type="checkbox"
-          checked={params.performTest}
-          onChange={(e) => set("performTest", e.target.checked)}
-        />
-        <label htmlFor="wx-test" className="font-medium text-gray-700">
+      <div className="border-t border-gray-200 pt-4 space-y-3">
+        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+          <input
+            type="checkbox"
+            className={check}
+            checked={params.performTest}
+            onChange={(e) => set("performTest", e.target.checked)}
+          />
           Perform hypothesis test
         </label>
+
+        <div className={params.performTest ? "space-y-3" : "space-y-3 opacity-50"}>
+          <div>
+            <label className={label}>Hypothesized median</label>
+            <input
+              className={field}
+              value={params.hypothesizedMedian}
+              onChange={(e) => set("hypothesizedMedian", e.target.value)}
+              disabled={!params.performTest}
+              placeholder="0"
+            />
+          </div>
+
+          <div>
+            <label className={label}>Alternative hypothesis</label>
+            <select
+              className={field}
+              value={params.alternative}
+              onChange={(e) =>
+                set("alternative", e.target.value as WilcoxonAlternative)
+              }
+              disabled={!params.performTest}
+            >
+              {(Object.keys(ALT_LABEL) as WilcoxonAlternative[]).map((k) => (
+                <option key={k} value={k}>
+                  {ALT_LABEL[k]}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
 
-      <div className={params.performTest ? "" : "opacity-50"}>
-        <label className="mb-1 block font-medium text-gray-700">
-          Hypothesized median
-        </label>
-        <input
-          type="text"
-          inputMode="decimal"
-          className="w-full rounded border border-gray-300 px-2 py-1"
-          value={params.hypothesizedMedian}
-          disabled={!params.performTest}
-          onChange={(e) => set("hypothesizedMedian", e.target.value)}
-        />
-      </div>
-
-      <div>
-        <label className="mb-1 block font-medium text-gray-700">
-          Alternative hypothesis
-        </label>
-        <select
-          className="w-full rounded border border-gray-300 px-2 py-1"
-          value={params.alternative}
-          onChange={(e) =>
-            set("alternative", e.target.value as WilcoxonAlternative)
-          }
-        >
-          {(Object.keys(ALT_LABEL) as WilcoxonAlternative[]).map((k) => (
-            <option key={k} value={k}>
-              {ALT_LABEL[k]}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <input
-          id="wx-ci"
-          type="checkbox"
-          checked={params.performCI}
-          onChange={(e) => set("performCI", e.target.checked)}
-        />
-        <label htmlFor="wx-ci" className="font-medium text-gray-700">
+      <div className="border-t border-gray-200 pt-4 space-y-3">
+        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+          <input
+            type="checkbox"
+            className={check}
+            checked={params.performCI}
+            onChange={(e) => set("performCI", e.target.checked)}
+          />
           Confidence interval for the median
         </label>
+
+        <div className={params.performCI ? "" : "opacity-50"}>
+          <label className={label}>Confidence level (%)</label>
+          <input
+            className={field}
+            value={params.confidenceLevel}
+            onChange={(e) => set("confidenceLevel", e.target.value)}
+            disabled={!params.performCI}
+            placeholder="95,0"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            The achieved confidence may differ: the distribution is discrete.
+          </p>
+        </div>
       </div>
 
-      <div className={params.performCI ? "" : "opacity-50"}>
-        <label className="mb-1 block font-medium text-gray-700">
-          Confidence level (%)
-        </label>
-        <input
-          type="text"
-          inputMode="decimal"
-          className="w-full rounded border border-gray-300 px-2 py-1"
-          value={params.confidenceLevel}
-          disabled={!params.performCI}
-          onChange={(e) => set("confidenceLevel", e.target.value)}
-        />
-      </div>
-
-      <fieldset className="border-t border-gray-200 pt-3">
-        <legend className="mb-1 font-medium text-gray-700">Graphs</legend>
-        {[
-          ["showHistogram", "Histogram"],
-          ["showIndividualValue", "Individual value plot"],
-          ["showBoxplot", "Boxplot"],
-        ].map(([k, label]) => (
-          <div key={k} className="flex items-center gap-2 py-0.5">
-            <input
-              id={`wx-${k}`}
-              type="checkbox"
-              checked={params[k as keyof HTWilcoxonParams] as boolean}
-              onChange={(e) =>
-                set(k as keyof HTWilcoxonParams, e.target.checked as never)
-              }
-            />
-            <label htmlFor={`wx-${k}`} className="text-gray-700">
-              {label}
+      <div className="border-t border-gray-200 pt-4">
+        <span className={label}>Graphs</span>
+        <div className="space-y-2">
+          {(
+            [
+              ["showHistogram", "Histogram"],
+              ["showIndividualValue", "Individual value plot"],
+              ["showBoxplot", "Boxplot"],
+            ] as const
+          ).map(([k, txt]) => (
+            <label key={k} className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                className={check}
+                checked={params[k]}
+                onChange={(e) => set(k, e.target.checked)}
+              />
+              {txt}
             </label>
-          </div>
-        ))}
-      </fieldset>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
