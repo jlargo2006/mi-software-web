@@ -36,7 +36,7 @@ export interface HTWilcoxonParams {
   showBoxplot: boolean;
 }
 
-export const DEFAULT_WILCOXON_PARAMS: HTWilcoxonParams = {
+export const HTWILCOXON_DEFAULT: HTWilcoxonParams = {
   column: "",
   hypothesizedMedian: "0",
   alternative: "two-sided",
