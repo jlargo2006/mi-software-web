@@ -150,6 +150,7 @@ export const PHASES: RibbonPhase[] = [
           { id: "wilcoxon", label: "1-Sample Wilcoxon (Median)", tool: "htWilcoxon", enabled: true },
           { id: "mannwhitney", label: "Mann-Whitney (2-Sample Median)", tool: "htMannWhitney", enabled: true },
           { id: "moodsmedian", label: "Mood's Median Test", tool: "htMoodsMedian", enabled: true },
+          { id: "kruskalwallis", label: "Kruskal-Wallis Test", tool: "htKruskalWallis", enabled: true },
           // p.396 | mtw: Var_Comp.mtw
           { id: "varComp", label: "Variance Comparison", tool: null, enabled: false },
           // (—) proposed – attribute data hypothesis test
