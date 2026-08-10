@@ -186,14 +186,26 @@ export default function HTWilcoxonResults({
                 <tr className="border-b border-gray-300 text-left text-gray-600">
                   <th className="py-1 pr-4">Sample</th>
                   <th className="py-1 pr-4">N</th>
-                  <th className="py-1">Median</th>
+                  <th className="py-1 pr-4">Median</th>
+                  {r.performCI && (
+                    <>
+                      <th className="py-1 pr-4">CI for {ETA}</th>
+                      <th className="py-1">Achieved Confidence</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody>
                 <tr className="border-b border-gray-200">
                   <td className="py-1 pr-4">{r.column}</td>
                   <td className="py-1 pr-4">{r.n}</td>
-                  <td className="py-1">{f(r.hodgesLehmann, 4)}</td>
+                  <td className="py-1 pr-4">{f(r.hodgesLehmann, 4)}</td>
+                  {r.performCI && (
+                    <>
+                      <td className="py-1 pr-4">{ciText}</td>
+                      <td className="py-1">{f(r.achievedConf, 2)}%</td>
+                    </>
+                  )}
                 </tr>
               </tbody>
             </table>
@@ -204,30 +216,6 @@ export default function HTWilcoxonResults({
             )}
           </section>
 
-          {/* Confidence interval */}
-          {r.performCI && (
-            <section className="mb-6">
-              <h3 className="mb-2 text-sm font-semibold text-gray-800">
-                Confidence Interval
-              </h3>
-              <table className="w-full border-collapse text-sm">
-                <thead>
-                  <tr className="border-b border-gray-300 text-left text-gray-600">
-                    <th className="py-1 pr-4">Sample</th>
-                    <th className="py-1 pr-4">Achieved Confidence</th>
-                    <th className="py-1">CI for {ETA}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b border-gray-200">
-                    <td className="py-1 pr-4">{r.column}</td>
-                    <td className="py-1 pr-4">{f(r.achievedConf, 2)}%</td>
-                    <td className="py-1">{ciText}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </section>
-          )}
 
           {/* Test */}
           {r.performTest && (
