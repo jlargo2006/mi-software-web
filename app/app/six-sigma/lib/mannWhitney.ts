@@ -190,27 +190,42 @@ export function mannWhitney(input: MWInput): HTMannWhitneyResult {
   for (let k = 0; k < n1; k++) wValue += ranks[k];
 
   // --- 3. Aproximacion normal con correccion de continuidad --------------
-  let zValue = NaN;
-  let pValue = NaN;
+  // Se calculan las dos versiones: Minitab informa ambas cuando hay empates.
+  let zNotAdj = NaN;
+  let pNotAdj = NaN;
+  let zAdj = NaN;
+  let pAdj = NaN;
+
   if (input.performTest) {
     const meanW = (n1 * (N + 1)) / 2;
-    // Varianza con correccion por empates en la muestra combinada.
-    const varW =
-      ((n1 * n2) / 12) * (N + 1 - tieTerm / (N * (N - 1)));
-    if (varW > 0) {
-      const diff = wValue - meanW;
-      // Correccion de continuidad: acerca W a la media en media unidad.
-      const cc = diff > 0 ? -0.5 : diff < 0 ? 0.5 : 0;
-      zValue = (diff + cc) / Math.sqrt(varW);
-      pValue =
+    const varNotAdj = (n1 * n2 * (N + 1)) / 12;
+    // Varianza corregida por empates en la muestra combinada.
+    const varAdj = ((n1 * n2) / 12) * (N + 1 - tieTerm / (N * (N - 1)));
+
+    const diff = wValue - meanW;
+    // Correccion de continuidad: acerca W a la media en media unidad.
+    const cc = diff > 0 ? -0.5 : diff < 0 ? 0.5 : 0;
+
+    const tail = (z: number): number => {
+      const p =
         alternative === "two-sided"
-          ? 2 * (1 - normalCdf(Math.abs(zValue)))
+          ? 2 * (1 - normalCdf(Math.abs(z)))
           : alternative === "greater"
-            ? 1 - normalCdf(zValue)
-            : normalCdf(zValue);
-      pValue = Math.min(1, Math.max(0, pValue));
+            ? 1 - normalCdf(z)
+            : normalCdf(z);
+      return Math.min(1, Math.max(0, p));
+    };
+
+    if (varNotAdj > 0) {
+      zNotAdj = (diff + cc) / Math.sqrt(varNotAdj);
+      pNotAdj = tail(zNotAdj);
+    }
+    if (varAdj > 0) {
+      zAdj = (diff + cc) / Math.sqrt(varAdj);
+      pAdj = tail(zAdj);
     }
   }
+
 
   // --- 4. Hodges-Lehmann e intervalo -------------------------------------
   // Todas las diferencias x_i - y_j. Son n1*n2 valores: 40.000 aqui.
@@ -267,8 +282,11 @@ export function mannWhitney(input: MWInput): HTMannWhitneyResult {
     alternative,
     performTest: input.performTest,
     wValue,
-    zValue,
-    pValue,
+    zNotAdj,
+    pNotAdj,
+    zAdj,
+    pAdj,
+    tieTerm,
     tiesCorrected,
     ciKind,
     confLevel,
