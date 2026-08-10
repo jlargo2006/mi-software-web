@@ -37,9 +37,16 @@ const Chart = ({
   </div>
 );
 
-/** Formato con coma decimal. */
-const f = (v: number, dec = 4): string =>
-  Number.isFinite(v) ? v.toFixed(dec).replace(".", ",") : "\u2014";
+/**
+ * Formato con coma decimal, sin ceros finales de relleno. Minitab ajusta los
+ * decimales a la resolucion de los datos: con enteros imprime 739 y no
+ * 739,0000, pero con flotantes conserva 14,8411.
+ */
+const f = (v: number, dec = 4): string => {
+  if (!Number.isFinite(v)) return "\u2014";
+  const s = v.toFixed(dec).replace(/0+$/, "").replace(/\.$/, "");
+  return s.replace(".", ",");
+};
 
 /** Traza de boxplot con los cinco numeros ya calculados al estilo Minitab. */
 const boxTraces = (b: MWBox, y: number, color: string, name: string): Data[] => {
@@ -92,7 +99,7 @@ export default function HTMannWhitneyResults({
 
   const r = result;
   const DIFF = `${ETA}${SUB1} - ${ETA}${SUB2}`;
-  const cl = f(r.confLevel, 0);
+  const cl = f(r.confLevel, 2);
 
   const ciHeader =
     r.ciKind === "two"
@@ -292,7 +299,7 @@ export default function HTMannWhitneyResults({
                   <tr>
                     <td className="py-1 pr-6 text-gray-600">Null hypothesis</td>
                     <td className="py-1">
-                      H{SUB0}: {DIFF} = {f(r.eta0, 0)}
+                      H{SUB0}: {DIFF} = {f(r.eta0, 4)}
                     </td>
                   </tr>
                   <tr>
@@ -300,7 +307,7 @@ export default function HTMannWhitneyResults({
                       Alternative hypothesis
                     </td>
                     <td className="py-1">
-                      H{SUB1}: {DIFF} {ALT_SYMBOL[r.alternative]} {f(r.eta0, 0)}
+                      H{SUB1}: {DIFF} {ALT_SYMBOL[r.alternative]} {f(r.eta0, 4)}
                     </td>
                   </tr>
                 </tbody>
@@ -335,6 +342,9 @@ export default function HTMannWhitneyResults({
                   )}
                 </tbody>
               </table>
+            </section>
+          )}
+
           {params.showHistogram && (
             <section className="mb-6">
               <h3 className="mb-2 text-sm font-semibold text-gray-800">
