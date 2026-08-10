@@ -157,6 +157,12 @@ const ES = () => (
         media en media unidad, porque se aproxima una distribuci&oacute;n discreta
         mediante una continua.
       </p>
+      <Note>
+        Cuando hay empates el informe muestra <strong>dos filas</strong>: el
+        p-valor sin corregir y el corregido. Suelen diferir muy poco, y el
+        segundo es el que debe usarse. Sin empates ambos coinciden y solo se
+        muestra una fila.
+      </Note>      
       <p>
         Con muestras moderadas o grandes la aproximaci&oacute;n normal es muy
         buena. Con muestras muy peque&ntilde;as conviene recurrir a la
