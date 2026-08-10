@@ -77,9 +77,15 @@ export interface MWModel {
 
   /** W: suma de rangos de la primera muestra en la muestra combinada. */
   wValue: number;
-  zValue: number;
-  pValue: number;
-  /** true si hubo empates y se aplico correccion de varianza. */
+  /** z y p sin corregir empates: varianza n1*n2*(N+1)/12. */
+  zNotAdj: number;
+  pNotAdj: number;
+  /** z y p con la varianza corregida por empates. */
+  zAdj: number;
+  pAdj: number;
+  /** Suma de (t^3 - t) sobre los grupos empatados. Cero si no hay empates. */
+  tieTerm: number;
+  /** true si hubo empates: el informe muestra entonces las dos filas. */
   tiesCorrected: boolean;
 
   ciKind: MWCIKind;
