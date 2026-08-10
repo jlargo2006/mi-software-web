@@ -24,6 +24,7 @@ import htTwoSampleT from "./ht/twosamplet";
 import htEqVar from "./ht/eqvar";
 import htPairedT from "./ht/pairedt";
 import htWilcoxon from "./ht/wilcoxon";
+import htSign from "./ht/sign";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
@@ -50,6 +51,7 @@ const ALL: ArtifactDefinition[] = [
   htEqVar,
   htPairedT,
   htWilcoxon,
+  htSign,
 ];
 
 export const REGISTRY: Record<string, ArtifactDefinition> = Object.fromEntries(
