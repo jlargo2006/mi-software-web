@@ -308,25 +308,33 @@ export default function HTMannWhitneyResults({
               <table className="border-collapse text-sm">
                 <thead>
                   <tr className="border-b border-gray-300 text-left text-gray-600">
+                    {r.tiesCorrected && <th className="py-1 pr-6">Method</th>}
                     <th className="py-1 pr-6">W-Value</th>
                     <th className="py-1">P-Value</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="border-b border-gray-200">
-                    <td className="py-1 pr-6">{f(r.wValue, 2)}</td>
-                    <td className="py-1">{f(r.pValue, 3)}</td>
-                  </tr>
+                  {r.tiesCorrected ? (
+                    <>
+                      <tr className="border-b border-gray-200">
+                        <td className="py-1 pr-6">Not adjusted for ties</td>
+                        <td className="py-1 pr-6">{f(r.wValue, 2)}</td>
+                        <td className="py-1">{f(r.pNotAdj, 3)}</td>
+                      </tr>
+                      <tr className="border-b border-gray-200">
+                        <td className="py-1 pr-6">Adjusted for ties</td>
+                        <td className="py-1 pr-6">{f(r.wValue, 2)}</td>
+                        <td className="py-1">{f(r.pAdj, 3)}</td>
+                      </tr>
+                    </>
+                  ) : (
+                    <tr className="border-b border-gray-200">
+                      <td className="py-1 pr-6">{f(r.wValue, 2)}</td>
+                      <td className="py-1">{f(r.pAdj, 3)}</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
-              {r.tiesCorrected && (
-                <p className="mt-2 text-xs text-gray-600">
-                  The variance was adjusted for ties in the pooled sample.
-                </p>
-              )}
-            </section>
-          )}
-
           {params.showHistogram && (
             <section className="mb-6">
               <h3 className="mb-2 text-sm font-semibold text-gray-800">
