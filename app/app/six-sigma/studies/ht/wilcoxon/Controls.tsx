@@ -1,34 +1,38 @@
-// app/app/six-sigma/studies/ht/onesamplet/Controls.tsx
+// app/app/six-sigma/studies/ht/wilcoxon/Controls.tsx
 "use client";
 import React from "react";
 import type { ColumnInfo } from "../../../lib/columns";
-import { ALT_LABEL, type Alternative, type HT1SampleTParams } from "./types";
+import {
+  ALT_LABEL,
+  type WilcoxonAlternative,
+  type HTWilcoxonParams,
+} from "./types";
 
 const label = "block text-sm font-medium text-gray-700 mb-1";
 const field =
   "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-[#00674d] focus:outline-none focus:ring-1 focus:ring-[#00674d]";
 const check = "h-4 w-4 rounded border-gray-300 text-[#00674d] focus:ring-[#00674d]";
 
-export default function HT1SampleTControls({
+export default function HTWilcoxonControls({
   params,
   onChange,
   columns,
 }: {
-  params: HT1SampleTParams;
-  onChange: (p: HT1SampleTParams) => void;
+  params: HTWilcoxonParams;
+  onChange: (p: HTWilcoxonParams) => void;
   columns: ColumnInfo[];
 }) {
-  const set = <K extends keyof HT1SampleTParams>(k: K, v: HT1SampleTParams[K]) =>
+  const set = <K extends keyof HTWilcoxonParams>(k: K, v: HTWilcoxonParams[K]) =>
     onChange({ ...params, [k]: v });
 
   return (
     <div className="space-y-4">
       <div>
-        <label className={label}>Column</label>
+        <label className={label}>Sample</label>
         <select
           className={field}
-          value={params.column ?? ""}
-          onChange={(e) => set("column", e.target.value || null)}
+          value={params.column}
+          onChange={(e) => set("column", e.target.value)}
         >
           <option value="">Select a column...</option>
           {columns.map((c) => (
@@ -37,16 +41,9 @@ export default function HT1SampleTControls({
             </option>
           ))}
         </select>
-      </div>
-
-      <div>
-        <label className={label}>Confidence level (%)</label>
-        <input
-          className={field}
-          value={params.confidenceLevel}
-          onChange={(e) => set("confidenceLevel", e.target.value)}
-          placeholder="95,0"
-        />
+        <p className="mt-1 text-xs text-gray-500">
+          Empty or non-numeric cells are dropped.
+        </p>
       </div>
 
       <div className="border-t border-gray-200 pt-4 space-y-3">
@@ -62,13 +59,13 @@ export default function HT1SampleTControls({
 
         <div className={params.performTest ? "space-y-3" : "space-y-3 opacity-50"}>
           <div>
-            <label className={label}>Hypothesized mean</label>
+            <label className={label}>Hypothesized median</label>
             <input
               className={field}
-              value={params.hypothesizedMean}
-              onChange={(e) => set("hypothesizedMean", e.target.value)}
+              value={params.hypothesizedMedian}
+              onChange={(e) => set("hypothesizedMedian", e.target.value)}
               disabled={!params.performTest}
-              placeholder="5"
+              placeholder="0"
             />
           </div>
 
@@ -77,16 +74,44 @@ export default function HT1SampleTControls({
             <select
               className={field}
               value={params.alternative}
-              onChange={(e) => set("alternative", e.target.value as Alternative)}
+              onChange={(e) =>
+                set("alternative", e.target.value as WilcoxonAlternative)
+              }
               disabled={!params.performTest}
             >
-              {(Object.keys(ALT_LABEL) as Alternative[]).map((k) => (
+              {(Object.keys(ALT_LABEL) as WilcoxonAlternative[]).map((k) => (
                 <option key={k} value={k}>
                   {ALT_LABEL[k]}
                 </option>
               ))}
             </select>
           </div>
+        </div>
+      </div>
+
+      <div className="border-t border-gray-200 pt-4 space-y-3">
+        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+          <input
+            type="checkbox"
+            className={check}
+            checked={params.performCI}
+            onChange={(e) => set("performCI", e.target.checked)}
+          />
+          Confidence interval for the median
+        </label>
+
+        <div className={params.performCI ? "" : "opacity-50"}>
+          <label className={label}>Confidence level (%)</label>
+          <input
+            className={field}
+            value={params.confidenceLevel}
+            onChange={(e) => set("confidenceLevel", e.target.value)}
+            disabled={!params.performCI}
+            placeholder="95,0"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            The achieved confidence may differ: the distribution is discrete.
+          </p>
         </div>
       </div>
 

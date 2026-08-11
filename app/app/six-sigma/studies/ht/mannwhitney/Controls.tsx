@@ -1,34 +1,40 @@
-// app/app/six-sigma/studies/ht/onesamplet/Controls.tsx
+// app/app/six-sigma/studies/ht/mannwhitney/Controls.tsx
 "use client";
 import React from "react";
 import type { ColumnInfo } from "../../../lib/columns";
-import { ALT_LABEL, type Alternative, type HT1SampleTParams } from "./types";
+import {
+  ALT_LABEL,
+  type MWAlternative,
+  type HTMannWhitneyParams,
+} from "./types";
 
 const label = "block text-sm font-medium text-gray-700 mb-1";
 const field =
   "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-[#00674d] focus:outline-none focus:ring-1 focus:ring-[#00674d]";
 const check = "h-4 w-4 rounded border-gray-300 text-[#00674d] focus:ring-[#00674d]";
 
-export default function HT1SampleTControls({
+export default function HTMannWhitneyControls({
   params,
   onChange,
   columns,
 }: {
-  params: HT1SampleTParams;
-  onChange: (p: HT1SampleTParams) => void;
+  params: HTMannWhitneyParams;
+  onChange: (p: HTMannWhitneyParams) => void;
   columns: ColumnInfo[];
 }) {
-  const set = <K extends keyof HT1SampleTParams>(k: K, v: HT1SampleTParams[K]) =>
-    onChange({ ...params, [k]: v });
+  const set = <K extends keyof HTMannWhitneyParams>(
+    k: K,
+    v: HTMannWhitneyParams[K]
+  ) => onChange({ ...params, [k]: v });
 
   return (
     <div className="space-y-4">
       <div>
-        <label className={label}>Column</label>
+        <label className={label}>First sample</label>
         <select
           className={field}
-          value={params.column ?? ""}
-          onChange={(e) => set("column", e.target.value || null)}
+          value={params.columnX}
+          onChange={(e) => set("columnX", e.target.value)}
         >
           <option value="">Select a column...</option>
           {columns.map((c) => (
@@ -40,13 +46,23 @@ export default function HT1SampleTControls({
       </div>
 
       <div>
-        <label className={label}>Confidence level (%)</label>
-        <input
+        <label className={label}>Second sample</label>
+        <select
           className={field}
-          value={params.confidenceLevel}
-          onChange={(e) => set("confidenceLevel", e.target.value)}
-          placeholder="95,0"
-        />
+          value={params.columnY}
+          onChange={(e) => set("columnY", e.target.value)}
+        >
+          <option value="">Select a column...</option>
+          {columns.map((c) => (
+            <option key={c.name} value={c.name}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        <p className="mt-1 text-xs text-gray-500">
+          Samples are independent and may have different sizes. Empty or
+          non-numeric cells are dropped.
+        </p>
       </div>
 
       <div className="border-t border-gray-200 pt-4 space-y-3">
@@ -62,13 +78,13 @@ export default function HT1SampleTControls({
 
         <div className={params.performTest ? "space-y-3" : "space-y-3 opacity-50"}>
           <div>
-            <label className={label}>Hypothesized mean</label>
+            <label className={label}>Hypothesized difference</label>
             <input
               className={field}
-              value={params.hypothesizedMean}
-              onChange={(e) => set("hypothesizedMean", e.target.value)}
+              value={params.hypothesizedDifference}
+              onChange={(e) => set("hypothesizedDifference", e.target.value)}
               disabled={!params.performTest}
-              placeholder="5"
+              placeholder="0"
             />
           </div>
 
@@ -77,10 +93,10 @@ export default function HT1SampleTControls({
             <select
               className={field}
               value={params.alternative}
-              onChange={(e) => set("alternative", e.target.value as Alternative)}
+              onChange={(e) => set("alternative", e.target.value as MWAlternative)}
               disabled={!params.performTest}
             >
-              {(Object.keys(ALT_LABEL) as Alternative[]).map((k) => (
+              {(Object.keys(ALT_LABEL) as MWAlternative[]).map((k) => (
                 <option key={k} value={k}>
                   {ALT_LABEL[k]}
                 </option>
@@ -88,6 +104,19 @@ export default function HT1SampleTControls({
             </select>
           </div>
         </div>
+      </div>
+
+      <div className="border-t border-gray-200 pt-4">
+        <label className={label}>Confidence level (%)</label>
+        <input
+          className={field}
+          value={params.confidenceLevel}
+          onChange={(e) => set("confidenceLevel", e.target.value)}
+          placeholder="95,0"
+        />
+        <p className="mt-1 text-xs text-gray-500">
+          The achieved confidence may differ: the distribution is discrete.
+        </p>
       </div>
 
       <div className="border-t border-gray-200 pt-4">

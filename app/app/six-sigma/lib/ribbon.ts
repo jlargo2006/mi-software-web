@@ -134,19 +134,23 @@ export const PHASES: RibbonPhase[] = [
           { id: "t1Sample", label: "1-Sample t-test", tool: "ht1SampleT", enabled: true },
           // p.313-314 / 327 | mtw: Furnace.MTW / 2 sample unequal variance
           // Single test; Equal vs Unequal variance is an option inside the study.
-          { id: "t2Sample", label: "2-Sample t-test", tool: null, enabled: false },
+          { id: "t2Sample", label: "2-Sample t-test", tool: "htTwoSampleT", enabled: true },
           // p.332 | mtw: EXH_STAT Delta.MTW
-          { id: "tPaired", label: "Paired t-test", tool: null, enabled: false },
+          { id: "tPaired", label: "Paired t-test", tool: "htPairedT", enabled: true },
           // p.346 / 375 | mtw: EXH_AOV.MTW
           // Test for Equal Variance. The correct statistic depends on the data:
           //   - 2 samples,  Normal      → F-test
           //   - >2 samples, Normal      → Bartlett's test
           //   - 2+ samples, Non-normal  → Levene's test
-          { id: "equalVar", label: "Test for Equal Variance", tool: null, enabled: false },
+          { id: "equalVar", label: "Test for Equal Variance", tool: "htEqVar", enabled: true },
           // p.356 | mtw: ANOVA.MTW
           { id: "anova", label: "One-Way ANOVA", tool: "htAnova1Way", enabled: true },
           // p.382 | mtw: DISTRIB1.MTW
-          { id: "sign", label: "1-Sample Sign / Wilcoxon (Median)", tool: null, enabled: false },
+          { id: "sign", label: "1-Sample Sign (Median)", tool: "htSign", enabled: true },
+          { id: "wilcoxon", label: "1-Sample Wilcoxon (Median)", tool: "htWilcoxon", enabled: true },
+          { id: "mannwhitney", label: "Mann-Whitney (2-Sample Median)", tool: "htMannWhitney", enabled: true },
+          { id: "moodsmedian", label: "Mood's Median Test", tool: "htMoodsMedian", enabled: true },
+          { id: "kruskalwallis", label: "Kruskal-Wallis Test", tool: "htKruskalWallis", enabled: true },
           // p.396 | mtw: Var_Comp.mtw
           { id: "varComp", label: "Variance Comparison", tool: null, enabled: false },
           // (—) proposed – attribute data hypothesis test

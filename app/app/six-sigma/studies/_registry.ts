@@ -20,6 +20,14 @@ import pssOneProportion from "./pss/oneproportion";
 import pssTwoProportions from "./pss/twoproportions";
 import ht1SampleT from "./ht/onesamplet";
 import htAnova1Way from "./ht/anova1way";
+import htTwoSampleT from "./ht/twosamplet";
+import htEqVar from "./ht/eqvar";
+import htPairedT from "./ht/pairedt";
+import htWilcoxon from "./ht/wilcoxon";
+import htSign from "./ht/sign";
+import htMannWhitney from "./ht/mannwhitney";
+import htMoodsMedian from "./ht/moodsmedian";
+import htKruskalWallis from "./ht/kruskalwallis";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
@@ -42,6 +50,14 @@ const ALL: ArtifactDefinition[] = [
   pssTwoProportions,
   ht1SampleT,
   htAnova1Way,
+  htTwoSampleT,
+  htEqVar,
+  htPairedT,
+  htWilcoxon,
+  htSign,
+  htMannWhitney,
+  htMoodsMedian,
+  htKruskalWallis,
 ];
 
 export const REGISTRY: Record<string, ArtifactDefinition> = Object.fromEntries(

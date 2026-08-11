@@ -1,34 +1,37 @@
-// app/app/six-sigma/studies/ht/onesamplet/Controls.tsx
+// app/app/six-sigma/studies/ht/pairedt/Controls.tsx
 "use client";
 import React from "react";
 import type { ColumnInfo } from "../../../lib/columns";
-import { ALT_LABEL, type Alternative, type HT1SampleTParams } from "./types";
+import { ALT_LABEL, type Alternative, type HTPairedTParams } from "./types";
 
 const label = "block text-sm font-medium text-gray-700 mb-1";
 const field =
   "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-[#00674d] focus:outline-none focus:ring-1 focus:ring-[#00674d]";
 const check = "h-4 w-4 rounded border-gray-300 text-[#00674d] focus:ring-[#00674d]";
 
-export default function HT1SampleTControls({
+export default function HTPairedTControls({
   params,
   onChange,
   columns,
 }: {
-  params: HT1SampleTParams;
-  onChange: (p: HT1SampleTParams) => void;
+  params: HTPairedTParams;
+  onChange: (p: HTPairedTParams) => void;
   columns: ColumnInfo[];
 }) {
-  const set = <K extends keyof HT1SampleTParams>(k: K, v: HT1SampleTParams[K]) =>
+  const set = <K extends keyof HTPairedTParams>(k: K, v: HTPairedTParams[K]) =>
     onChange({ ...params, [k]: v });
+
+  const sameColumn =
+    params.columnX !== null && params.columnX === params.columnY;
 
   return (
     <div className="space-y-4">
       <div>
-        <label className={label}>Column</label>
+        <label className={label}>Sample 1</label>
         <select
           className={field}
-          value={params.column ?? ""}
-          onChange={(e) => set("column", e.target.value || null)}
+          value={params.columnX ?? ""}
+          onChange={(e) => set("columnX", e.target.value || null)}
         >
           <option value="">Select a column...</option>
           {columns.map((c) => (
@@ -37,6 +40,31 @@ export default function HT1SampleTControls({
             </option>
           ))}
         </select>
+      </div>
+
+      <div>
+        <label className={label}>Sample 2</label>
+        <select
+          className={field}
+          value={params.columnY ?? ""}
+          onChange={(e) => set("columnY", e.target.value || null)}
+        >
+          <option value="">Select a column...</option>
+          {columns.map((c) => (
+            <option key={c.name} value={c.name}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        {sameColumn && (
+          <p className="mt-1 text-xs text-amber-700">
+            Sample 1 and Sample 2 must be different columns.
+          </p>
+        )}
+        <p className="mt-1 text-xs text-gray-500">
+          Rows are paired by position; rows with a missing value in either
+          column are dropped.
+        </p>
       </div>
 
       <div>
@@ -62,13 +90,13 @@ export default function HT1SampleTControls({
 
         <div className={params.performTest ? "space-y-3" : "space-y-3 opacity-50"}>
           <div>
-            <label className={label}>Hypothesized mean</label>
+            <label className={label}>Hypothesized difference</label>
             <input
               className={field}
-              value={params.hypothesizedMean}
-              onChange={(e) => set("hypothesizedMean", e.target.value)}
+              value={params.hypothesizedDifference}
+              onChange={(e) => set("hypothesizedDifference", e.target.value)}
               disabled={!params.performTest}
-              placeholder="5"
+              placeholder="0"
             />
           </div>
 
@@ -95,9 +123,9 @@ export default function HT1SampleTControls({
         <div className="space-y-2">
           {(
             [
-              ["showHistogram", "Histogram"],
-              ["showIndividualValue", "Individual value plot"],
-              ["showBoxplot", "Boxplot"],
+              ["showHistogram", "Histogram of differences"],
+              ["showIndividualValue", "Individual value plot of differences"],
+              ["showBoxplot", "Boxplot of differences"],
             ] as const
           ).map(([k, txt]) => (
             <label key={k} className="flex items-center gap-2 text-sm text-gray-700">

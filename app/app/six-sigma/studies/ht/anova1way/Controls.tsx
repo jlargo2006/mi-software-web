@@ -1,11 +1,14 @@
 // app/app/six-sigma/studies/ht/anova1way/Controls.tsx
+// Nota: el archivo se mantiene en ASCII puro. Todo caracter no ASCII va como
+// escape \uXXXX para evitar el mojibake de la cadena de build.
+//   \u2026 ...   \u03b1 alpha   \u2212 signo menos
 "use client";
 import React from "react";
 import type { ColumnInfo } from "../../../lib/columns";
 import type { Anova1WayParams, DataFormat } from "./types";
 
-const ALPHA = "\u03B1";
 const ELLIPSIS = "\u2026";
+const ALPHA = "\u03b1";
 const MINUS = "\u2212";
 
 export default function Controls({
@@ -140,7 +143,7 @@ export default function Controls({
             onClick={addLevelCol}
             className="px-2 py-1 border rounded text-gray-700 hover:bg-gray-50"
           >
-            + Add level
+            {"+ Add level"}
           </button>
           <p className="text-xs text-gray-500">
             The column name is used as the level label.
@@ -151,7 +154,7 @@ export default function Controls({
       {/* ---- Opciones ---- */}
       <div className="border-t pt-3">
         <label className="block font-medium mb-1">
-          Significance level ({ALPHA})
+          {"Significance level (" + ALPHA + ")"}
         </label>
         <input
           type="text"
@@ -164,6 +167,7 @@ export default function Controls({
         </p>
       </div>
 
+      {/* ---- Graficos ---- */}
       <div className="border-t pt-3 space-y-1">
         <div className="font-medium mb-1">Graphs</div>
         {(
@@ -182,6 +186,47 @@ export default function Controls({
             <span>{label}</span>
           </label>
         ))}
+      </div>
+
+      {/* ---- Residuos ---- */}
+      <div className="border-t pt-3 space-y-1">
+        <div className="font-medium mb-1">Residuals</div>
+
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={params.showResiduals}
+            onChange={(e) =>
+              onChange({ ...params, showResiduals: e.target.checked })
+            }
+          />
+          <span>Four in one</span>
+        </label>
+
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={params.showResidualTable}
+            onChange={(e) =>
+              onChange({ ...params, showResidualTable: e.target.checked })
+            }
+          />
+          <span>Residual table</span>
+        </label>
+
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={params.standardizedResiduals}
+            onChange={(e) =>
+              onChange({ ...params, standardizedResiduals: e.target.checked })
+            }
+          />
+          <span>Use standardized residuals</span>
+        </label>
+        <p className="text-xs text-gray-500">
+          Standardized residuals beyond {MINUS}2 / +2 flag unusual observations.
+        </p>
       </div>
     </div>
   );
