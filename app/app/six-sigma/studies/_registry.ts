@@ -33,6 +33,7 @@ import htTwoProportions from "./ht/twoproportions";
 import htOneProportion from "./ht/oneproportion";
 import htChiSqAssoc from "./ht/chisqassociation";
 import impScatter from "./improve/scatterplot";
+import impCorrelation from "./improve/correlation";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
@@ -68,6 +69,7 @@ const ALL: ArtifactDefinition[] = [
   htTwoProportions,
   htChiSqAssoc,
   impScatter,
+  impCorrelation,
 ];
 
 export const REGISTRY: Record<string, ArtifactDefinition> = Object.fromEntries(
