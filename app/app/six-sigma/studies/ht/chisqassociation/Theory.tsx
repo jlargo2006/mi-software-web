@@ -112,8 +112,8 @@ const ES = () => (
         filas y columnas.
       </p>
       <p>
-        Por eso los grados de libertad son (<V>r</V>{MINUS}1)({V ? "" : ""}
-        <V>c</V>{MINUS}1): fijados los marginales, solo esas celdas quedan libres.
+        Por eso los grados de libertad son (<V>r</V>{MINUS}1)(<V>c</V>{MINUS}1):
+        fijados los marginales, solo esas celdas quedan libres.
       </p>
     </Section>
 
