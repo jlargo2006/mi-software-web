@@ -5,6 +5,8 @@ import type { ColumnInfo } from "../../../lib/columns";
 import {
   KIND_HAS_GROUPS,
   KIND_LABEL,
+  LOWESS_F_DEFAULT,
+  LOWESS_STEPS_DEFAULT,
   type ImpScatterParams,
   type ScatterKind,
 } from "./types";
@@ -12,7 +14,8 @@ import {
 const label = "block text-sm font-medium text-gray-700 mb-1";
 const field =
   "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-[#00674d] focus:outline-none focus:ring-1 focus:ring-[#00674d]";
-const check = "h-4 w-4 rounded border-gray-300 text-[#00674d] focus:ring-[#00674d]";
+const check =
+  "h-4 w-4 rounded border-gray-300 text-[#00674d] focus:ring-[#00674d]";
 
 export default function ImpScatterControls({
   params,
@@ -120,6 +123,51 @@ export default function ImpScatterControls({
           />
           Show fitted line equation and R{"\u00b2"}
         </label>
+      </div>
+
+      <div className="border-t border-gray-200 pt-4 space-y-3">
+        <label className="flex items-center gap-2 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            className={check}
+            checked={params.showLowess}
+            onChange={(e) => set("showLowess", e.target.checked)}
+          />
+          Add a lowess smoother
+        </label>
+
+        {params.showLowess && (
+          <>
+            <div>
+              <label className={label}>Degree of smoothing</label>
+              <input
+                className={field}
+                value={params.lowessF}
+                onChange={(e) => set("lowessF", e.target.value)}
+                placeholder={LOWESS_F_DEFAULT}
+                inputMode="decimal"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Fraction of points in each local neighbourhood, between 0 and 1.
+                Larger values give a smoother curve.
+              </p>
+            </div>
+            <div>
+              <label className={label}>Number of steps</label>
+              <input
+                className={field}
+                value={params.lowessSteps}
+                onChange={(e) => set("lowessSteps", e.target.value)}
+                placeholder={LOWESS_STEPS_DEFAULT}
+                inputMode="numeric"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Robustness iterations. Each one down-weights points far from the
+                curve. Use 0 for no down-weighting.
+              </p>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
