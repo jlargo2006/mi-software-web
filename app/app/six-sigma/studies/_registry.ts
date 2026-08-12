@@ -28,6 +28,7 @@ import htSign from "./ht/sign";
 import htMannWhitney from "./ht/mannwhitney";
 import htMoodsMedian from "./ht/moodsmedian";
 import htKruskalWallis from "./ht/kruskalwallis";
+import htTwoProportions from "./ht/twoproportions";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
@@ -58,6 +59,7 @@ const ALL: ArtifactDefinition[] = [
   htMannWhitney,
   htMoodsMedian,
   htKruskalWallis,
+  htTwoProportions,
 ];
 
 export const REGISTRY: Record<string, ArtifactDefinition> = Object.fromEntries(
