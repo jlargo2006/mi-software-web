@@ -32,8 +32,8 @@ export interface HTTwoProportionsParams {
   alternative: TPAlternative;
   /** Nivel de confianza en porcentaje. */
   confidenceLevel: string;
-  /** Aplicar correccion de continuidad al test normal. */
-  continuityCorrection: boolean;
+  /** Usar la proporcion combinada en el test. Es el defecto. */  
+  usePooled: boolean;                                            
   /** Mostrar la fila del test exacto de Fisher. */
   showFisher: boolean;
 }
@@ -48,7 +48,7 @@ export const HTTWOPROPORTIONS_DEFAULT: HTTwoProportionsParams = {
   hypothesizedDifference: "0",
   alternative: "two-sided",
   confidenceLevel: "95",
-  continuityCorrection: false,
+  usePooled: true,
   showFisher: true,
 };
 
@@ -74,7 +74,7 @@ export interface TPModel {
 
   /** Proporcion combinada, usada solo por el test. */
   pooledP: number;
-  continuityCorrection: boolean;
+  usePooled: boolean;
   zValue: number;
   pNormal: number;
 
