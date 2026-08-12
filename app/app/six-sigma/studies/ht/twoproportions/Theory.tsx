@@ -125,14 +125,15 @@ const ES = () => (
       </p>
     </Section>
 
-    <Section title="El test usa la proporción combinada">
+    <Section title="El test y la opción de combinar">
       <FormulaZ />
       <Note>
-        Intervalo y test <strong>no comparten denominador</strong>, y eso es
-        deliberado. El informe permite desactivar la combinaci&oacute;n: con
-        varianzas separadas el ejemplo de abajo dar&iacute;a <V>z</V> = {MINUS}4,17
-        en lugar de {MINUS}4,33. Ambos valores son correctos; el segundo es el
-        contraste por defecto y el m&aacute;s potente bajo H{"\u2080"}.
+        Por defecto <strong>el test usa las mismas varianzas separadas que el
+        intervalo</strong>, de modo que ambos son coherentes entre s&iacute;. Marcando
+        la casilla se pasa a la estimaci&oacute;n combinada {PBAR}: en el ejemplo de
+        abajo, <V>z</V> = {MINUS}3,57 en lugar de {MINUS}4,33. Aqu&iacute; la
+        combinaci&oacute;n resulta <em>menos</em> significativa, porque {PBAR} queda
+        entre 0,85 y 0,94 y su varianza es mayor que la media de las dos.
       </Note>
       <Note>
         Es el error m&aacute;s frecuente al implementar este estudio:{" "}
@@ -140,11 +141,6 @@ const ES = () => (
         ejemplo de abajo, emplear la varianza del intervalo tambi&eacute;n en el test
         dar&iacute;a <V>z</V> = {MINUS}4,17 en lugar de {MINUS}4,33.
       </Note>
-      <p>
-        Como consecuencia, intervalo y p-valor pueden discrepar en casos l&iacute;mite:
-        un intervalo que roza el cero con un p-valor algo por debajo de {ALPHA}. No es
-        un fallo, sino dos estimaciones de varianza distintas.
-      </p>
       <Note>
         Con una diferencia hipot&eacute;tica <strong>distinta de cero</strong> la nula
         ya no implica igualdad de proporciones, y entonces no cabe combinar: el
@@ -181,8 +177,8 @@ const ES = () => (
         {MINUS}0,050440)
       </p>
       <p className="font-mono text-xs">
-        {PBAR} = 722/825 = 0,875152 {"\u00b7"} <V>z</V> = {MINUS}4,33 {"\u00b7"}{" "}
-        <V>p</V> = 0,000
+        <V>z</V> = {MINUS}4,33 {"\u00b7"} <V>p</V> = 0,000 {"\u00b7"} combinando:{" "}
+        {PBAR} = 0,875152, <V>z</V> = {MINUS}3,57
       </p>
       <p className="font-mono text-xs">Fisher exacto: <V>p</V> = 0,000</p>
       <p>
@@ -226,13 +222,14 @@ const EN = () => (
       </p>
     </Section>
 
-    <Section title="The test uses the pooled proportion">
+    <Section title="The test and the pooling option">
       <FormulaZ />
       <Note>
-        Interval and test <strong>do not share a denominator</strong>, and that is
-        deliberate. Pooling can be switched off: with separate variances the
-        example below gives <V>z</V> = {MINUS}4.17 instead of {MINUS}4.33. Both are
-        correct; the latter is the default and the more powerful under H{"\u2080"}.
+        By default <strong>the test uses the same separate variances as the
+        interval</strong>, so the two agree. Checking the box switches to the pooled
+        {PBAR}: below, <V>z</V> = {MINUS}3.57 instead of {MINUS}4.33. Pooling is
+        <em>less</em> significant here, since {PBAR} sits between 0.85 and 0.94 and
+        carries a larger variance than either sample.
       </Note>
       <Note>
         This is the most common implementation error:{" "}
@@ -240,10 +237,6 @@ const EN = () => (
         interval&apos;s variance in the test below would give <V>z</V> = {MINUS}4.17
         instead of {MINUS}4.33.
       </Note>
-      <p>
-        As a result the interval and the p-value can disagree in borderline cases.
-        That is not a bug but two different variance estimates.
-      </p>
       <Note>
         With a <strong>non-zero</strong> hypothesized difference the null no longer
         implies equal proportions, so pooling is dropped in favour of separate
@@ -278,8 +271,11 @@ const EN = () => (
         {MINUS}0.050440)
       </p>
       <p className="font-mono text-xs">
-        {PBAR} = 0.875152 {"\u00b7"} <V>z</V> = {MINUS}4.33 {"\u00b7"} <V>p</V> =
-        0.000 {"\u00b7"} Fisher: <V>p</V> = 0.000
+        <V>z</V> = {MINUS}4.33 {"\u00b7"} <V>p</V> = 0.000 {"\u00b7"} Fisher:{" "}
+        <V>p</V> = 0.000
+      </p>
+      <p className="font-mono text-xs">
+        Pooled: {PBAR} = 0.875152, <V>z</V> = {MINUS}3.57
       </p>
       <p>
         The second sample has a clearly higher event rate. The interval lies entirely
