@@ -15,7 +15,7 @@ export interface TPInput {
   eta0: number;
   alternative: TPAlternative;
   confLevel: number;
-  continuityCorrection: boolean;
+  usePooled: boolean;
   showFisher: boolean;
 }
 
@@ -153,8 +153,7 @@ export function twoProportions(input: TPInput): HTTwoProportionsResult {
     eta0,
     alternative,
     confLevel,
-    continuityCorrection,
-  } = input;
+    } = input;
 
   // --- 1. Validacion -----------------------------------------------------
   const ints = [x1, n1, x2, n2];
@@ -209,26 +208,21 @@ export function twoProportions(input: TPInput): HTTwoProportionsResult {
   if (ciKind === "lower") ciHigh = 1;
   if (ciKind === "upper") ciLow = -1;
 
-  // --- 3. Test: proporcion COMBINADA cuando eta0 = 0 ---------------------
-  // Con eta0 distinto de cero la hipotesis nula no implica p1 = p2, asi que
-  // no cabe combinar: se usan las varianzas separadas.
+  // --- 3. Test: proporcion combinada o varianzas separadas ---------------
+  // Bajo H0 con eta0 = 0 las proporciones son iguales, asi que la estimacion
+  // combinada es la mas eficiente y es el defecto del informe. Con eta0
+  // distinto de cero la nula no implica igualdad y no cabe combinar.
   const shiftedNull = eta0 !== 0;
   const pooledP = (x1 + x2) / (n1 + n2);
-  const seTest = shiftedNull
-    ? seCI
-    : Math.sqrt(pooledP * (1 - pooledP) * (1 / n1 + 1 / n2));
+  const pooled = input.usePooled && !shiftedNull;
+  const seTest = pooled
+    ? Math.sqrt(pooledP * (1 - pooledP) * (1 / n1 + 1 / n2))
+    : seCI;
 
   let zValue = NaN;
   let pNormal = NaN;
   if (seTest > 0) {
-    const diff = difference - eta0;
-    let num = diff;
-    if (continuityCorrection) {
-      // Acerca la diferencia a eta0 en media unidad de la escala discreta.
-      const cc = 0.5 * (1 / n1 + 1 / n2);
-      num = diff > 0 ? Math.max(0, diff - cc) : Math.min(0, diff + cc);
-    }
-    zValue = num / seTest;
+    zValue = (difference - eta0) / seTest;
     pNormal =
       alternative === "two-sided"
         ? 2 * (1 - normalCdf(Math.abs(zValue)))
@@ -274,7 +268,7 @@ export function twoProportions(input: TPInput): HTTwoProportionsResult {
     ciLow,
     ciHigh,
     pooledP,
-    continuityCorrection,
+    usePooled: pooled,
     zValue,
     pNormal,
     showFisher: input.showFisher,
