@@ -151,10 +151,10 @@ export default function HTTwoProportionsControls({
           <input
             type="checkbox"
             className={check}
-            checked={params.continuityCorrection}
-            onChange={(e) => set("continuityCorrection", e.target.checked)}
+            checked={params.usePooled}
+            onChange={(e) => set("usePooled", e.target.checked)}
           />
-          Use continuity correction
+          Use the pooled estimate of the proportion for the test
         </label>
         <label className="flex items-center gap-2 text-sm text-gray-700">
           <input
@@ -166,8 +166,8 @@ export default function HTTwoProportionsControls({
           Show Fisher&apos;s exact test
         </label>
         <p className="text-xs text-gray-500">
-          Fisher&apos;s exact test only applies when the hypothesized difference
-          is 0.
+          Pooling applies only when the hypothesized difference is 0.
+          Fisher&apos;s exact test likewise.
         </p>
       </div>
     </div>
