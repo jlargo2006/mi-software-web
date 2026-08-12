@@ -121,7 +121,7 @@ export const PHASES: RibbonPhase[] = [
       { id: "multiVari", label: "Multi-Vari Chart", tool: "multiVari", enabled: true },
      
       // p.272 | mtw: Die Example
-      { id: "clt", label: "Sampling Distributions / CLT", tool: null, enabled: false },
+//      { id: "clt", label: "Sampling Distributions / CLT", tool: null, enabled: false },
 
       // ---- Hypothesis Tests (dropdown) -----------------------------------
       {
@@ -154,10 +154,6 @@ export const PHASES: RibbonPhase[] = [
           { id: "oneproportion", label: "1 Proportion", tool: "htOneProportion", enabled: true },
           { id: "twoproportions", label: "2 Proportions", tool: "htTwoProportions", enabled: true },
           { id: "chisqassociation", label: "Chi-Square Test for Association", tool: "htChiSqAssoc", enabled: true },
-          // p.396 | mtw: Var_Comp.mtw
-          { id: "varComp", label: "Variance Comparison", tool: null, enabled: false },
-          // (—) proposed – attribute data hypothesis test
-          { id: "chiSquare", label: "Chi-Square Test", tool: null, enabled: false },
         ],
       },
 
