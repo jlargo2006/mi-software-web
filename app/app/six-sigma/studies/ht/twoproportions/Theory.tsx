@@ -127,13 +127,13 @@ const ES = () => (
 
     <Section title="El test usa la proporción combinada">
       <FormulaZ />
-      <p>
-        Aqu&iacute; est&aacute; la diferencia esencial: bajo H{"\u2080"} las dos
-        proporciones son <strong>iguales</strong>, as&iacute; que la mejor estimaci&oacute;n
-        de ese valor com&uacute;n es la proporci&oacute;n combinada {PBAR}, calculada
-        sobre los dos grupos juntos. Usarla reduce la varianza y da un contraste
-        m&aacute;s potente.
-      </p>
+      <Note>
+        Intervalo y test <strong>no comparten denominador</strong>, y eso es
+        deliberado. El informe permite desactivar la combinaci&oacute;n: con
+        varianzas separadas el ejemplo de abajo dar&iacute;a <V>z</V> = {MINUS}4,17
+        en lugar de {MINUS}4,33. Ambos valores son correctos; el segundo es el
+        contraste por defecto y el m&aacute;s potente bajo H{"\u2080"}.
+      </Note>
       <Note>
         Es el error m&aacute;s frecuente al implementar este estudio:{" "}
         <strong>el intervalo y el test no comparten denominador</strong>. En el
@@ -228,11 +228,12 @@ const EN = () => (
 
     <Section title="The test uses the pooled proportion">
       <FormulaZ />
-      <p>
-        Under H{"\u2080"} the two proportions are <strong>equal</strong>, so the best
-        estimate of that common value is the pooled {PBAR} computed across both
-        groups. Using it lowers the variance and yields a more powerful test.
-      </p>
+      <Note>
+        Interval and test <strong>do not share a denominator</strong>, and that is
+        deliberate. Pooling can be switched off: with separate variances the
+        example below gives <V>z</V> = {MINUS}4.17 instead of {MINUS}4.33. Both are
+        correct; the latter is the default and the more powerful under H{"\u2080"}.
+      </Note>
       <Note>
         This is the most common implementation error:{" "}
         <strong>interval and test do not share a denominator</strong>. Using the
