@@ -26,7 +26,7 @@ export function computeHTTwoProportions(
     eta0: num(params.hypothesizedDifference),
     alternative: params.alternative,
     confLevel: num(params.confidenceLevel),
-    continuityCorrection: params.continuityCorrection,
+    usePooled: params.usePooled,
     showFisher: params.showFisher,
   });
 }
