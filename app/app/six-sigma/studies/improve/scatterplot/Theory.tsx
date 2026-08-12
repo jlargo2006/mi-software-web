@@ -4,7 +4,13 @@ import React, { useState } from "react";
 
 type Lang = "es" | "en";
 
-const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+const Section = ({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) => (
   <section className="space-y-2">
     <h3 className="font-bold text-base text-[#00674d] border-b border-gray-200 pb-1">
       {title}
@@ -52,8 +58,9 @@ const ES = () => (
         la variable que se controla.
       </p>
       <Note>
-        El gr&aacute;fico <strong>no demuestra causalidad</strong>. Una relaci&oacute;n
-        clara puede deberse a una tercera variable que influya en ambas.
+        El gr&aacute;fico <strong>no demuestra causalidad</strong>. Una
+        relaci&oacute;n clara puede deberse a una tercera variable que influya en
+        ambas.
       </Note>
     </Section>
 
@@ -72,8 +79,8 @@ const ES = () => (
           regresi&oacute;n simple queda comprometida.
         </li>
         <li>
-          <strong>At&iacute;picos</strong>: puntos alejados. Los alejados en <V>x</V>{" "}
-          son los m&aacute;s peligrosos, porque arrastran la recta.
+          <strong>At&iacute;picos</strong>: puntos alejados. Los alejados en{" "}
+          <V>x</V> son los m&aacute;s peligrosos, porque arrastran la recta.
         </li>
         <li>
           <strong>Agrupamientos</strong>: c&uacute;mulos separados suelen delatar una
@@ -107,8 +114,8 @@ const ES = () => (
           secuencia.
         </li>
         <li>
-          <strong>With Connect and Groups</strong>: un recorrido por grupo, &uacute;til
-          para perfiles o trayectorias.
+          <strong>With Connect and Groups</strong>: un recorrido por grupo,
+          &uacute;til para perfiles o trayectorias.
         </li>
       </ul>
       <Note>
@@ -116,6 +123,47 @@ const ES = () => (
         regresi&oacute;n. La primera pasa por todos los puntos y sube y baja; la
         segunda es un &uacute;nico segmento recto.
       </Note>
+    </Section>
+
+    <Section title="El suavizador lowess">
+      <p>
+        Es una opci&oacute;n aparte, superponible a cualquiera de las seis variantes.
+        En vez de imponer una recta a todos los datos, ajusta{" "}
+        <strong>una recta local en cada punto</strong>, usando solo sus vecinos
+        m&aacute;s cercanos en <V>x</V> y d&aacute;ndoles peso seg&uacute;n la
+        distancia. Al unir todos esos ajustes locales sale una curva.
+      </p>
+      <ul className="list-disc pl-5 space-y-1">
+        <li>
+          <strong>Grado de suavizado</strong>: la fracci&oacute;n de puntos de cada
+          vecindario. Cerca de 1 la curva tiende a la recta global; muy
+          peque&ntilde;o, persigue el ruido. El defecto, 0,5, suele ser buen punto de
+          partida.
+        </li>
+        <li>
+          <strong>Pasos</strong>: iteraciones de robustez. Cada una infrapondera los
+          puntos que quedaron lejos de la curva anterior, de modo que un
+          at&iacute;pico deja de arrastrarla. Con 0 pasos no hay
+          reponderaci&oacute;n.
+        </li>
+      </ul>
+      <Note>
+        No es un modelo:{" "}
+        <strong>no da ecuaci&oacute;n, ni coeficientes, ni p-valores</strong>, y no
+        sirve para predecir fuera del rango. Es una herramienta <em>visual</em>, para
+        ver la forma de la relaci&oacute;n antes de decidir si una recta la describe
+        bien. Si el lowess se aparta claramente de la recta de m&iacute;nimos
+        cuadrados, la relaci&oacute;n no es lineal y el <V>r</V> de Pearson se queda
+        corto.
+      </Note>
+      <p>
+        En los datos del ejemplo, con 0,5 y 2 pasos, la curva pasa por{" "}
+        <strong>1505 yardas en 339 acarreos</strong>: los dos puntos que comparten
+        ese valor de <V>x</V> reciben el mismo ajuste, y la robustez ha
+        infraponderado la temporada de 1852 yardas. Compara con las 1503 que predice
+        la recta ah&iacute; mismo: casi id&eacute;nticas, se&ntilde;al de que la
+        linealidad se sostiene.
+      </p>
     </Section>
 
     <Section title="La recta de mínimos cuadrados">
@@ -127,12 +175,12 @@ const ES = () => (
       <p>
         Minimiza la suma de los residuos al cuadrado, {SUM}(<V>y</V> {MINUS}{" "}
         <V>y</V>{HAT})<Sup>2</Sup>. El <V>R</V><Sup>2</Sup> es la proporci&oacute;n
-        de variabilidad de <V>Y</V> que la recta explica, y en regresi&oacute;n simple
-        coincide con <V>r</V><Sup>2</Sup>.
+        de variabilidad de <V>Y</V> que la recta explica, y en regresi&oacute;n
+        simple coincide con <V>r</V><Sup>2</Sup>.
       </p>
       <Note>
-        La recta se traza <strong>solo dentro del rango observado</strong>. Extrapolar
-        fuera de &eacute;l no est&aacute; respaldado por los datos.
+        La recta se traza <strong>solo dentro del rango observado</strong>.
+        Extrapolar fuera de &eacute;l no est&aacute; respaldado por los datos.
       </Note>
     </Section>
 
@@ -151,20 +199,21 @@ const ES = () => (
       </p>
       <p>
         Relaci&oacute;n positiva y fuerte: cada acarreo adicional supone unas{" "}
-        <strong>4,9 yardas</strong> m&aacute;s. El 87,3% de la variabilidad en yardas
-        queda explicado.
+        <strong>4,9 yardas</strong> m&aacute;s. El 87,3% de la variabilidad en
+        yardas queda explicado.
       </p>
       <Note>
         Dos detalles que el gr&aacute;fico revela y el <V>r</V> esconde. Con 339
-        acarreos hay <strong>dos temporadas muy dispares</strong>, 1852 y 1222 yardas:
-        mismo <V>x</V>, casi 630 yardas de diferencia. Y las dos temporadas cortas
-        (146 y 148 acarreos) est&aacute;n aisladas a la izquierda:{" "}
-        <strong>sostienen buena parte del ajuste</strong>. Sin ellas la relaci&oacute;n
-        se debilitar&iacute;a mucho.
+        acarreos hay <strong>dos temporadas muy dispares</strong>, 1852 y 1222
+        yardas: mismo <V>x</V>, casi 630 yardas de diferencia. Y las dos temporadas
+        cortas (146 y 148 acarreos) est&aacute;n aisladas a la izquierda:{" "}
+        <strong>sostienen buena parte del ajuste</strong>. Sin ellas la
+        relaci&oacute;n se debilitar&iacute;a mucho.
       </Note>
       <p>
-        La interseccion, {MINUS}163,50 yardas para cero acarreos, no tiene sentido
-        f&iacute;sico: es lo normal cuando <V>x</V> = 0 queda lejos de los datos.
+        La intersecci&oacute;n, {MINUS}163,50 yardas para cero acarreos, no tiene
+        sentido f&iacute;sico: es lo normal cuando <V>x</V> = 0 queda lejos de los
+        datos.
       </p>
     </Section>
   </div>
@@ -180,8 +229,8 @@ const EN = () => (
         response and <V>X</V> the predictor.
       </p>
       <Note>
-        The plot <strong>does not prove causation</strong>: a third variable may drive
-        both.
+        The plot <strong>does not prove causation</strong>: a third variable may
+        drive both.
       </Note>
     </Section>
 
@@ -224,8 +273,8 @@ const EN = () => (
           slopes indicate <strong>interaction</strong>.
         </li>
         <li>
-          <strong>With Connect Line</strong>: joins points in <V>x</V> order — a path,
-          not a fit.
+          <strong>With Connect Line</strong>: joins points in <V>x</V> order — a
+          path, not a fit.
         </li>
         <li>
           <strong>With Connect and Groups</strong>: one path per group, useful for
@@ -238,6 +287,33 @@ const EN = () => (
       </Note>
     </Section>
 
+    <Section title="The lowess smoother">
+      <p>
+        A separate option, overlaid on any of the six variants. Instead of forcing
+        one line through all the data it fits{" "}
+        <strong>a local line at every point</strong>, using only its nearest
+        neighbours in <V>x</V>, weighted by distance.
+      </p>
+      <ul className="list-disc pl-5 space-y-1">
+        <li>
+          <strong>Degree of smoothing</strong>: the fraction of points per
+          neighbourhood. Near 1 the curve approaches the global line; too small and
+          it chases noise. The default 0.5 is a sound starting point.
+        </li>
+        <li>
+          <strong>Steps</strong>: robustness iterations, each down-weighting points
+          far from the previous curve so that an outlier stops dragging it.
+        </li>
+      </ul>
+      <Note>
+        It is not a model:{" "}
+        <strong>no equation, no coefficients, no p-values</strong>, and no
+        extrapolation. It is a <em>visual</em> check on the shape. Clear departure
+        from the least-squares line means the relationship is not linear and
+        Pearson&apos;s <V>r</V> understates it.
+      </Note>
+    </Section>
+
     <Section title="The least-squares line">
       <Formula>
         <V>y</V>{HAT} = <V>b</V><Sub>0</Sub> + <V>b</V><Sub>1</Sub><V>x</V>
@@ -246,8 +322,8 @@ const EN = () => (
       </Formula>
       <p>
         It minimises {SUM}(<V>y</V> {MINUS} <V>y</V>{HAT})<Sup>2</Sup>.{" "}
-        <V>R</V><Sup>2</Sup> is the share of variability in <V>Y</V> explained, equal
-        to <V>r</V><Sup>2</Sup> in simple regression. The line is drawn{" "}
+        <V>R</V><Sup>2</Sup> is the share of variability in <V>Y</V> explained,
+        equal to <V>r</V><Sup>2</Sup> in simple regression. The line is drawn{" "}
         <strong>only within the observed range</strong>.
       </p>
     </Section>
@@ -255,7 +331,8 @@ const EN = () => (
     <Section title="Worked example">
       <p>Thirteen seasons, carries against yards:</p>
       <p className="font-mono text-xs">
-        <V>n</V> = 13 {"\u00b7"} yards{HAT} = {MINUS}163.50 + 4.9162 {"\u00b7"} carries
+        <V>n</V> = 13 {"\u00b7"} yards{HAT} = {MINUS}163.50 + 4.9162 {"\u00b7"}{" "}
+        carries
       </p>
       <p className="font-mono text-xs">
         <V>r</V> = 0.9345 {"\u00b7"} <V>R</V><Sup>2</Sup> = 87.3% {"\u00b7"}{" "}
