@@ -45,9 +45,9 @@ export const PHASES: RibbonPhase[] = [
       { id: "pareto", label: "Pareto Chart", tool: "pareto", enabled: true },
 
       // (—) proposed – Define phase project tools
-      { id: "sipoc", label: "SIPOC Diagram", tool: null, enabled: false },
-      { id: "charter", label: "Project Charter", tool: null, enabled: false },
-      { id: "ctqTree", label: "CTQ Tree", tool: null, enabled: false },
+//      { id: "sipoc", label: "SIPOC Diagram", tool: null, enabled: false },
+//      { id: "charter", label: "Project Charter", tool: null, enabled: false },
+//      { id: "ctqTree", label: "CTQ Tree", tool: null, enabled: false },
     ],
   },
 
@@ -151,6 +151,7 @@ export const PHASES: RibbonPhase[] = [
           { id: "mannwhitney", label: "Mann-Whitney (2-Sample Median)", tool: "htMannWhitney", enabled: true },
           { id: "moodsmedian", label: "Mood's Median Test", tool: "htMoodsMedian", enabled: true },
           { id: "kruskalwallis", label: "Kruskal-Wallis Test", tool: "htKruskalWallis", enabled: true },
+          { id: "twoproportions", label: "2 Proportions", tool: "htTwoProportions", enabled: true },
           // p.396 | mtw: Var_Comp.mtw
           { id: "varComp", label: "Variance Comparison", tool: null, enabled: false },
           // (—) proposed – attribute data hypothesis test
