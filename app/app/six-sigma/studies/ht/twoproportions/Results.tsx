@@ -86,6 +86,7 @@ export default function HTTwoProportionsResults({
       tickvals: [0, 1],
       ticktext: [r.label2, r.label1],
       fixedrange: true,
+      zeroline: false,
     },
   };
 
