@@ -1,6 +1,6 @@
 // app/app/six-sigma/studies/improve/scatterplot/compute.ts
 import type { ColumnSnapshot } from "../../types";
-import { leastSquares } from "../../../lib/scatterplot";
+import { leastSquares, lowess } from "../../../lib/scatterplot";
 import {
   KIND_HAS_CONNECT,
   KIND_HAS_GROUPS,
@@ -20,6 +20,11 @@ const cellNum = (c: number | string | null | undefined): number => {
 const cellText = (c: number | string | null | undefined): string =>
   c === null || c === undefined ? "" : String(c).trim();
 
+const num = (s: string): number => {
+  const t = s.trim().replace(",", ".");
+  return t === "" ? NaN : Number(t);
+};
+
 const fail = (error: string): ImpScatterResult => ({ ok: false, error });
 
 export function computeImpScatter(
@@ -33,7 +38,8 @@ export function computeImpScatter(
   }
 
   const needsGroups = KIND_HAS_GROUPS[params.kind];
-  const gCol = needsGroups && params.groupColumn ? data[params.groupColumn] : undefined;
+  const gCol =
+    needsGroups && params.groupColumn ? data[params.groupColumn] : undefined;
   if (needsGroups && !gCol) {
     return fail("This scatterplot type requires a grouping variable.");
   }
@@ -61,7 +67,25 @@ export function computeImpScatter(
     return fail("At least two complete observations are required.");
   }
 
-  // --- 2. Dividir en series ----------------------------------------------
+  // --- 2. Suavizador ------------------------------------------------------
+  const lowF = num(params.lowessF);
+  let lowSteps = num(params.lowessSteps);
+  if (params.showLowess) {
+    if (!Number.isFinite(lowF) || lowF <= 0 || lowF > 1) {
+      return fail("The degree of smoothing must be between 0 and 1.");
+    }
+    if (
+      !Number.isFinite(lowSteps) ||
+      lowSteps < 0 ||
+      !Number.isInteger(lowSteps)
+    ) {
+      return fail("The number of steps must be a non-negative whole number.");
+    }
+    // Mas de 5 pasos no cambia el resultado y solo cuesta tiempo.
+    lowSteps = Math.min(5, lowSteps);
+  }
+
+  // --- 3. Dividir en series ----------------------------------------------
   const labels = gCol
     ? [...new Set(pts.map((p) => p.g))].sort((a, b) =>
         a.localeCompare(b, undefined, { numeric: true })
@@ -83,7 +107,13 @@ export function computeImpScatter(
       : sub;
     const x = ord.map((p) => p.x);
     const y = ord.map((p) => p.y);
-    return { label, x, y, fit: wantFit ? leastSquares(x, y) : null };
+    return {
+      label,
+      x,
+      y,
+      fit: wantFit ? leastSquares(x, y) : null,
+      smooth: params.showLowess ? lowess(x, y, lowF, lowSteps) : null,
+    };
   });
 
   const allX = pts.map((p) => p.x);
@@ -91,8 +121,7 @@ export function computeImpScatter(
 
   const xTitle = params.xColumn;
   const yTitle = params.yColumn;
-  const title =
-    params.title.trim() || `Scatterplot of ${yTitle} vs ${xTitle}`;
+  const title = params.title.trim() || `Scatterplot of ${yTitle} vs ${xTitle}`;
 
   return {
     ok: true,
@@ -106,5 +135,17 @@ export function computeImpScatter(
     overallFit: leastSquares(allX, allY),
     n: pts.length,
     nMissing,
+    lowess: params.showLowess
+      ? {
+          on: true,
+          f: lowF,
+          steps: lowSteps,
+          // Indicativo: con grupos, cada serie usa su propio tamano.
+          q: Math.max(
+            2,
+            Math.min(pts.length, Math.floor(lowF * pts.length + 1e-9))
+          ),
+        }
+      : null,
   };
 }
