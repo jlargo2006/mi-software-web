@@ -207,9 +207,10 @@ export default function HTTwoProportionsResults({
                 )}
               </tbody>
             </table>
-            {!r.usePooled && !r.shiftedNull && (
+            {r.usePooled && (
               <p className="mt-2 text-xs text-gray-600">
-                The test uses separate variances instead of the pooled estimate.
+                The test uses the pooled estimate of the proportion; the interval
+                always uses separate variances.
               </p>
             )}
             {r.shiftedNull && (
