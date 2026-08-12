@@ -18,6 +18,7 @@ import pss2SampleT from "./pss/twosamplet";
 import pssAnova from "./pss/anova";
 import pssOneProportion from "./pss/oneproportion";
 import pssTwoProportions from "./pss/twoproportions";
+import pssPairedT from "./pss/pairedt";
 import ht1SampleT from "./ht/onesamplet";
 import htAnova1Way from "./ht/anova1way";
 import htTwoSampleT from "./ht/twosamplet";
@@ -51,6 +52,7 @@ const ALL: ArtifactDefinition[] = [
   pssAnova,
   pssOneProportion,
   pssTwoProportions,
+  pssPairedT,
   ht1SampleT,
   htAnova1Way,
   htTwoSampleT,
