@@ -152,6 +152,7 @@ export const PHASES: RibbonPhase[] = [
           { id: "moodsmedian", label: "Mood's Median Test", tool: "htMoodsMedian", enabled: true },
           { id: "kruskalwallis", label: "Kruskal-Wallis Test", tool: "htKruskalWallis", enabled: true },
           { id: "twoproportions", label: "2 Proportions", tool: "htTwoProportions", enabled: true },
+          { id: "oneproportion", label: "1 Proportion", tool: "htOneProportion", enabled: true },
           // p.396 | mtw: Var_Comp.mtw
           { id: "varComp", label: "Variance Comparison", tool: null, enabled: false },
           // (—) proposed – attribute data hypothesis test
