@@ -47,6 +47,10 @@ export const KIND_HAS_CONNECT: Record<ScatterKind, boolean> = {
   connectGroups: true,
 };
 
+/** Valores por defecto del suavizador, los mismos de Minitab. */
+export const LOWESS_F_DEFAULT = "0,5";
+export const LOWESS_STEPS_DEFAULT = "2";
+
 export interface ImpScatterParams {
   kind: ScatterKind;
   yColumn: string;
@@ -56,6 +60,16 @@ export interface ImpScatterParams {
   /** Titulo del grafico. Vacio: se genera automaticamente. */
   title: string;
   showEquation: boolean;
+
+  /**
+   * Suavizador lowess. Es independiente del tipo de grafico: se superpone a
+   * cualquiera de las seis variantes.
+   */
+  showLowess: boolean;
+  /** Grado de suavizado f, la fraccion de puntos de cada vecindario. */
+  lowessF: string;
+  /** Pasos de robustez. 0 desactiva la reponderacion. */
+  lowessSteps: string;
 }
 
 export const IMPSCATTER_DEFAULT: ImpScatterParams = {
@@ -65,6 +79,9 @@ export const IMPSCATTER_DEFAULT: ImpScatterParams = {
   groupColumn: "",
   title: "",
   showEquation: true,
+  showLowess: false,
+  lowessF: LOWESS_F_DEFAULT,
+  lowessSteps: LOWESS_STEPS_DEFAULT,
 };
 
 /** Ajuste por minimos cuadrados de una serie. */
@@ -91,6 +108,8 @@ export interface ScatterSeries {
   y: number[];
   /** Ajuste propio de la serie. Null si no procede o si faltan puntos. */
   fit: ScatterFit | null;
+  /** Curva suavizada, ya ordenada por x. Null si no se pidio o no cabe. */
+  smooth: { x: number[]; y: number[] } | null;
 }
 
 export interface ImpScatterModel {
@@ -104,6 +123,8 @@ export interface ImpScatterModel {
   n: number;
   /** Pares descartados por tener algun valor vacio o no numerico. */
   nMissing: number;
+  /** Parametros efectivos del suavizador, ya validados. */
+  lowess: { on: boolean; f: number; steps: number; q: number } | null;
 }
 
 export type ImpScatterResult =
