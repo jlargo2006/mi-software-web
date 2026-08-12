@@ -91,8 +91,29 @@ export default function ImpScatterResults({
         mode: "lines",
         x: [xMin, xMax],
         y: [b0 + b1 * xMin, b0 + b1 * xMax],
-        line: { color, width: 2, dash: grouped ? "solid" : "solid" },
+        line: { color, width: 2 },
         name: grouped ? `${s.label} fit` : "Fitted line",
+        showlegend: false,
+        hoverinfo: "skip",
+      } as unknown as Data);
+    }
+
+    // El suavizador se superpone a cualquier variante. Se distingue de la
+    // recta por el trazo discontinuo y el grosor.
+    if (s.smooth) {
+      traces.push({
+        type: "scatter",
+        mode: "lines",
+        x: s.smooth.x,
+        y: s.smooth.y,
+        line: {
+          color,
+          width: 2.5,
+          dash: "dot",
+          shape: "spline",
+          smoothing: 0.6,
+        },
+        name: grouped ? `${s.label} smooth` : "Lowess",
         showlegend: false,
         hoverinfo: "skip",
       } as unknown as Data);
@@ -131,7 +152,10 @@ export default function ImpScatterResults({
             {r.title}
           </h3>
 
-          <div className="border border-gray-200 rounded" style={{ height: 420 }}>
+          <div
+            className="border border-gray-200 rounded"
+            style={{ height: 420 }}
+          >
             <ResultChart data={traces} layout={{ autosize: true, ...layout }} />
           </div>
 
@@ -162,6 +186,18 @@ export default function ImpScatterResults({
               {r.n} point(s) plotted
               {grouped ? ` in ${r.series.length} group(s)` : ""}.
             </p>
+            {r.lowess && (
+              <p>
+                Lowess smoother: degree of smoothing {f(r.lowess.f, 2)} (
+                {r.lowess.q} of {r.n} points per neighbourhood),{" "}
+                {r.lowess.steps} step(s).
+              </p>
+            )}
+            {r.lowess && r.series.some((s) => !s.smooth) && (
+              <p className="text-amber-700">
+                Some series have fewer than three points: no smoother drawn.
+              </p>
+            )}
             {r.nMissing > 0 && (
               <p className="text-amber-700">
                 {r.nMissing} row(s) dropped: a value was missing or
