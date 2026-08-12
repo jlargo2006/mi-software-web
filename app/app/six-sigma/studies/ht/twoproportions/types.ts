@@ -48,7 +48,7 @@ export const HTTWOPROPORTIONS_DEFAULT: HTTwoProportionsParams = {
   hypothesizedDifference: "0",
   alternative: "two-sided",
   confidenceLevel: "95",
-  usePooled: true,
+  usePooled: false,
   showFisher: true,
 };
 
