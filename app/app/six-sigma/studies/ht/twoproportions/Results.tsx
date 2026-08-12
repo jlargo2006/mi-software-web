@@ -207,9 +207,9 @@ export default function HTTwoProportionsResults({
                 )}
               </tbody>
             </table>
-            {r.continuityCorrection && (
+            {!r.usePooled && !r.shiftedNull && (
               <p className="mt-2 text-xs text-gray-600">
-                The normal approximation includes a continuity correction.
+                The test uses separate variances instead of the pooled estimate.
               </p>
             )}
             {r.shiftedNull && (
@@ -236,8 +236,7 @@ export default function HTTwoProportionsResults({
               />
             </div>
             <p className="mt-2 text-xs italic text-gray-600">
-              Individual 95% Wald intervals, shown for reference only: the test
-              uses the pooled proportion.
+              Individual 95% Wald intervals, shown for reference only.
             </p>
           </section>
         </div>
