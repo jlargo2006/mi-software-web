@@ -184,7 +184,7 @@ export const PHASES: RibbonPhase[] = [
     name: "Improve",
     tools: [
       // p.433 | mtw: RB Stats Correlation.mtw
-      { id: "correlation", label: "Correlation / Scatterplot", tool: null, enabled: false },
+      { id: "scatterplot", label: "Scatterplot", tool: "impScatter", enabled: true },
 
       // ---- Regression (dropdown) -----------------------------------------
       {
