@@ -24,6 +24,8 @@ const impBoxCox: AnalysisDefinition<ImpBoxCoxParams, ImpBoxCoxResult> = {
     [p.column, p.storeColumn, p.subgroupSize].filter((c): c is string =>
       Boolean(c && c.trim() !== "" && !/^\d+$/.test(c.trim()))
     ),
+  outputs: (_p, r) =>
+    r.ok ? [{ column: r.storeColumn, values: r.storeMatrix }] : [],
 };
 
 export default impBoxCox;
