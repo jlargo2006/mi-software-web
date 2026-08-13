@@ -55,10 +55,12 @@ export interface ImpBoxCoxModel {
   usedRounded: boolean;
 
   curve: BoxCoxPoint[];
-  /** Datos originales y transformados, en el orden de la hoja. */
+  /** Datos originales y transformados, solo las filas con dato. */
   original: number[];
   transformed: number[];
   storeColumn: string;
+  /** Columna a volcar, alineada con las filas de la hoja. */
+  storeMatrix: (number | string)[];
 
   skewBefore: number;
   skewAfter: number;
