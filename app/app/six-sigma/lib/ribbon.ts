@@ -199,7 +199,7 @@ export const PHASES: RibbonPhase[] = [
           // p.457 | mtw: Mailing Response vs. Discount.mtw
 //          { id: "regNonlinear", label: "Non-Linear", tool: "impRegression", enabled: true },
           // p.467 | mtw: Flight Regression MLR.mtw
-          { id: "regMultiple", label: "Multiple Linear", tool: null, enabled: false },
+//          { id: "regMultiple", label: "Multiple Linear", tool: null, enabled: false },
         ],
       },
 
@@ -248,7 +248,7 @@ export const PHASES: RibbonPhase[] = [
       },
 
       // (—) proposed
-      { id: "controlPlan", label: "Control Plan", tool: null, enabled: false },
+//      { id: "controlPlan", label: "Control Plan", tool: null, enabled: false },
     ],
   },
 ];
