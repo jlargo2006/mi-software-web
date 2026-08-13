@@ -208,19 +208,32 @@ export default function ImpRegResults({
     const zLo = Math.min(...scores);
     const zHi = Math.max(...scores);
 
-    // Anchura de clase: se apunta a raiz(n) barras y se redondea la anchura
-    // al 1, 2 o 5 mas proximo en su decada, para que los limites caigan en
-    // valores legibles. El automatico de Plotly da demasiado pocas barras.
+    // Anchura de clase: se apunta a 2*raiz(n) barras y se prueban los pasos
+    // 1, 2 y 5 de la decada, quedandose con el que deje el numero de barras
+    // mas cerca del objetivo. Redondear siempre hacia arriba, como hacia la
+    // version anterior, daba la mitad de barras de las debidas.
     const rMin = Math.min(...r.residuals);
     const rMax = Math.max(...r.residuals);
     const span = rMax - rMin;
     let binSize = 1;
     if (span > 0) {
-      const target = span / Math.max(4, Math.ceil(Math.sqrt(r.n)));
-      const pow = Math.pow(10, Math.floor(Math.log10(target)));
-      const norm = target / pow;
-      const step = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
-      binSize = step * pow;
+      const targetBins = Math.max(6, Math.ceil(2 * Math.sqrt(r.n)));
+      const raw = span / targetBins;
+      const pow = Math.pow(10, Math.floor(Math.log10(raw)));
+      let best = pow;
+      let bestErr = Infinity;
+      for (const step of [1, 2, 5, 10]) {
+        const w = step * pow;
+        const bins = Math.ceil(rMax / w) - Math.floor(rMin / w);
+        // Se penaliza quedarse corto de barras: perder detalle es peor que
+        // tener alguna clase vacia de mas.
+        const err = Math.abs(bins - targetBins) + (bins < 5 ? 10 : 0);
+        if (err < bestErr) {
+          bestErr = err;
+          best = w;
+        }
+      }
+      binSize = best;
     }
     const resBins = {
       start: Math.floor(rMin / binSize) * binSize,
