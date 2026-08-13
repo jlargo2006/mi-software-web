@@ -44,7 +44,7 @@ export default function ImpBoxCoxResults({
     } as unknown as Data,
   ];
 
-  const vline = (xv: number, text: string): Partial<Shape> => ({
+  const vline = (xv: number): Partial<Shape> => ({
     type: "line",
     x0: xv,
     x1: xv,
@@ -65,8 +65,8 @@ export default function ImpBoxCoxResults({
       line: { color: GREY, width: 1, dash: "dash" },
     },
   ];
-  if (Number.isFinite(r.lowerCL)) shapes.push(vline(r.lowerCL, "Lower CL"));
-  if (Number.isFinite(r.upperCL)) shapes.push(vline(r.upperCL, "Upper CL"));
+  if (Number.isFinite(r.lowerCL)) shapes.push(vline(r.lowerCL));
+  if (Number.isFinite(r.upperCL)) shapes.push(vline(r.upperCL));
 
   const layout: Partial<Layout> = {
     margin: { l: 70, r: 170, t: 20, b: 55 },
@@ -84,7 +84,7 @@ export default function ImpBoxCoxResults({
               y: 0.98,
               text: "Lower CL",
               showarrow: false,
-              textangle: -90,
+              textangle: "-90",
               xanchor: "right" as const,
               yanchor: "top" as const,
               font: { size: 10, color: GREY },
@@ -99,7 +99,7 @@ export default function ImpBoxCoxResults({
               y: 0.98,
               text: "Upper CL",
               showarrow: false,
-              textangle: -90,
+              textangle: "-90",
               xanchor: "left" as const,
               yanchor: "top" as const,
               font: { size: 10, color: GREY },
