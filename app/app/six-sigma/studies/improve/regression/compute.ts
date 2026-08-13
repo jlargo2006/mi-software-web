@@ -202,14 +202,34 @@ export function computeImpReg(
     };
   }
 
-  // --- 7. Residuos estandarizados -----------------------------------------
-  // Se dividen por s * raiz(1 - h), con h la palanca de cada punto, de modo
-  // que todos comparten varianza teorica 1.
-  const stdResiduals = x.map((xv, i) => {
+  // --- 7. Residuos tipificados --------------------------------------------
+  // La palanca h mide cuanto pesa cada punto en su propio ajuste. Sale de
+  // la varianza del valor ajustado, ya calculada por predictAt.
+  const leverage = x.map((xv) => {
     const { seFit } = predictAt(fit, xv);
-    const h = fit.mse > 0 ? (seFit * seFit) / fit.mse : 0;
-    const den = fit.s * Math.sqrt(Math.max(1e-12, 1 - h));
-    return fit.residuals[i] / den;
+    return fit.mse > 0 ? (seFit * seFit) / fit.mse : 0;
+  });
+
+  // Estandarizado: residuo entre su propio error tipico. Todos comparten
+  // varianza teorica 1, asi que son comparables entre si.
+  const stdResiduals = fit.residuals.map((e, i) => {
+    const den = fit.s * Math.sqrt(Math.max(1e-12, 1 - leverage[i]));
+    return e / den;
+  });
+
+  // Eliminado: el mismo cociente pero con la varianza del error estimada
+  // SIN esa observacion. Se obtiene de la identidad
+  //   s(i)^2 = ((n-p)*MSE - e^2/(1-h)) / (n-p-1)
+  // que evita reajustar el modelo n veces. Detecta puntos influyentes que
+  // el estandarizado disimula, porque un atipico infla el MSE que lo divide.
+  const dfDel = fit.dfError - 1;
+  const delResiduals = fit.residuals.map((e, i) => {
+    const h = leverage[i];
+    const om = Math.max(1e-12, 1 - h);
+    if (dfDel <= 0) return NaN;
+    const s2i = (fit.dfError * fit.mse - (e * e) / om) / dfDel;
+    if (!(s2i > 0)) return NaN;
+    return e / Math.sqrt(s2i * om);
   });
 
   return {
@@ -233,6 +253,8 @@ export function computeImpReg(
     fitted: fit.fitted,
     residuals: fit.residuals,
     stdResiduals,
+    delResiduals,
+    leverage,
     order_: pts.map((p) => p.k),
     curve,
     prediction,
