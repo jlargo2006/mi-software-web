@@ -14,6 +14,21 @@ export const DEGREE_ORDER: Record<RegDegree, number> = {
   cubic: 3,
 };
 
+export type ResidualType = "regular" | "standardized" | "deleted";
+
+export const RESIDUAL_LABEL: Record<ResidualType, string> = {
+  regular: "Regular",
+  standardized: "Standardized",
+  deleted: "Deleted",
+};
+
+/** Rotulo del eje segun el tipo de residuo elegido. */
+export const RESIDUAL_AXIS: Record<ResidualType, string> = {
+  regular: "Residual",
+  standardized: "Standardized Residual",
+  deleted: "Deleted Residual",
+};
+
 export interface ImpRegParams {
   yColumn: string;
   xColumn: string;
@@ -25,6 +40,11 @@ export interface ImpRegParams {
   /** Prediccion en un valor concreto de X. Vacio: no se calcula. */
   predictX: string;
   showResidualPlots: boolean;
+  /**
+   * Tipo de residuo de los graficos. No altera el ajuste ni las tablas: solo
+   * la escala en que se representan los residuos.
+   */
+  residualType: ResidualType;
 }
 
 export const IMPREG_DEFAULT: ImpRegParams = {
@@ -36,6 +56,7 @@ export const IMPREG_DEFAULT: ImpRegParams = {
   confidenceLevel: "95",
   predictX: "",
   showResidualPlots: true,
+  residualType: "regular",
 };
 
 /** Una fila de la tabla de analisis de la varianza. */
@@ -107,8 +128,12 @@ export interface ImpRegModel {
   y: number[];
   fitted: number[];
   residuals: number[];
-  /** Residuos estandarizados, para el grafico normal. */
+  /** Residuos estandarizados, internamente studentizados. */
   stdResiduals: number[];
+  /** Residuos eliminados, externamente studentizados. */
+  delResiduals: number[];
+  /** Palanca de cada observacion, en el orden de x. */
+  leverage: number[];
   /** Orden original en la hoja, para el grafico de secuencia. */
   order_: number[];
 
