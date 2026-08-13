@@ -35,6 +35,7 @@ import htChiSqAssoc from "./ht/chisqassociation";
 import impScatter from "./improve/scatterplot";
 import impCorrelation from "./improve/correlation";
 import impRegression from "./improve/regression";
+import impBoxCox from "./improve/boxcox";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
@@ -72,6 +73,7 @@ const ALL: ArtifactDefinition[] = [
   impScatter,
   impCorrelation,
   impRegression,
+  impBoxCox,
 ];
 
 export const REGISTRY: Record<string, ArtifactDefinition> = Object.fromEntries(
