@@ -119,10 +119,7 @@ export function computeImpBoxCox(
     subgroupSize = m;
     for (let k = 0; k < raw.length; k += m) {
       groups.push(
-        Array.from(
-          { length: Math.min(m, raw.length - k) },
-          (_, j) => k + j
-        )
+        Array.from({ length: Math.min(m, raw.length - k) }, (_, j) => k + j)
       );
     }
   }
@@ -140,7 +137,7 @@ export function computeImpBoxCox(
   const fit = boxCoxFit(raw, groups, chi2);
   if (!fit) return fail("Lambda cannot be estimated from these data.");
 
-  // Valor conveniente mas proximo, que es el que Minitab aplica.
+  // Valor conveniente mas proximo, que es el que se aplica por omision.
   let rounded = ROUND_GRID[0];
   for (const g of ROUND_GRID) {
     if (Math.abs(g - fit.lambdaHat) < Math.abs(rounded - fit.lambdaHat)) {
@@ -170,9 +167,6 @@ export function computeImpBoxCox(
   }
   const target = data[store];
   if (!target) return fail(`Column "${store}" does not exist.`);
-  if (target.values.some((c) => cellText(c) !== "")) {
-    return fail(`Column "${store}" is not empty.`);
-  }
 
   // --- 6. Curva ------------------------------------------------------------
   // Se muestra el tramo en que la desviacion no pasa de cuatro veces el
@@ -185,7 +179,33 @@ export function computeImpBoxCox(
     if (Number.isFinite(s) && s <= cap) curve.push({ lambda: l, sd: s });
   }
 
+  // --- 7. Transformacion y volcado ----------------------------------------
   const transformed = raw.map((v) => bcTransform(v, lambdaUsed));
+
+  // La columna se alinea con las filas de la hoja: las filas sin dato quedan
+  // vacias, para que cada valor caiga frente a su original.
+  const storeMatrix: (number | string)[] = col.values.map(() => "");
+  rowIdx.forEach((row, k) => {
+    storeMatrix[row] = transformed[k];
+  });
+
+  // La comprobacion de columna vacia va aqui, no antes: al volver a pulsar Run
+  // la columna ya contiene lo que escribimos nosotros, y eso no es un choque.
+  // Se tolera si coincide celda a celda, y se rechaza si hay otra cosa.
+  const clash = target.values.some((c, i) => {
+    const txt = cellText(c);
+    if (txt === "") return false;
+    const mine = storeMatrix[i];
+    if (typeof mine !== "number") return true;
+    const cur = cellNum(c);
+    // Margen amplio: la celda puede haberse guardado redondeada.
+    return !Number.isFinite(cur) || Math.abs(cur - mine) > 1e-6;
+  });
+  if (clash) {
+    return fail(
+      `Column "${store}" already holds different data. Clear it, or pick another column.`
+    );
+  }
 
   return {
     ok: true,
@@ -208,6 +228,7 @@ export function computeImpBoxCox(
     original: raw,
     transformed,
     storeColumn: store,
+    storeMatrix,
     skewBefore: skewness(raw),
     skewAfter: skewness(transformed),
     sdBefore: sdOf(raw),
