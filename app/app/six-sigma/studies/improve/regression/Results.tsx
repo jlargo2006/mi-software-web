@@ -247,6 +247,7 @@ export default function ImpRegResults({
     };
 
 
+
     // El modelo trabaja ordenado por x, pero este grafico necesita el orden
     // de la hoja. Se invierte la permutacion una sola vez.
     const bySheet = r.order_
