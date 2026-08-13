@@ -25,12 +25,10 @@ const fsig = (v: number, sig: number): string => {
   return v.toFixed(dec).replace(".", ",");
 };
 
-/** Enteros con separador de millar, para las sumas de cuadrados grandes. */
+/** Enteros para las sumas de cuadrados grandes, un decimal para el resto. */
 const fss = (v: number): string => {
   if (!Number.isFinite(v)) return "";
-  return Math.abs(v) >= 100000
-    ? Math.round(v).toString()
-    : fx(v, Math.abs(v) >= 1000 ? 1 : 1);
+  return Math.abs(v) >= 100000 ? Math.round(v).toString() : fx(v, 1);
 };
 
 export default function ImpRegResults({
@@ -210,6 +208,34 @@ export default function ImpRegResults({
     const zLo = Math.min(...scores);
     const zHi = Math.max(...scores);
 
+    // Anchura de clase: se apunta a raiz(n) barras y se redondea la anchura
+    // al 1, 2 o 5 mas proximo en su decada, para que los limites caigan en
+    // valores legibles. El automatico de Plotly da demasiado pocas barras.
+    const rMin = Math.min(...r.residuals);
+    const rMax = Math.max(...r.residuals);
+    const span = rMax - rMin;
+    let binSize = 1;
+    if (span > 0) {
+      const target = span / Math.max(4, Math.ceil(Math.sqrt(r.n)));
+      const pow = Math.pow(10, Math.floor(Math.log10(target)));
+      const norm = target / pow;
+      const step = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
+      binSize = step * pow;
+    }
+    const resBins = {
+      start: Math.floor(rMin / binSize) * binSize,
+      end: Math.ceil(rMax / binSize) * binSize + binSize / 2,
+      size: binSize,
+    };
+
+    // El modelo trabaja ordenado por x, pero este grafico necesita el orden
+    // de la hoja. Se invierte la permutacion una sola vez.
+    const bySheet = r.order_
+      .map((k, i) => ({ k, i }))
+      .sort((a, b) => a.k - b.k);
+    const orderX = bySheet.map((e) => e.k);
+    const orderY = bySheet.map((e) => r.residuals[e.i]);
+
     resTraces.push(
       {
         type: "scatter",
@@ -245,10 +271,12 @@ export default function ImpRegResults({
         showlegend: false,
         hovertemplate: "Fit: %{x:.2f}<br>Residual: %{y:.3f}<extra></extra>",
       } as unknown as Data,
-      // 3. Histograma de residuos.
+      // 3. Histograma de residuos, con anchura de clase explicita.
       {
         type: "histogram",
         x: r.residuals,
+        xbins: resBins,
+        autobinx: false,
         marker: { color: BLUE, line: { color: "#ffffff", width: 1 } },
         xaxis: "x3",
         yaxis: "y3",
@@ -259,12 +287,8 @@ export default function ImpRegResults({
       {
         type: "scatter",
         mode: "lines+markers",
-        x: r.order_,
-        y: r.order_.map((_, i) => {
-          // Se reordena al orden original: el modelo trabaja ordenado por x.
-          const idx = r.order_.indexOf(i + 1);
-          return r.residuals[idx];
-        }),
+        x: orderX,
+        y: orderY,
         marker: { color: BLUE, size: 6 },
         line: { color: BLUE, width: 1 },
         xaxis: "x4",
@@ -317,6 +341,9 @@ export default function ImpRegResults({
         title: { text: "Observation Order" },
         domain: [0.56, 1],
         anchor: "y4",
+        // Con pocas observaciones el automatico rotula medios enteros.
+        dtick: Math.max(1, Math.ceil(r.n / 12)),
+        tick0: 1,
       },
       yaxis4: { title: { text: "Residual" }, domain: [0, 0.42], anchor: "x4" },
       annotations: [
