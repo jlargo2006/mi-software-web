@@ -1,7 +1,7 @@
 // app/app/six-sigma/studies/improve/regression/Results.tsx
 "use client";
 import React from "react";
-import type { Data, Layout } from "plotly.js";
+import type { Data, Layout, Shape } from "plotly.js";
 import ReportLayout from "../../../components/ReportLayout";
 import ResultChart from "../../../components/ResultChart";
 import { blomScores } from "./compute";
@@ -274,20 +274,22 @@ export default function ImpRegResults({
       } as unknown as Data
     );
 
+    // Los ejes se tipan con los literales de Plotly: un string genérico no
+    // es asignable a xref/yref.
     const zeroLine = (
-      xref: string,
-      yref: string,
+      xref: Shape["xref"],
+      yref: Shape["yref"],
       x0: number,
       x1: number
-    ) => ({
-      type: "line" as const,
+    ): Partial<Shape> => ({
+      type: "line",
       xref,
       yref,
       x0,
       x1,
       y0: 0,
       y1: 0,
-      line: { color: "#9ca3af", width: 1, dash: "dash" as const },
+      line: { color: "#9ca3af", width: 1, dash: "dash" },
     });
 
     resLayout = {
