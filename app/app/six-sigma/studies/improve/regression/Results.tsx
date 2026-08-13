@@ -210,8 +210,7 @@ export default function ImpRegResults({
 
     // Anchura de clase: se apunta a 2*raiz(n) barras y se prueban los pasos
     // 1, 2 y 5 de la decada, quedandose con el que deje el numero de barras
-    // mas cerca del objetivo. Redondear siempre hacia arriba, como hacia la
-    // version anterior, daba la mitad de barras de las debidas.
+    // mas cerca del objetivo.
     const rMin = Math.min(...r.residuals);
     const rMax = Math.max(...r.residuals);
     const span = rMax - rMin;
@@ -224,7 +223,10 @@ export default function ImpRegResults({
       let bestErr = Infinity;
       for (const step of [1, 2, 5, 10]) {
         const w = step * pow;
-        const bins = Math.ceil(rMax / w) - Math.floor(rMin / w);
+        // Se cuenta sobre la rejilla desplazada, la que se usa de verdad.
+        const lo = Math.floor(rMin / w + 0.5) - 0.5;
+        const hi = Math.ceil(rMax / w - 0.5) + 0.5;
+        const bins = Math.round(hi - lo);
         // Se penaliza quedarse corto de barras: perder detalle es peor que
         // tener alguna clase vacia de mas.
         const err = Math.abs(bins - targetBins) + (bins < 5 ? 10 : 0);
@@ -235,11 +237,15 @@ export default function ImpRegResults({
       }
       binSize = best;
     }
+    // La rejilla se desplaza media clase para que el cero quede en el centro
+    // de una barra y no en la frontera entre dos: los residuos son
+    // simetricos respecto al cero y el histograma debe reflejarlo.
     const resBins = {
-      start: Math.floor(rMin / binSize) * binSize,
-      end: Math.ceil(rMax / binSize) * binSize + binSize / 2,
+      start: (Math.floor(rMin / binSize + 0.5) - 0.5) * binSize,
+      end: (Math.ceil(rMax / binSize - 0.5) + 0.5) * binSize + binSize / 2,
       size: binSize,
     };
+
 
     // El modelo trabaja ordenado por x, pero este grafico necesita el orden
     // de la hoja. Se invierte la permutacion una sola vez.
