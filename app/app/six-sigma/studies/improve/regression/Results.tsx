@@ -6,7 +6,11 @@ import ReportLayout from "../../../components/ReportLayout";
 import ResultChart from "../../../components/ResultChart";
 import { blomScores } from "./compute";
 import { normalInv } from "../../../lib/regression";
-import type { ImpRegParams, ImpRegResult } from "./types";
+import {
+  RESIDUAL_AXIS,
+  type ImpRegParams,
+  type ImpRegResult,
+} from "./types";
 
 const GREEN = "#00674d";
 const RED = "#b91c1c";
@@ -194,16 +198,31 @@ export default function ImpRegResults({
   let resLayout: Partial<Layout> = {};
 
   if (params.showResidualPlots) {
+    // Los cuatro graficos usan la serie elegida. Cambia la escala de los dos
+    // de la izquierda en el eje X, y de los dos de la derecha en el eje Y.
+    const rawRes =
+      params.residualType === "standardized"
+        ? r.stdResiduals
+        : params.residualType === "deleted"
+          ? r.delResiduals
+          : r.residuals;
+    // Los eliminados pueden no existir si no quedan grados de libertad.
+    const useRes = rawRes.every((v) => Number.isFinite(v))
+      ? rawRes
+      : r.residuals;
+    const resName = RESIDUAL_AXIS[
+      useRes === rawRes ? params.residualType : "regular"
+    ];
+
     // 1. Normal: residuos ordenados frente a su puntuacion normal.
-    const sorted = [...r.residuals].sort((a, b) => a - b);
+    const sorted = [...useRes].sort((a, b) => a - b);
     const scores = blomScores(r.n);
     const pcts = [1, 5, 10, 25, 50, 75, 90, 95, 99];
 
     // Recta de referencia: media y desviacion de los residuos.
-    const mr = r.residuals.reduce((a, b) => a + b, 0) / r.n;
+    const mr = useRes.reduce((a, b) => a + b, 0) / r.n;
     const sr = Math.sqrt(
-      r.residuals.reduce((a, v) => a + (v - mr) * (v - mr), 0) /
-        Math.max(1, r.n - 1)
+      useRes.reduce((a, v) => a + (v - mr) * (v - mr), 0) / Math.max(1, r.n - 1)
     );
     const zLo = Math.min(...scores);
     const zHi = Math.max(...scores);
@@ -211,8 +230,8 @@ export default function ImpRegResults({
     // Anchura de clase: se apunta a 2*raiz(n) barras y se prueban los pasos
     // 1, 2 y 5 de la decada, quedandose con el que deje el numero de barras
     // mas cerca del objetivo.
-    const rMin = Math.min(...r.residuals);
-    const rMax = Math.max(...r.residuals);
+    const rMin = Math.min(...useRes);
+    const rMax = Math.max(...useRes);
     const span = rMax - rMin;
     let binSize = 1;
     if (span > 0) {
@@ -246,15 +265,13 @@ export default function ImpRegResults({
       size: binSize,
     };
 
-
-
     // El modelo trabaja ordenado por x, pero este grafico necesita el orden
     // de la hoja. Se invierte la permutacion una sola vez.
     const bySheet = r.order_
       .map((k, i) => ({ k, i }))
       .sort((a, b) => a.k - b.k);
     const orderX = bySheet.map((e) => e.k);
-    const orderY = bySheet.map((e) => r.residuals[e.i]);
+    const orderY = bySheet.map((e) => useRes[e.i]);
 
     resTraces.push(
       {
@@ -266,7 +283,7 @@ export default function ImpRegResults({
         xaxis: "x",
         yaxis: "y",
         showlegend: false,
-        hovertemplate: "Residual: %{x:.3f}<extra></extra>",
+        hovertemplate: `${resName}: %{x:.3f}<extra></extra>`,
       } as unknown as Data,
       {
         type: "scatter",
@@ -284,24 +301,24 @@ export default function ImpRegResults({
         type: "scatter",
         mode: "markers",
         x: r.fitted,
-        y: r.residuals,
+        y: useRes,
         marker: { color: BLUE, size: 6 },
         xaxis: "x2",
         yaxis: "y2",
         showlegend: false,
-        hovertemplate: "Fit: %{x:.2f}<br>Residual: %{y:.3f}<extra></extra>",
+        hovertemplate: `Fit: %{x:.2f}<br>${resName}: %{y:.3f}<extra></extra>`,
       } as unknown as Data,
       // 3. Histograma de residuos, con anchura de clase explicita.
       {
         type: "histogram",
-        x: r.residuals,
+        x: useRes,
         xbins: resBins,
         autobinx: false,
         marker: { color: BLUE, line: { color: "#ffffff", width: 1 } },
         xaxis: "x3",
         yaxis: "y3",
         showlegend: false,
-        hovertemplate: "Residual: %{x}<br>Frequency: %{y}<extra></extra>",
+        hovertemplate: `${resName}: %{x}<br>Frequency: %{y}<extra></extra>`,
       } as unknown as Data,
       // 4. Residuos en el orden de la hoja.
       {
@@ -314,7 +331,7 @@ export default function ImpRegResults({
         xaxis: "x4",
         yaxis: "y4",
         showlegend: false,
-        hovertemplate: "Order: %{x}<br>Residual: %{y:.3f}<extra></extra>",
+        hovertemplate: `Order: %{x}<br>${resName}: %{y:.3f}<extra></extra>`,
       } as unknown as Data
     );
 
@@ -340,7 +357,7 @@ export default function ImpRegResults({
       margin: { l: 60, r: 30, t: 30, b: 50 },
       grid: { rows: 2, columns: 2, pattern: "independent" },
       showlegend: false,
-      xaxis: { title: { text: "Residual" }, domain: [0, 0.44], anchor: "y" },
+      xaxis: { title: { text: resName }, domain: [0, 0.44], anchor: "y" },
       yaxis: {
         title: { text: "Percent" },
         domain: [0.58, 1],
@@ -354,8 +371,8 @@ export default function ImpRegResults({
         domain: [0.56, 1],
         anchor: "y2",
       },
-      yaxis2: { title: { text: "Residual" }, domain: [0.58, 1], anchor: "x2" },
-      xaxis3: { title: { text: "Residual" }, domain: [0, 0.44], anchor: "y3" },
+      yaxis2: { title: { text: resName }, domain: [0.58, 1], anchor: "x2" },
+      xaxis3: { title: { text: resName }, domain: [0, 0.44], anchor: "y3" },
       yaxis3: { title: { text: "Frequency" }, domain: [0, 0.42], anchor: "x3" },
       xaxis4: {
         title: { text: "Observation Order" },
@@ -365,7 +382,7 @@ export default function ImpRegResults({
         dtick: Math.max(1, Math.ceil(r.n / 12)),
         tick0: 1,
       },
-      yaxis4: { title: { text: "Residual" }, domain: [0, 0.42], anchor: "x4" },
+      yaxis4: { title: { text: resName }, domain: [0, 0.42], anchor: "x4" },
       annotations: [
         ["Normal Probability Plot", 0.22, 1.0],
         ["Versus Fits", 0.78, 1.0],
@@ -587,6 +604,14 @@ export default function ImpRegResults({
 
           <section className="space-y-1 text-xs text-gray-600">
             <p>{r.n} observation(s) used.</p>
+            {params.showResidualPlots &&
+              params.residualType === "deleted" &&
+              !r.delResiduals.every((v) => Number.isFinite(v)) && (
+                <p className="text-amber-700">
+                  Deleted residuals are not estimable here: too few error
+                  degrees of freedom. Regular residuals are shown instead.
+                </p>
+              )}
             {r.nMissing > 0 && (
               <p className="text-amber-700">
                 {r.nMissing} row(s) dropped: a value was missing or
