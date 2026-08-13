@@ -2,13 +2,21 @@
 "use client";
 import React from "react";
 import type { ColumnInfo } from "../../../lib/columns";
-import { DEGREE_LABEL, type ImpRegParams, type RegDegree } from "./types";
+import {
+  DEGREE_LABEL,
+  RESIDUAL_LABEL,
+  type ImpRegParams,
+  type RegDegree,
+  type ResidualType,
+} from "./types";
 
 const label = "block text-sm font-medium text-gray-700 mb-1";
 const field =
   "w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-[#00674d] focus:outline-none focus:ring-1 focus:ring-[#00674d]";
 const check =
   "h-4 w-4 rounded border-gray-300 text-[#00674d] focus:ring-[#00674d]";
+const radio =
+  "h-4 w-4 border-gray-300 text-[#00674d] focus:ring-[#00674d]";
 
 export default function ImpRegControls({
   params,
@@ -67,7 +75,7 @@ export default function ImpRegControls({
               <input
                 type="radio"
                 name="reg-degree"
-                className="h-4 w-4 border-gray-300 text-[#00674d] focus:ring-[#00674d]"
+                className={radio}
                 checked={params.degree === k}
                 onChange={() => set("degree", k)}
               />
@@ -126,7 +134,7 @@ export default function ImpRegControls({
         </p>
       </div>
 
-      <div className="border-t border-gray-200 pt-4">
+      <div className="border-t border-gray-200 pt-4 space-y-3">
         <label className="flex items-center gap-2 text-sm text-gray-700">
           <input
             type="checkbox"
@@ -136,6 +144,35 @@ export default function ImpRegControls({
           />
           Four-in-one residual plots
         </label>
+
+        {params.showResidualPlots && (
+          <div>
+            <span className={label}>Residuals for Plots</span>
+            <div className="space-y-2">
+              {(Object.keys(RESIDUAL_LABEL) as ResidualType[]).map((k) => (
+                <label
+                  key={k}
+                  className="flex items-center gap-2 text-sm text-gray-700"
+                >
+                  <input
+                    type="radio"
+                    name="reg-restype"
+                    className={radio}
+                    checked={params.residualType === k}
+                    onChange={() => set("residualType", k)}
+                  />
+                  {RESIDUAL_LABEL[k]} Residual
+                </label>
+              ))}
+            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              Only rescales the plots; the fit and the tables do not change.
+              Standardized residuals are comparable across observations;
+              deleted ones re-estimate the error without each point, which
+              exposes influential values.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
