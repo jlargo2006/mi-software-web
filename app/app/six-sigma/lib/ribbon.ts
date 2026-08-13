@@ -195,9 +195,9 @@ export const PHASES: RibbonPhase[] = [
         enabled: true,
         children: [
           // p.452 | mtw: Concentrator.MTW
-          { id: "regSimple", label: "Simple Linear", tool: null, enabled: false },
+          { id: "regSimple", label: "Simple Linear", tool: "impRegression", enabled: true },
           // p.457 | mtw: Mailing Response vs. Discount.mtw
-          { id: "regNonlinear", label: "Non-Linear", tool: null, enabled: false },
+          { id: "regNonlinear", label: "Non-Linear", tool: "impRegression", enabled: true },
           // p.467 | mtw: Flight Regression MLR.mtw
           { id: "regMultiple", label: "Multiple Linear", tool: null, enabled: false },
         ],
