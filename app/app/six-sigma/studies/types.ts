@@ -11,6 +11,13 @@ export type ArtifactKind = "analysis" | "diagram";
 export interface StudyColumn { name: string; values: Cell[] }
 export type ColumnSnapshot = Record<string, StudyColumn>;
 
+/* Un volcado a la hoja: una columna por NOMBRE y sus celdas, fila a fila. */
+export interface StudyOutput {
+  column: string;
+  /** Alineado con sheet.rows: "" en las filas que no reciben valor. */
+  values: Cell[];
+}
+
 interface BaseArtifact {
   id: string;
   label: string;
@@ -44,6 +51,11 @@ export interface AnalysisDefinition<P = unknown, R = unknown> extends BaseArtifa
   // Pantalla teorica OPCIONAL: formulas, metodo y decisiones de calculo.
   // Si existe, el runner muestra el boton "Theory" en la cabecera.
   Theory?: React.FC;
+
+  // Columnas que el estudio ESCRIBE en la hoja al pulsar Run. Opcional: la
+  // inmensa mayoria de los estudios no escriben nada. El runner resuelve el
+  // nombre a indice y volca los valores con pasteData.
+  outputs?: (params: P, result: R) => StudyOutput[];
 }
 
 /* ---------- Familia 2: diagramas / formularios libres ---------- */
@@ -62,4 +74,3 @@ export type ArtifactDefinition =
   | AnalysisDefinition<any, any>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   | DiagramDefinition<any>;
-
