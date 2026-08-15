@@ -45,9 +45,9 @@ export const PHASES: RibbonPhase[] = [
       { id: "pareto", label: "Pareto Chart", tool: "pareto", enabled: true },
 
       // (—) proposed – Define phase project tools
-      { id: "sipoc", label: "SIPOC Diagram", tool: null, enabled: false },
-      { id: "charter", label: "Project Charter", tool: null, enabled: false },
-      { id: "ctqTree", label: "CTQ Tree", tool: null, enabled: false },
+//      { id: "sipoc", label: "SIPOC Diagram", tool: null, enabled: false },
+//      { id: "charter", label: "Project Charter", tool: null, enabled: false },
+//      { id: "ctqTree", label: "CTQ Tree", tool: null, enabled: false },
     ],
   },
 
@@ -121,7 +121,7 @@ export const PHASES: RibbonPhase[] = [
       { id: "multiVari", label: "Multi-Vari Chart", tool: "multiVari", enabled: true },
      
       // p.272 | mtw: Die Example
-      { id: "clt", label: "Sampling Distributions / CLT", tool: null, enabled: false },
+//      { id: "clt", label: "Sampling Distributions / CLT", tool: null, enabled: false },
 
       // ---- Hypothesis Tests (dropdown) -----------------------------------
       {
@@ -151,10 +151,9 @@ export const PHASES: RibbonPhase[] = [
           { id: "mannwhitney", label: "Mann-Whitney (2-Sample Median)", tool: "htMannWhitney", enabled: true },
           { id: "moodsmedian", label: "Mood's Median Test", tool: "htMoodsMedian", enabled: true },
           { id: "kruskalwallis", label: "Kruskal-Wallis Test", tool: "htKruskalWallis", enabled: true },
-          // p.396 | mtw: Var_Comp.mtw
-          { id: "varComp", label: "Variance Comparison", tool: null, enabled: false },
-          // (—) proposed – attribute data hypothesis test
-          { id: "chiSquare", label: "Chi-Square Test", tool: null, enabled: false },
+          { id: "oneproportion", label: "1 Proportion", tool: "htOneProportion", enabled: true },
+          { id: "twoproportions", label: "2 Proportions", tool: "htTwoProportions", enabled: true },
+          { id: "chisqassociation", label: "Chi-Square Test for Association", tool: "htChiSqAssoc", enabled: true },
         ],
       },
 
@@ -167,10 +166,10 @@ export const PHASES: RibbonPhase[] = [
         children: [
           { id: "pssT1",       label: "1-Sample t-test",             tool: "pss1SampleT", enabled: true  },
           { id: "pssT2",       label: "2-Sample t-test",             tool: "pss2SampleT", enabled: true  },
-          { id: "pssTPaired",  label: "Paired t-test",               tool: null,          enabled: false },
-          { id: "pssEqualVar", label: "Test for Equal Variance",     tool: null,          enabled: false },
+          { id: "psspairedt",   label: "Paired t",                   tool: "pssPairedT",  enabled: true },
+   //       { id: "pssEqualVar", label: "Test for Equal Variance",     tool: null,          enabled: false },
           { id: "pssAnova",    label: "One-Way ANOVA",               tool: "pssAnova",    enabled: true },
-          { id: "pssSign",     label: "1-Sample Sign / Wilcoxon",    tool: null,          enabled: false },
+   //       { id: "pssSign",     label: "1-Sample Sign / Wilcoxon",    tool: null,          enabled: false },
           { id: "pssProp1",    label: "1 Proportion",                tool: "pssOneProportion",          enabled: true },
           { id: "pssProp2",    label: "2 Proportions",               tool: "pssTwoProportions",          enabled: true },
         ],
@@ -185,7 +184,8 @@ export const PHASES: RibbonPhase[] = [
     name: "Improve",
     tools: [
       // p.433 | mtw: RB Stats Correlation.mtw
-      { id: "correlation", label: "Correlation / Scatterplot", tool: null, enabled: false },
+      { id: "scatterplot", label: "Scatterplot", tool: "impScatter", enabled: true },
+      { id: "correlation", label: "Correlation", tool: "impCorrelation", enabled: true },
 
       // ---- Regression (dropdown) -----------------------------------------
       {
@@ -195,16 +195,16 @@ export const PHASES: RibbonPhase[] = [
         enabled: true,
         children: [
           // p.452 | mtw: Concentrator.MTW
-          { id: "regSimple", label: "Simple Linear", tool: null, enabled: false },
+          { id: "regSimple", label: "Simple Linear", tool: "impRegression", enabled: true },
           // p.457 | mtw: Mailing Response vs. Discount.mtw
-          { id: "regNonlinear", label: "Non-Linear", tool: null, enabled: false },
+//          { id: "regNonlinear", label: "Non-Linear", tool: "impRegression", enabled: true },
           // p.467 | mtw: Flight Regression MLR.mtw
-          { id: "regMultiple", label: "Multiple Linear", tool: null, enabled: false },
+//          { id: "regMultiple", label: "Multiple Linear", tool: null, enabled: false },
         ],
       },
 
       // p.465 | mtw: Transform.MTW
-      { id: "boxCox", label: "Box-Cox Transformation", tool: null, enabled: false },
+      { id: "boxCox", label: "Box-Cox Transformation", tool: "impBoxCox", enabled: true },
 
       // ---- Design of Experiments (dropdown) ------------------------------
       {
@@ -248,7 +248,7 @@ export const PHASES: RibbonPhase[] = [
       },
 
       // (—) proposed
-      { id: "controlPlan", label: "Control Plan", tool: null, enabled: false },
+//      { id: "controlPlan", label: "Control Plan", tool: null, enabled: false },
     ],
   },
 ];

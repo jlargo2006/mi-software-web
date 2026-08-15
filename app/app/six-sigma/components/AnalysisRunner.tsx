@@ -19,6 +19,8 @@ interface Props<P, R> {
   onParamsChange: (p: P) => void;
   savedSnapshot?: ColumnSnapshot | null;
   onSaveStudy: (s: SaveStudyInput) => void;
+  /** Escritura en la hoja activa. Ausente: los volcados se ignoran. */
+  onWriteData?: (startRow: number, startCol: number, matrix: Cell[][]) => void;
 }
 
 export default function AnalysisRunner<P, R>({
@@ -29,11 +31,13 @@ export default function AnalysisRunner<P, R>({
   onParamsChange,
   savedSnapshot = null,
   onSaveStudy,
+  onWriteData,
 }: Props<P, R>) {
   const columns = useMemo(() => getColumns(sheet), [sheet]);
   const [ran, setRan] = useState(false);
   const [frozen, setFrozen] = useState<ColumnSnapshot | null>(null);
   const [showTheory, setShowTheory] = useState(false);
+  const [writeError, setWriteError] = useState<string | null>(null);
 
   const viewing = mode === "view";
 
@@ -52,8 +56,30 @@ export default function AnalysisRunner<P, R>({
   };
 
   const handleRun = () => {
-    setFrozen(freeze());
+    const snap = freeze();
+    setFrozen(snap);
     setRan(true);
+    setWriteError(null);
+
+    // Volcado a la hoja, si el estudio lo pide. Se calcula aqui y no en el
+    // useMemo: escribir es un efecto, y solo debe ocurrir al pulsar Run.
+    if (!def.outputs || !onWriteData) return;
+    const res = def.compute(snap, params);
+    // Solo se escribe si el calculo ha ido bien.
+    if (!res || (res as { ok?: boolean }).ok === false) return;
+
+    for (const out of def.outputs(params, res)) {
+      const col = columns.find((c) => c.name === out.column);
+      if (!col) {
+        setWriteError(`Column "${out.column}" no longer exists.`);
+        continue;
+      }
+      onWriteData(
+        0,
+        col.index,
+        out.values.map((v) => [v])
+      );
+    }
   };
 
   // Datos a usar: snapshot guardado (view) > snapshot del Run > nada.
@@ -135,6 +161,12 @@ export default function AnalysisRunner<P, R>({
           )}
         </div>
       </StudyControls>
+
+      {writeError && (
+        <div className="mb-3 rounded-md border border-red-300 bg-red-50 px-4 py-2 text-sm text-red-800">
+          {writeError}
+        </div>
+      )}
 
       {/* Resultados: siempre que haya datos (view) o tras Run (edit) */}
       {(viewing || ran) && data && result && (

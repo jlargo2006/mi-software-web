@@ -306,6 +306,7 @@ export default function SixSigmaAnalyzer({
                     onParamsChange={setArtifactParams}
                     savedSnapshot={savedArtifactSnapshot}
                     onSaveStudy={saveStudy}
+                    onWriteData={wb.pasteData}
                   />
                 )}
               </div>

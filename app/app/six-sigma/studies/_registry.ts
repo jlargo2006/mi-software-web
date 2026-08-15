@@ -18,6 +18,7 @@ import pss2SampleT from "./pss/twosamplet";
 import pssAnova from "./pss/anova";
 import pssOneProportion from "./pss/oneproportion";
 import pssTwoProportions from "./pss/twoproportions";
+import pssPairedT from "./pss/pairedt";
 import ht1SampleT from "./ht/onesamplet";
 import htAnova1Way from "./ht/anova1way";
 import htTwoSampleT from "./ht/twosamplet";
@@ -28,6 +29,13 @@ import htSign from "./ht/sign";
 import htMannWhitney from "./ht/mannwhitney";
 import htMoodsMedian from "./ht/moodsmedian";
 import htKruskalWallis from "./ht/kruskalwallis";
+import htTwoProportions from "./ht/twoproportions";
+import htOneProportion from "./ht/oneproportion";
+import htChiSqAssoc from "./ht/chisqassociation";
+import impScatter from "./improve/scatterplot";
+import impCorrelation from "./improve/correlation";
+import impRegression from "./improve/regression";
+import impBoxCox from "./improve/boxcox";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
@@ -48,6 +56,7 @@ const ALL: ArtifactDefinition[] = [
   pssAnova,
   pssOneProportion,
   pssTwoProportions,
+  pssPairedT,
   ht1SampleT,
   htAnova1Way,
   htTwoSampleT,
@@ -58,6 +67,13 @@ const ALL: ArtifactDefinition[] = [
   htMannWhitney,
   htMoodsMedian,
   htKruskalWallis,
+  htOneProportion,
+  htTwoProportions,
+  htChiSqAssoc,
+  impScatter,
+  impCorrelation,
+  impRegression,
+  impBoxCox,
 ];
 
 export const REGISTRY: Record<string, ArtifactDefinition> = Object.fromEntries(
