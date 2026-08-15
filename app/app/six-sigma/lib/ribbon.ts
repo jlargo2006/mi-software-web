@@ -199,15 +199,15 @@ export const PHASES: RibbonPhase[] = [
           // p.457 | mtw: Mailing Response vs. Discount.mtw
 //          { id: "regNonlinear", label: "Non-Linear", tool: "impRegression", enabled: true },
           // p.467 | mtw: Flight Regression MLR.mtw
-//          { id: "regMultiple", label: "Multiple Linear", tool: null, enabled: false },
+//          { id: "regMultiple", label: "Multiple Linear", tool: null, enabled: false },          
+            // p.465 | mtw: Transform.MTW
+            { id: "boxCox", label: "Box-Cox Transformation", tool: "impBoxCox", enabled: true },
+            { id: "matrixPlot", label: "Matrix Plot", tool: "impMatrixPlot", enabled: true },
+            { id: "bestSubsets", label: "Best Subsets Regression", tool: "impBestSubsets", enabled: true },
+            { id: "fitRegression", label: "Fit Regression Model", tool: "impFitRegression", enabled: true },          
         ],
       },
-
-      // p.465 | mtw: Transform.MTW
-      { id: "boxCox", label: "Box-Cox Transformation", tool: "impBoxCox", enabled: true },
-      { id: "matrixPlot", label: "Matrix Plot", tool: "impMatrixPlot", enabled: true },
-      { id: "bestSubsets", label: "Best Subsets Regression", tool: "impBestSubsets", enabled: true },
-      
+     
       // ---- Design of Experiments (dropdown) ------------------------------
       {
         id: "doe",
