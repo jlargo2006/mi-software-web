@@ -206,7 +206,8 @@ export const PHASES: RibbonPhase[] = [
       // p.465 | mtw: Transform.MTW
       { id: "boxCox", label: "Box-Cox Transformation", tool: "impBoxCox", enabled: true },
       { id: "matrixPlot", label: "Matrix Plot", tool: "impMatrixPlot", enabled: true },
-
+      { id: "bestSubsets", label: "Best Subsets Regression", tool: "impBestSubsets", enabled: true },
+      
       // ---- Design of Experiments (dropdown) ------------------------------
       {
         id: "doe",
