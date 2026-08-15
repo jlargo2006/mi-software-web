@@ -37,6 +37,7 @@ import impCorrelation from "./improve/correlation";
 import impRegression from "./improve/regression";
 import impBoxCox from "./improve/boxcox";
 import impMatrixPlot from "./improve/matrixplot";
+import impBestSubsets from "./improve/bestsubsets";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
@@ -76,6 +77,7 @@ const ALL: ArtifactDefinition[] = [
   impRegression,
   impBoxCox,
   impMatrixPlot,
+  impBestSubsets,
 ];
 
 export const REGISTRY: Record<string, ArtifactDefinition> = Object.fromEntries(
