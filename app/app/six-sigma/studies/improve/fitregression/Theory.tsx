@@ -300,7 +300,7 @@ const EN = () => (
 
     <Section title="Type III sums of squares">
       <p>
-        A term's Adj SS is how much the error grows when{" "}
+        A term{"\u2019"}s Adj SS is how much the error grows when{" "}
         <strong>that term alone</strong> is dropped, the others staying in. It
         measures its exclusive contribution.
       </p>
