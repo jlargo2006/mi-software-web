@@ -18,6 +18,14 @@ export interface StudyOutput {
   values: Cell[];
 }
 
+/** Una hoja nueva que el estudio genera al pulsar Run. */
+export interface SheetOutput {
+  /** Nombre sugerido; el libro le anade un numero si ya existe. */
+  name: string;
+  headers: string[];
+  rows: Cell[][];
+}
+
 interface BaseArtifact {
   id: string;
   label: string;
@@ -56,6 +64,10 @@ export interface AnalysisDefinition<P = unknown, R = unknown> extends BaseArtifa
   // inmensa mayoria de los estudios no escriben nada. El runner resuelve el
   // nombre a indice y volca los valores con pasteData.
   outputs?: (params: P, result: R) => StudyOutput[];
+
+  // Hojas NUEVAS que el estudio crea al pulsar Run. Solo los generadores de
+  // disenos las usan. El runner evita duplicarlas si el contenido no cambia.
+  sheetOutputs?: (params: P, result: R) => SheetOutput[];
 }
 
 /* ---------- Familia 2: diagramas / formularios libres ---------- */
