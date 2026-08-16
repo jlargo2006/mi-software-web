@@ -1,6 +1,6 @@
 // components/AnalysisRunner.tsx
 "use client";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import type { SheetData, Cell } from "../lib/types";
 import { getColumns } from "../lib/columns";
 import StudyControls from "./StudyControls";
@@ -21,6 +21,8 @@ interface Props<P, R> {
   onSaveStudy: (s: SaveStudyInput) => void;
   /** Escritura en la hoja activa. Ausente: los volcados se ignoran. */
   onWriteData?: (startRow: number, startCol: number, matrix: Cell[][]) => void;
+  /** Creacion de hojas nuevas. Ausente: los disenos no se almacenan. */
+  onCreateSheet?: (name: string, headers: string[], rows: Cell[][]) => void;
 }
 
 export default function AnalysisRunner<P, R>({
@@ -32,16 +34,19 @@ export default function AnalysisRunner<P, R>({
   savedSnapshot = null,
   onSaveStudy,
   onWriteData,
+  onCreateSheet,
 }: Props<P, R>) {
   const columns = useMemo(() => getColumns(sheet), [sheet]);
   const [ran, setRan] = useState(false);
   const [frozen, setFrozen] = useState<ColumnSnapshot | null>(null);
   const [showTheory, setShowTheory] = useState(false);
   const [writeError, setWriteError] = useState<string | null>(null);
+  // Firma de la ultima hoja creada: evita generar una hoja identica cada vez
+  // que se pulsa Run sin haber cambiado nada.
+  const lastSheetSig = useRef<string | null>(null);
 
   const viewing = mode === "view";
 
-  // Congela las columnas referenciadas por la config actual.
   const freeze = (): ColumnSnapshot => {
     const names = def.referencedColumns(params);
     const snap: ColumnSnapshot = {};
@@ -61,28 +66,33 @@ export default function AnalysisRunner<P, R>({
     setRan(true);
     setWriteError(null);
 
-    // Volcado a la hoja, si el estudio lo pide. Se calcula aqui y no en el
-    // useMemo: escribir es un efecto, y solo debe ocurrir al pulsar Run.
-    if (!def.outputs || !onWriteData) return;
+    if (!def.outputs && !def.sheetOutputs) return;
     const res = def.compute(snap, params);
-    // Solo se escribe si el calculo ha ido bien.
     if (!res || (res as { ok?: boolean }).ok === false) return;
 
-    for (const out of def.outputs(params, res)) {
-      const col = columns.find((c) => c.name === out.column);
-      if (!col) {
-        setWriteError(`Column "${out.column}" no longer exists.`);
-        continue;
+    // Volcado de columnas sobre la hoja activa.
+    if (def.outputs && onWriteData) {
+      for (const out of def.outputs(params, res)) {
+        const col = columns.find((c) => c.name === out.column);
+        if (!col) {
+          setWriteError(`Column "${out.column}" no longer exists.`);
+          continue;
+        }
+        onWriteData(0, col.index, out.values.map((v) => [v]));
       }
-      onWriteData(
-        0,
-        col.index,
-        out.values.map((v) => [v])
-      );
+    }
+
+    // Hojas nuevas.
+    if (def.sheetOutputs && onCreateSheet) {
+      const sheets = def.sheetOutputs(params, res);
+      const sig = JSON.stringify(sheets);
+      if (sig !== lastSheetSig.current) {
+        lastSheetSig.current = sig;
+        for (const s of sheets) onCreateSheet(s.name, s.headers, s.rows);
+      }
     }
   };
 
-  // Datos a usar: snapshot guardado (view) > snapshot del Run > nada.
   const data: ColumnSnapshot | null = savedSnapshot ?? frozen;
 
   const result = useMemo(
@@ -135,7 +145,6 @@ export default function AnalysisRunner<P, R>({
         )}
       </div>
 
-      {/* Config PROPIA del estudio, oculta en modo view. Ya SIN Run. */}
       <StudyControls mode={mode}>
         <ControlsUI
           params={params}
@@ -143,7 +152,6 @@ export default function AnalysisRunner<P, R>({
           columns={columns}
         />
 
-        {/* Run + Save juntos, gestionados por el runner */}
         <div className="mt-3 flex items-center gap-2">
           <button
             onClick={handleRun}
@@ -168,7 +176,6 @@ export default function AnalysisRunner<P, R>({
         </div>
       )}
 
-      {/* Resultados: siempre que haya datos (view) o tras Run (edit) */}
       {(viewing || ran) && data && result && (
         <ResultsUI data={data} params={params} result={result} />
       )}
