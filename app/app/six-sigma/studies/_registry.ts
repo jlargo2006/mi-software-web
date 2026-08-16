@@ -41,6 +41,7 @@ import impBestSubsets from "./improve/bestsubsets";
 import impFitRegression from "./improve/fitregression";
 import doeCreateFactorial from "./doe/factorial/create";
 import doeMainEffects from "./doe/factorial/maineffects";
+import doeInteraction from "./doe/factorial/interaction";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
@@ -84,6 +85,7 @@ const ALL: ArtifactDefinition[] = [
   impFitRegression,
   doeCreateFactorial,
   doeMainEffects,
+  doeInteraction,
 ];
 
 export const REGISTRY: Record<string, ArtifactDefinition> = Object.fromEntries(
