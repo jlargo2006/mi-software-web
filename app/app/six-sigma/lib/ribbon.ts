@@ -215,6 +215,7 @@ export const PHASES: RibbonPhase[] = [
         tool: null,
         enabled: true,
         children: [
+          { id: "createFactorial", label: "Create Factorial Design", tool: "doeCreateFactorial", enabled: true },
           // p.482 | mtw: Catapult.mtw
           { id: "doeFull", label: "Full Factorial", tool: null, enabled: false },
           // p.522 | mtw: Panel Cleaning.MTW
