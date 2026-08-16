@@ -223,6 +223,7 @@ export const PHASES: RibbonPhase[] = [
           // (—) proposed
           { id: "doeRSM", label: "Response Surface / Contour Plot", tool: null, enabled: false },
           { id: "mainEffects", label: "Main Effects Plot", tool: "doeMainEffects", enabled: true },
+          { id: "interactionPlot", label: "Interaction Plot", tool: "doeInteraction", enabled: true },
         ],
       },
     ],
