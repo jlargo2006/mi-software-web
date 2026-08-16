@@ -385,7 +385,7 @@ const EN = () => (
     <Section title="The generated worksheet">
       <ul className="list-disc pl-5 space-y-1">
         <li>
-          <strong>StdOrder</strong> — position in standard order, the run's
+          <strong>StdOrder</strong> — position in standard order, the run{"\u2019"}s
           identity.
         </li>
         <li>
