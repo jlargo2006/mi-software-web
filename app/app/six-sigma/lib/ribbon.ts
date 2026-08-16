@@ -222,6 +222,7 @@ export const PHASES: RibbonPhase[] = [
           { id: "doeCenter", label: "Full Factorial + Center Points", tool: null, enabled: false },
           // (—) proposed
           { id: "doeRSM", label: "Response Surface / Contour Plot", tool: null, enabled: false },
+          { id: "mainEffects", label: "Main Effects Plot", tool: "doeMainEffects", enabled: true },
         ],
       },
     ],
