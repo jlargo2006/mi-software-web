@@ -193,6 +193,39 @@ export function useWorkbook() {
     [activeSheet]
   );
 
+  // ---- Crear una hoja NUEVA ya rellena (generadores de disenos) ----
+  const createSheetWithData = useCallback(
+    (baseName: string, headers: string[], rows: Cell[][]): string => {
+      let created = baseName;
+      setOrder((prevOrder) => {
+        let name = baseName;
+        let i = 1;
+        while (prevOrder.includes(name)) name = `${baseName}${++i}`;
+        created = name;
+
+        const width = Math.max(GRID_COLS, headers.length);
+        const paddedHeaders = padTo(headers, width, "");
+        // Se rellena hasta el ancho de la rejilla y se garantiza un minimo de
+        // filas, para que la hoja se vea utilizable al abrirla.
+        const paddedRows: Cell[][] = rows.map((r) =>
+          padTo(r as Cell[], width, "" as Cell)
+        );
+        while (paddedRows.length < 30) {
+          paddedRows.push(Array.from({ length: width }, () => "" as Cell));
+        }
+
+        setData((prev) => ({
+          ...prev,
+          [name]: { headers: paddedHeaders, rows: paddedRows },
+        }));
+        setActiveSheet(name);
+        return [...prevOrder, name];
+      });
+      return created;
+    },
+    []
+  );
+  
   // ---- Insertar columnas ANTES de `start` (empuja a la derecha, recorta a Z) ----
   const insertColumnsAt = useCallback(
     (start: number, count: number) => {
@@ -250,5 +283,6 @@ export function useWorkbook() {
     resetWorkbook,
     insertColumnsAt,
     insertRowsAt,
+    createSheetWithData,
   };
 }
