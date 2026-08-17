@@ -226,6 +226,7 @@ export const PHASES: RibbonPhase[] = [
           { id: "mainEffects", label: "Main Effects Plot", tool: "doeMainEffects", enabled: true },
           { id: "interactionPlot", label: "Interaction Plot", tool: "doeInteraction", enabled: true },
           { id: "analyzeFactorial", label: "Analyze Factorial Design", tool: "doeAnalyzeFactorial", enabled: true },
+          { id: "responseOptimizer", label: "Response Optimizer", tool: "doeOptimizer", enabled: true },
         ],
       },
     ],
