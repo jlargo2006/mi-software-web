@@ -147,6 +147,7 @@ export interface DoeAnalyzeModel {
     series: { label: string; means: number[] }[];
   }[];
 
+  advice: Advice;
   alpha: number;
   grandMean: number;
   n: number;
