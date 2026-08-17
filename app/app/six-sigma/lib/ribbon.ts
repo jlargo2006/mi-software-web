@@ -218,13 +218,14 @@ export const PHASES: RibbonPhase[] = [
         children: [
           { id: "createFactorial", label: "Create Factorial Design", tool: "doeCreateFactorial", enabled: true },
           // p.482 | mtw: Catapult.mtw
-          { id: "doeFull", label: "Full Factorial", tool: null, enabled: false },
+//          { id: "doeFull", label: "Full Factorial", tool: null, enabled: false },
           // p.522 | mtw: Panel Cleaning.MTW
-          { id: "doeCenter", label: "Full Factorial + Center Points", tool: null, enabled: false },
+//          { id: "doeCenter", label: "Full Factorial + Center Points", tool: null, enabled: false },
           // (—) proposed
-          { id: "doeRSM", label: "Response Surface / Contour Plot", tool: null, enabled: false },
+//          { id: "doeRSM", label: "Response Surface / Contour Plot", tool: null, enabled: false },
           { id: "mainEffects", label: "Main Effects Plot", tool: "doeMainEffects", enabled: true },
           { id: "interactionPlot", label: "Interaction Plot", tool: "doeInteraction", enabled: true },
+          { id: "analyzeFactorial", label: "Analyze Factorial Design", tool: "doeAnalyzeFactorial", enabled: true },
         ],
       },
     ],
