@@ -43,6 +43,7 @@ import impFitRegression from "./improve/fitregression";
 import doeCreateFactorial from "./doe/factorial/create";
 import doeMainEffects from "./doe/factorial/maineffects";
 import doeInteraction from "./doe/factorial/interaction";
+import doeAnalyzeFactorial from "./doe/factorial/analyze";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
@@ -88,6 +89,7 @@ const ALL: ArtifactDefinition[] = [
   doeCreateFactorial,
   doeMainEffects,
   doeInteraction,
+  doeAnalyzeFactorial,
 ];
 
 export const REGISTRY: Record<string, ArtifactDefinition> = Object.fromEntries(
