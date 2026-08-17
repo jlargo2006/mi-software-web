@@ -400,16 +400,17 @@ export function computeDoeOpt(
   });
 
   // --- Intervalos en el optimo ---------------------------------------------
-  const tc = tQuantile(1 - alphaCI / 2, models[0].errDF);
+  // La inversa de X'X se calcula UNA vez: todas las respuestas comparten
+  // matriz de diseno, y solo cambia s.
+  const inv = invXtX(X, n);
   const row = designRow(best);
+  let q = 0;
+  for (let a = 0; a < row.length; a++) {
+    for (let b = 0; b < row.length; b++) q += row[a] * inv[a][b] * row[b];
+  }
+
   const predictions: ResponsePrediction[] = models.map((m) => {
     const fitv = predictAt(m, best!);
-    // SE del valor medio ajustado: s * sqrt(x0' (X'X)^-1 x0).
-    let q = 0;
-    const inv = invXtX(X, n);
-    for (let a = 0; a < row.length; a++) {
-      for (let b = 0; b < row.length; b++) q += row[a] * inv[a][b] * row[b];
-    }
     const seFit = m.s * Math.sqrt(Math.max(0, q));
     // El intervalo de PREDICCION incluye la variabilidad de una observacion
     // futura, de ahi el 1 adicional bajo la raiz.
