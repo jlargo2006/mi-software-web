@@ -18,6 +18,7 @@ import {
   MAX_FACTORS,
   type Advice,
   type AnovaGroup,
+  type DoeAnalyzeModel,
   type DoeAnalyzeParams,
   type DoeAnalyzeResult,
   type TermRow,
@@ -366,9 +367,7 @@ export function computeDoeAnalyze(
     })),
   }));
 
-  const interactions: DoeAnalyzeResult extends { ok: true }
-    ? never
-    : { rowFactor: string; colFactor: string; xLabels: string[]; series: { label: string; means: number[] }[] }[] = [];
+  const interactions: DoeAnalyzeModel["interactions"] = [];
   for (let i = 0; i < k; i++) {
     for (let j = 0; j < k; j++) {
       if (i === j) continue;
