@@ -3,6 +3,8 @@ import type { ColumnSnapshot } from "../../../types";
 import { multiRegressionFit } from "../../../../lib/multiregression";
 import { fSf, tQuantile } from "../../../../lib/regression";
 import {
+  CT_PT_KEY,
+  CT_PT_TERM,
   LETTER,
   buildTerms,
   detectAliases,
@@ -44,6 +46,7 @@ const num = (s: string): number => {
 const fail = (error: string): DoeAnalyzeResult => ({ ok: false, error });
 
 const GROUP_LABEL: Record<number, string> = {
+  0: "Curvature",
   1: "Linear",
   2: "2-Way Interactions",
   3: "3-Way Interactions",
@@ -115,39 +118,99 @@ export function computeDoeAnalyze(
   if (n < 4) return fail("Not enough complete runs to fit a factorial model.");
 
   // --- Codificacion de los factores -----------------------------------------
-  // Este estudio es para disenos de DOS niveles: un factor con tres o mas
-  // niveles distintos no se puede codificar en -1 / +1.
+  // Un factor puede traer TRES niveles distintos y seguir siendo de dos
+  // niveles: si el intermedio es exactamente el punto medio, se trata de un
+  // punto central, no de un tercer nivel. Se codifica como 0.
   const coding: FactorCoding[] = [];
   const coded: number[][] = [];
+  const centerFactors: string[] = [];
 
   for (let j = 0; j < facNames.length; j++) {
     const uniq = [...new Set(rawLevels[j])];
     if (uniq.length < 2) {
       return fail(`Factor "${facNames[j]}" has a single level.`);
     }
-    if (uniq.length > 2) {
-      return fail(
-        `Factor "${facNames[j]}" has ${uniq.length} levels. This analysis is for ` +
-          `two-level designs. If those are center points, exclude them, or use a ` +
-          `general factorial analysis.`
-      );
-    }
     const allNum = uniq.every((s) => Number.isFinite(cellNum(s)));
     uniq.sort((a, b) =>
       allNum ? cellNum(a) - cellNum(b) : a.localeCompare(b, undefined, { numeric: true })
     );
 
+    const lowTxt = uniq[0];
+    const highTxt = uniq[uniq.length - 1];
+    let midTxt: string | null = null;
+
+    if (uniq.length === 3 && allNum) {
+      const lo = cellNum(uniq[0]);
+      const mid = cellNum(uniq[1]);
+      const hi = cellNum(uniq[2]);
+      const expected = (lo + hi) / 2;
+      // Tolerancia relativa: los datos vienen redondeados de la hoja.
+      const tol = Math.max(1e-9, Math.abs(hi - lo) * 1e-6);
+      if (Math.abs(mid - expected) > tol) {
+        return fail(
+          `Factor "${facNames[j]}" has three levels (${uniq.join(", ")}) and the ` +
+            `middle one is not the midpoint of the other two. This analysis is for ` +
+            `two-level designs, with or without center points.`
+        );
+      }
+      midTxt = uniq[1];
+      centerFactors.push(facNames[j]);
+    } else if (uniq.length > 2) {
+      return fail(
+        `Factor "${facNames[j]}" has ${uniq.length} levels. This analysis is for ` +
+          `two-level designs, with or without center points. For a factor with ` +
+          `three or more genuine levels, use a general factorial analysis.`
+      );
+    }
+
     // El factor de texto se queda codificado en la ecuacion no codificada: no
     // hay una escala real que decodificar.
-    const center = allNum ? (cellNum(uniq[0]) + cellNum(uniq[1])) / 2 : 0;
-    const half = allNum ? (cellNum(uniq[1]) - cellNum(uniq[0])) / 2 : 1;
+    const center = allNum ? (cellNum(lowTxt) + cellNum(highTxt)) / 2 : 0;
+    const half = allNum ? (cellNum(highTxt) - cellNum(lowTxt)) / 2 : 1;
     if (allNum && !(half > 0)) {
       return fail(`Factor "${facNames[j]}" has two identical levels.`);
     }
 
-    coding.push({ name: facNames[j], text: !allNum, levels: uniq, center, half });
-    coded.push(rawLevels[j].map((s) => (s === uniq[0] ? -1 : 1)));
+    coding.push({
+      name: facNames[j],
+      text: !allNum,
+      levels: [lowTxt, highTxt],
+      center,
+      half,
+    });
+    coded.push(
+      rawLevels[j].map((s) => {
+        if (s === lowTxt) return -1;
+        if (s === highTxt) return 1;
+        if (midTxt !== null && s === midTxt) return 0;
+        return NaN;
+      })
+    );
   }
+
+  if (coded.some((col) => col.some((v) => Number.isNaN(v)))) {
+    return fail("Some factor level could not be coded. Check for stray values.");
+  }
+
+  // Una corrida es punto central cuando TODOS los factores estan a medio
+  // camino. Basta con que una columna no sea 0 para que sea una esquina.
+  const isCenter = Array.from({ length: n }, (_, i) =>
+    coded.every((col) => col[i] === 0)
+  );
+  const nCenterPoints = isCenter.filter(Boolean).length;
+  const hasCenterPoints = nCenterPoints > 0;
+
+  if (centerFactors.length > 0 && !hasCenterPoints) {
+    return fail(
+      `${centerFactors.join(", ")} ${
+        centerFactors.length === 1 ? "has" : "have"
+      } a midpoint level, but no run sits at the centre of every factor at once. ` +
+        `A center point needs all factors at their midpoint simultaneously.`
+    );
+  }
+
+  const useCtPt = hasCenterPoints && params.includeCenterPoints;
+  const ctPtCol = isCenter.map((c) => (c ? 1 : 0));
 
   // --- Terminos -------------------------------------------------------------
   const allTerms = buildTerms(facNames, maxOrder);
@@ -170,10 +233,27 @@ export function computeDoeAnalyze(
     }
   }
 
-  const { groups: aliases, clean: aliasClean } = detectAliases(coded, allTerms);
+  // Los alias se detectan SOLO sobre las esquinas: un punto central tiene todas
+  // las columnas a 0 y falsearia la comparacion de signos.
+  const cornerIdx = Array.from({ length: n }, (_, i) => i).filter(
+    (i) => !isCenter[i]
+  );
+  if (cornerIdx.length < 2) {
+    return fail("Every run sits at the centre: there are no corner points to analyse.");
+  }
+  const codedCorners = coded.map((col) => cornerIdx.map((i) => col[i]));
+  const { groups: aliases, clean: aliasClean } = detectAliases(
+    codedCorners,
+    allTerms
+  );
 
-  const X = active.map((t) => termColumn(coded, t));
-  const fit = multiRegressionFit(X, y, active.map((t) => t.key));
+  // El termino de curvatura se anade AL FINAL del modelo, para que los indices
+  // de los terminos reales sigan coincidiendo con los de la matriz.
+  const modelTerms: Term[] = useCtPt ? [...active, CT_PT_TERM] : [...active];
+  const X = modelTerms.map((t) =>
+    t.key === CT_PT_KEY ? ctPtCol : termColumn(coded, t)
+  );
+  const fit = multiRegressionFit(X, y, modelTerms.map((t) => t.key));
   if (!fit) {
     return fail(
       "The model is not estimable: some terms are aliased with each other. " +
@@ -189,7 +269,13 @@ export function computeDoeAnalyze(
   // un termino: no hay error residual y ningun contraste es posible por la via
   // habitual. Lenth supone que la mayoria de los efectos son nulos y usa su
   // mediana como medida del ruido.
-  const rawEffects = fit.terms.map((t, i) => 2 * t.coef);
+  //
+  // El termino de curvatura NO es un efecto factorial y queda fuera: incluirlo
+  // contaminaria la mediana con la que se estima el ruido.
+  const rawEffects = modelTerms
+    .map((t, i) => (t.order === 0 ? NaN : 2 * fit.terms[i].coef))
+    .filter((v) => Number.isFinite(v));
+
   let usedLenth = false;
   let pse = NaN;
   let lenthDF = NaN;
@@ -210,10 +296,11 @@ export function computeDoeAnalyze(
   }
 
   // --- Filas de terminos ----------------------------------------------------
-  const rows: TermRow[] = active.map((term, i) => {
+  const rows: TermRow[] = modelTerms.map((term, i) => {
     const ft = fit.terms[i];
-    const effect = 2 * ft.coef;
-    if (usedLenth) {
+    // El indicador de curvatura no tiene "efecto": no hay nivel alto ni bajo.
+    const effect = term.order === 0 ? NaN : 2 * ft.coef;
+    if (usedLenth && term.order !== 0) {
       const t = effect / pse;
       const p = lenthP(effect, pse, lenthDF);
       return {
@@ -253,16 +340,19 @@ export function computeDoeAnalyze(
   // pero no en cuanto el diseno se desequilibra.
   const groups: AnovaGroup[] = [];
   if (!usedLenth) {
-    const orders = [...new Set(active.map((t) => t.order))].sort((a, b) => a - b);
+    // La curvatura va al final de la tabla, como en Minitab.
+    const orders = [...new Set(modelTerms.map((t) => t.order))].sort(
+      (a, b) => (a === 0 ? 99 : a) - (b === 0 ? 99 : b)
+    );
     for (const o of orders) {
       const members = rows.filter((r) => r.term.order === o);
-      const keep = active.filter((t) => t.order !== o);
+      const keep = modelTerms.filter((t) => t.order !== o);
       let ss: number;
       if (keep.length === 0) {
         ss = fit.totSS - fit.errSS;
       } else {
         const sub = multiRegressionFit(
-          keep.map((t) => termColumn(coded, t)),
+          keep.map((t) => (t.key === CT_PT_KEY ? ctPtCol : termColumn(coded, t))),
           y,
           keep.map((t) => t.key)
         );
@@ -296,6 +386,10 @@ export function computeDoeAnalyze(
         : e.members.map((i) => facNames[i]).join("*"),
     value: e.value,
   }));
+  // El indicador de curvatura se queda tal cual: no hay escala que decodificar.
+  if (useCtPt) {
+    uncoded.push({ label: CT_PT_KEY, value: fit.terms[active.length].coef });
+  }
 
   // --- Observaciones inusuales ---------------------------------------------
   const leverageLimit = Math.min(0.99, (3 * fit.p) / n);
@@ -320,7 +414,9 @@ export function computeDoeAnalyze(
     ? lenthMargin / pse
     : tQuantile(1 - alpha / 2, dfe);
 
+  // La curvatura no es un efecto factorial y no entra en estos graficos.
   const effectsPlot = rows
+    .filter((r) => r.term.order !== 0)
     .map((r) => ({
       label: r.term.letters,
       std: Math.abs(r.t),
@@ -336,6 +432,8 @@ export function computeDoeAnalyze(
   const k = facNames.length;
   const predict = (pt: number[]): number => {
     let v = fit.constant.coef;
+    // Las medias ajustadas se evaluan en las ESQUINAS: el indicador va a 0, de
+    // modo que el termino de curvatura no interviene.
     active.forEach((t, i) => {
       let prod = 1;
       for (const m of t.members) prod *= pt[m];
@@ -403,6 +501,9 @@ export function computeDoeAnalyze(
     leverageLimit,
     aliases,
     aliasClean,
+    hasCenterPoints,
+    nCenterPoints,
+    centerFactors,
     usedLenth,
     pse,
     lenthDF,
@@ -411,7 +512,7 @@ export function computeDoeAnalyze(
     effectsPlot,
     mainEffects,
     interactions,
-    advice: buildAdvice(rows, facNames, alpha, usedLenth),
+    advice: buildAdvice(rows, facNames, alpha, usedLenth, useCtPt),
     alpha,
     grandMean,
     n,
@@ -427,12 +528,17 @@ export function computeDoeAnalyze(
  * ningun otro que siga en el modelo. Por eso un efecto principal con p = 1,000
  * se queda si participa en una interaccion significativa: su coeficiente ya no
  * se interpreta solo, sino a traves de la interaccion.
+ *
+ * El termino de curvatura NUNCA se propone para retirar. No es un efecto que
+ * sobre: es la unica prueba de que el plano describe los datos. Quitarlo manda
+ * su variabilidad al error y sesga todos los contrastes.
  */
 function buildAdvice(
   rows: TermRow[],
   facNames: string[],
   alpha: number,
-  usedLenth: boolean
+  usedLenth: boolean,
+  useCtPt: boolean
 ): Advice {
   const keys = new Set(rows.map((r) => r.term.key));
   const isParent = (key: string): boolean =>
@@ -440,16 +546,25 @@ function buildAdvice(
       (o) => o.term.key !== key && parentKeys(o.term, facNames).includes(key)
     );
 
-  const removable = rows.filter((r) => !isParent(r.term.key));
+  const factorRows = rows.filter((r) => r.term.order !== 0);
+  const removable = factorRows.filter((r) => !isParent(r.term.key));
   const worst = removable.reduce<TermRow | null>(
     (best, r) => (best === null || r.p > best.p ? r : best),
     null
   );
 
   const al = alpha.toString().replace(".", ",");
+  const ctPtNote = useCtPt
+    ? ` The ${CT_PT_KEY} term is never proposed for removal: it is the only test that ` +
+      `the response is a plane between the levels, and dropping it would push its ` +
+      `variability into the error.`
+    : "";
 
   if (worst && worst.p > alpha) {
-    const next = rows.filter((r) => r.term.key !== worst.term.key).map((r) => r.term.key);
+    const next = factorRows
+      .filter((r) => r.term.key !== worst.term.key)
+      .map((r) => r.term.key);
+    if (useCtPt) next.push(CT_PT_KEY);
     return {
       kind: "remove",
       term: worst.term.key,
@@ -460,14 +575,12 @@ function buildAdvice(
         `It is the least significant term that can be dropped without breaking the ` +
         `hierarchy, and it does not reach ${al}. Removing it returns a degree of ` +
         `freedom to the error, which makes every remaining test sharper. Take out one ` +
-        `term at a time: the others change when it goes.`,
+        `term at a time: the others change when it goes.` + ctPtNote,
       nextTerms: next,
     };
   }
 
-  const stuck = rows.filter(
-    (r) => r.p > alpha && isParent(r.term.key)
-  );
+  const stuck = factorRows.filter((r) => r.p > alpha && isParent(r.term.key));
   if (stuck.length > 0) {
     const names = stuck.map((r) => r.term.key).join(", ");
     return {
