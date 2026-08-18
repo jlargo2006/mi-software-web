@@ -248,12 +248,52 @@ export function availableDesigns(k: number): DesignOption[] {
   return out;
 }
 
-/** Divisores de potencia de dos validos como numero de bloques. */
-export function blockOptions(base: number): number[] {
-  const out: number[] = [];
-  for (let b = 0; b <= Math.max(0, base - 1); b++) out.push(1 << b);
-  return out;
+/**
+ * Numeros de bloques admisibles.
+ *
+ * Dos mecanismos distintos se combinan. Agrupar REPLICAS enteras no confunde
+ * nada: cada bloque contiene todas las esquinas, asi que todos los efectos
+ * siguen estimables. Partir una replica por el signo de una interaccion si
+ * confunde, y exige potencias de dos.
+ *
+ * De ahi b = g x w, con g divisor del numero de replicas y w potencia de dos
+ * como maximo la mitad de las corridas base.
+ */
+export function blockOptions(baseRuns: number, replicates: number): number[] {
+  const reps = Number.isInteger(replicates) && replicates >= 1 ? replicates : 1;
+  const out = new Set<number>();
+  for (let g = 1; g <= reps; g++) {
+    if (reps % g !== 0) continue;
+    for (let w = 1; w <= baseRuns / 2; w *= 2) out.add(g * w);
+  }
+  return [...out].sort((a, b) => a - b);
 }
+
+/**
+ * Descompone un numero de bloques en sus dos mecanismos.
+ *
+ * Se maximiza g, el numero de grupos de replicas: cuantas mas replicas se
+ * usen para bloquear, menos hay que confundir dentro de cada una. Devuelve
+ * null si b no es alcanzable.
+ */
+export function splitBlocks(
+  baseRuns: number,
+  replicates: number,
+  blocks: number
+): { repGroups: number; within: number } | null {
+  const reps = Number.isInteger(replicates) && replicates >= 1 ? replicates : 1;
+  let best: { repGroups: number; within: number } | null = null;
+  for (let g = 1; g <= reps; g++) {
+    if (reps % g !== 0) continue;
+    if (blocks % g !== 0) continue;
+    const w = blocks / g;
+    if ((w & (w - 1)) !== 0) continue;
+    if (w > baseRuns / 2) continue;
+    if (best === null || g > best.repGroups) best = { repGroups: g, within: w };
+  }
+  return best;
+}
+
 
 /**
  * Genera las columnas de bloque confundiendo con las interacciones de orden
