@@ -103,7 +103,12 @@ export function computeDoeAnalyze(
   // --- Columna de bloques ---------------------------------------------------
   const blkName = params.blockColumn.trim();
   if (blkName !== "") {
-    if (!data[blkName]) return fail(`Column "${blkName}" does not exist.`);
+    if (!data[blkName]) {
+      return fail(
+        `Column "${blkName}" is not available. If it does exist in the worksheet, ` +
+          `it is not being passed to the analysis.`
+      );
+    }    
     if (blkName === resp || facNames.includes(blkName)) {
       return fail(
         `"${blkName}" is already used as the response or as a factor: it cannot ` +
