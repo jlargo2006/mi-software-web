@@ -18,6 +18,8 @@ export interface DoeAnalyzeParams {
   maxOrder: string;
   /** Terminos retirados por el usuario, por clave. */
   excluded: string[];
+  /** Ajustar el termino de curvatura cuando hay puntos centrales. */
+  includeCenterPoints: boolean;  
   alpha: string;
   residualKind: ResidualKind;
   showPareto: boolean;
@@ -39,6 +41,7 @@ export const DOEANALYZE_DEFAULT: DoeAnalyzeParams = {
   showResiduals: true,
   showMainEffects: false,
   showInteraction: false,
+  includeCenterPoints: true,
 };
 
 export interface TermRow {
@@ -128,6 +131,12 @@ export interface DoeAnalyzeModel {
   aliases: AliasGroup[];
   aliasClean: boolean;
 
+  /** Puntos centrales detectados en la hoja. */
+  hasCenterPoints: boolean;
+  nCenterPoints: number;
+  /** Factores con tres niveles cuyo medio es el punto central. */
+  centerFactors: string[];
+  
   /** Metodo de Lenth: solo cuando no quedan grados de libertad. */
   usedLenth: boolean;
   pse: number;
