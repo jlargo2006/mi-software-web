@@ -6,8 +6,11 @@ import {
   CT_PT_KEY,
   CT_PT_TERM,
   LETTER,
+  blockColumns,
+  blockTerm,
   buildTerms,
   detectAliases,
+  isBlockTerm,
   lenth,
   lenthP,
   parentKeys,
@@ -45,7 +48,10 @@ const num = (s: string): number => {
 
 const fail = (error: string): DoeAnalyzeResult => ({ ok: false, error });
 
+// Los bloques van DELANTE de los efectos lineales y la curvatura AL FINAL, que
+// es el orden en que Minitab presenta la tabla.
 const GROUP_LABEL: Record<number, string> = {
+  [-1]: "Blocks",
   0: "Curvature",
   1: "Linear",
   2: "2-Way Interactions",
@@ -54,6 +60,9 @@ const GROUP_LABEL: Record<number, string> = {
   5: "5-Way Interactions",
   6: "6-Way Interactions",
 };
+
+/** Clave de ordenacion de los grupos: -1 primero, 0 al final. */
+const orderRank = (o: number): number => (o === 0 ? 99 : o);
 
 /** Cuatro cifras significativas, hasta seis decimales. */
 export const sig4 = (v: number): string => {
@@ -91,31 +100,84 @@ export function computeDoeAnalyze(
     return fail("The model order must be a whole number from 1 to 6.");
   }
 
+  // --- Columna de bloques ---------------------------------------------------
+  const blkName = params.blockColumn.trim();
+  if (blkName !== "") {
+    if (!data[blkName]) return fail(`Column "${blkName}" does not exist.`);
+    if (blkName === resp || facNames.includes(blkName)) {
+      return fail(
+        `"${blkName}" is already used as the response or as a factor: it cannot ` +
+          `also be the block column.`
+      );
+    }
+  }
+
   // --- Filas completas ------------------------------------------------------
   const len = Math.max(
     yCol.values.length,
-    ...facNames.map((nm) => data[nm].values.length)
+    ...facNames.map((nm) => data[nm].values.length),
+    blkName === "" ? 0 : data[blkName].values.length
   );
   const y: number[] = [];
   const rawLevels: string[][] = facNames.map(() => []);
+  const blkTexts: string[] = [];
   let nMissing = 0;
 
   for (let i = 0; i < len; i++) {
     const yv = cellNum(yCol.values[i]);
     const texts = facNames.map((nm) => cellText(data[nm].values[i]));
+    const bTxt = blkName === "" ? "" : cellText(data[blkName].values[i]);
     const allBlank =
-      cellText(yCol.values[i]) === "" && texts.every((t) => t === "");
+      cellText(yCol.values[i]) === "" &&
+      texts.every((t) => t === "") &&
+      bTxt === "";
     if (allBlank) continue;
     if (!Number.isFinite(yv) || texts.some((t) => t === "")) {
       nMissing++;
       continue;
     }
+    // Una corrida sin bloque no se puede asignar: se descarta, igual que si le
+    // faltara un nivel de factor.
+    if (blkName !== "" && bTxt === "") {
+      nMissing++;
+      continue;
+    }
     y.push(yv);
     texts.forEach((t, j) => rawLevels[j].push(t));
+    blkTexts.push(bTxt);
   }
 
   const n = y.length;
   if (n < 4) return fail("Not enough complete runs to fit a factorial model.");
+
+  // --- Niveles de bloque ----------------------------------------------------
+  // Se indexan por orden ordenado, no de aparicion, para que la numeracion no
+  // dependa de como esten dispuestas las filas de la hoja. Se admite tanto
+  // 1/2/3 como etiquetas de texto: "Day 1", "Lot B"...
+  let blockOf: number[] = blkTexts.map(() => 0);
+  let blockLevels: number[] = [];
+  if (blkName !== "") {
+    const seen = [...new Set(blkTexts)];
+    const allNum = seen.every((s) => Number.isFinite(cellNum(s)));
+    seen.sort((a, b) =>
+      allNum ? cellNum(a) - cellNum(b) : a.localeCompare(b, undefined, { numeric: true })
+    );
+    if (seen.length < 2) {
+      return fail(
+        `Column "${blkName}" holds a single block. Leave the block column empty ` +
+          `if the experiment was not blocked.`
+      );
+    }
+    if (seen.length > 20) {
+      return fail(
+        `Column "${blkName}" holds ${seen.length} blocks, which is too many for ` +
+          `this analysis. Check that you picked the right column.`
+      );
+    }
+    const idx = new Map(seen.map((s, i) => [s, i]));
+    blockOf = blkTexts.map((t) => idx.get(t) ?? 0);
+    blockLevels = seen.map((_, i) => i);
+  }
 
   // --- Codificacion de los factores -----------------------------------------
   // Un factor puede traer TRES niveles distintos y seguir siendo de dos
@@ -242,22 +304,42 @@ export function computeDoeAnalyze(
     return fail("Every run sits at the centre: there are no corner points to analyse.");
   }
   const codedCorners = coded.map((col) => cornerIdx.map((i) => col[i]));
-  const { groups: aliases, clean: aliasClean } = detectAliases(
+  const { groups: aliasFac, clean: aliasClean } = detectAliases(
     codedCorners,
     allTerms
   );
 
-  // El termino de curvatura se anade AL FINAL del modelo, para que los indices
-  // de los terminos reales sigan coincidiendo con los de la matriz.
-  const modelTerms: Term[] = useCtPt ? [...active, CT_PT_TERM] : [...active];
-  const X = modelTerms.map((t) =>
-    t.key === CT_PT_KEY ? ctPtCol : termColumn(coded, t)
-  );
+  // --- Matriz del modelo ----------------------------------------------------
+  // Con b bloques hacen falta b-1 columnas, en codificacion de EFECTOS: la
+  // columna j vale 1 en el bloque j, -1 en el ultimo y 0 en el resto. Asi los
+  // coeficientes suman cero y la constante es la media global.
+  const useBlocks = blockLevels.length >= 2 && params.includeBlocks;
+  const blkCols = useBlocks ? blockColumns(blockOf, blockLevels) : [];
+  const blkTerms = useBlocks
+    ? blockLevels.slice(0, -1).map((_, i) => blockTerm(i))
+    : [];
+  const nBlk = blkTerms.length;
+
+  // Los bloques van delante y la curvatura al final: asi los terminos
+  // factoriales ocupan las posiciones nBlk .. nBlk + active.length - 1, que es
+  // lo que usan la ecuacion no codificada y las medias ajustadas.
+  const modelTerms: Term[] = [
+    ...blkTerms,
+    ...active,
+    ...(useCtPt ? [CT_PT_TERM] : []),
+  ];
+  const X = modelTerms.map((t, i) => {
+    if (isBlockTerm(t)) return blkCols[i];
+    if (t.key === CT_PT_KEY) return ctPtCol;
+    return termColumn(coded, t);
+  });
+
   const fit = multiRegressionFit(X, y, modelTerms.map((t) => t.key));
   if (!fit) {
     return fail(
-      "The model is not estimable: some terms are aliased with each other. " +
-        "Lower the model order, or remove the terms flagged in the alias structure."
+      "The model is not estimable: some terms are aliased with each other, or a " +
+        "block is confounded with a term in the model. Lower the model order, or " +
+        "remove the terms flagged in the alias structure."
     );
   }
 
@@ -270,10 +352,10 @@ export function computeDoeAnalyze(
   // habitual. Lenth supone que la mayoria de los efectos son nulos y usa su
   // mediana como medida del ruido.
   //
-  // El termino de curvatura NO es un efecto factorial y queda fuera: incluirlo
-  // contaminaria la mediana con la que se estima el ruido.
+  // Ni los bloques ni la curvatura son efectos factoriales, y quedan fuera:
+  // contaminarian la mediana con la que se estima el ruido.
   const rawEffects = modelTerms
-    .map((t, i) => (t.order === 0 ? NaN : 2 * fit.terms[i].coef))
+    .map((t, i) => (t.order <= 0 ? NaN : 2 * fit.terms[i].coef))
     .filter((v) => Number.isFinite(v));
 
   let usedLenth = false;
@@ -298,9 +380,10 @@ export function computeDoeAnalyze(
   // --- Filas de terminos ----------------------------------------------------
   const rows: TermRow[] = modelTerms.map((term, i) => {
     const ft = fit.terms[i];
-    // El indicador de curvatura no tiene "efecto": no hay nivel alto ni bajo.
-    const effect = term.order === 0 ? NaN : 2 * ft.coef;
-    if (usedLenth && term.order !== 0) {
+    // Ni los bloques ni la curvatura tienen "efecto": no hay nivel alto ni bajo
+    // entre los que medirlo.
+    const effect = term.order <= 0 ? NaN : 2 * ft.coef;
+    if (usedLenth && term.order > 0) {
       const t = effect / pse;
       const p = lenthP(effect, pse, lenthDF);
       return {
@@ -337,24 +420,26 @@ export function computeDoeAnalyze(
   // --- ANOVA jerarquica -----------------------------------------------------
   // La suma de cuadrados de un grupo se calcula retirando TODOS sus terminos
   // de golpe. En un diseno ortogonal coincide con la suma de las individuales,
-  // pero no en cuanto el diseno se desequilibra.
+  // pero no en cuanto el diseno se desequilibra, y las columnas de bloque NO
+  // son ortogonales entre si.
   const groups: AnovaGroup[] = [];
   if (!usedLenth) {
-    // La curvatura va al final de la tabla, como en Minitab.
     const orders = [...new Set(modelTerms.map((t) => t.order))].sort(
-      (a, b) => (a === 0 ? 99 : a) - (b === 0 ? 99 : b)
+      (a, b) => orderRank(a) - orderRank(b)
     );
     for (const o of orders) {
       const members = rows.filter((r) => r.term.order === o);
-      const keep = modelTerms.filter((t) => t.order !== o);
+      const keepIdx = modelTerms
+        .map((t, i) => (t.order === o ? -1 : i))
+        .filter((i) => i >= 0);
       let ss: number;
-      if (keep.length === 0) {
+      if (keepIdx.length === 0) {
         ss = fit.totSS - fit.errSS;
       } else {
         const sub = multiRegressionFit(
-          keep.map((t) => (t.key === CT_PT_KEY ? ctPtCol : termColumn(coded, t))),
+          keepIdx.map((i) => X[i]),
           y,
-          keep.map((t) => t.key)
+          keepIdx.map((i) => modelTerms[i].key)
         );
         ss = sub ? sub.errSS - fit.errSS : NaN;
       }
@@ -374,9 +459,11 @@ export function computeDoeAnalyze(
   }
 
   // --- Ecuacion en unidades no codificadas ----------------------------------
+  // Solo los terminos factoriales se decodifican, y su indice en el ajuste
+  // arranca en nBlk porque los bloques van delante.
   const unc = uncodedCoefficients(
     fit.constant.coef,
-    active.map((t, i) => ({ term: t, coef: fit.terms[i].coef })),
+    active.map((t, i) => ({ term: t, coef: fit.terms[nBlk + i].coef })),
     coding
   );
   const uncoded: UncodedTerm[] = unc.map((e) => ({
@@ -388,7 +475,10 @@ export function computeDoeAnalyze(
   }));
   // El indicador de curvatura se queda tal cual: no hay escala que decodificar.
   if (useCtPt) {
-    uncoded.push({ label: CT_PT_KEY, value: fit.terms[active.length].coef });
+    uncoded.push({
+      label: CT_PT_KEY,
+      value: fit.terms[nBlk + active.length].coef,
+    });
   }
 
   // --- Observaciones inusuales ---------------------------------------------
@@ -414,9 +504,9 @@ export function computeDoeAnalyze(
     ? lenthMargin / pse
     : tQuantile(1 - alpha / 2, dfe);
 
-  // La curvatura no es un efecto factorial y no entra en estos graficos.
+  // Ni bloques ni curvatura son efectos factoriales: fuera de estos graficos.
   const effectsPlot = rows
-    .filter((r) => r.term.order !== 0)
+    .filter((r) => r.term.order > 0)
     .map((r) => ({
       label: r.term.letters,
       std: Math.abs(r.t),
@@ -432,12 +522,13 @@ export function computeDoeAnalyze(
   const k = facNames.length;
   const predict = (pt: number[]): number => {
     let v = fit.constant.coef;
-    // Las medias ajustadas se evaluan en las ESQUINAS: el indicador va a 0, de
-    // modo que el termino de curvatura no interviene.
+    // Se promedia sobre los bloques: sus columnas van a 0, que con codificacion
+    // de efectos es exactamente la media de los bloques. Y las esquinas dejan
+    // el indicador de curvatura tambien a 0.
     active.forEach((t, i) => {
       let prod = 1;
       for (const m of t.members) prod *= pt[m];
-      v += fit.terms[i].coef * prod;
+      v += fit.terms[nBlk + i].coef * prod;
     });
     return v;
   };
@@ -483,6 +574,17 @@ export function computeDoeAnalyze(
     }
   }
 
+  // --- Alias ----------------------------------------------------------------
+  // Los bloques aparecen como lineas propias tras la identidad: cuando el
+  // bloqueo es por replica cada uno es estimable por si mismo.
+  const aliases = useBlocks
+    ? [
+        ...aliasFac.slice(0, 1),
+        ...blkTerms.map((t) => ({ term: t.letters, aliases: [] as string[] })),
+        ...aliasFac.slice(1),
+      ]
+    : aliasFac;
+
   return {
     ok: true,
     response: resp,
@@ -504,6 +606,8 @@ export function computeDoeAnalyze(
     hasCenterPoints,
     nCenterPoints,
     centerFactors,
+    blockLevels,
+    usedBlocks: useBlocks,
     usedLenth,
     pse,
     lenthDF,
@@ -512,7 +616,7 @@ export function computeDoeAnalyze(
     effectsPlot,
     mainEffects,
     interactions,
-    advice: buildAdvice(rows, facNames, alpha, usedLenth, useCtPt),
+    advice: buildAdvice(rows, facNames, alpha, usedLenth, useCtPt, useBlocks),
     alpha,
     grandMean,
     n,
@@ -529,16 +633,18 @@ export function computeDoeAnalyze(
  * se queda si participa en una interaccion significativa: su coeficiente ya no
  * se interpreta solo, sino a traves de la interaccion.
  *
- * El termino de curvatura NUNCA se propone para retirar. No es un efecto que
- * sobre: es la unica prueba de que el plano describe los datos. Quitarlo manda
- * su variabilidad al error y sesga todos los contrastes.
+ * Ni la curvatura ni los bloques se proponen NUNCA para retirar. La curvatura es
+ * la unica prueba de que el plano describe los datos; los bloques representan
+ * como se corrio el experimento, no una hipotesis sobre el proceso. Quitar
+ * cualquiera de los dos manda su variabilidad al error y sesga los contrastes.
  */
 function buildAdvice(
   rows: TermRow[],
   facNames: string[],
   alpha: number,
   usedLenth: boolean,
-  useCtPt: boolean
+  useCtPt: boolean,
+  useBlocks: boolean
 ): Advice {
   const keys = new Set(rows.map((r) => r.term.key));
   const isParent = (key: string): boolean =>
@@ -546,7 +652,8 @@ function buildAdvice(
       (o) => o.term.key !== key && parentKeys(o.term, facNames).includes(key)
     );
 
-  const factorRows = rows.filter((r) => r.term.order !== 0);
+  // Solo los terminos factoriales entran en la poda: order > 0.
+  const factorRows = rows.filter((r) => r.term.order > 0);
   const removable = factorRows.filter((r) => !isParent(r.term.key));
   const worst = removable.reduce<TermRow | null>(
     (best, r) => (best === null || r.p > best.p ? r : best),
@@ -556,15 +663,17 @@ function buildAdvice(
   const al = alpha.toString().replace(".", ",");
   const ctPtNote = useCtPt
     ? ` The ${CT_PT_KEY} term is never proposed for removal: it is the only test that ` +
-      `the response is a plane between the levels, and dropping it would push its ` +
-      `variability into the error.`
+      `the response is a plane between the levels.`
+    : "";
+  const blkNote = useBlocks
+    ? ` Neither are the block terms: they record how the experiment was actually ` +
+      `run, not a hypothesis about the process.`
     : "";
 
   if (worst && worst.p > alpha) {
     const next = factorRows
       .filter((r) => r.term.key !== worst.term.key)
       .map((r) => r.term.key);
-    if (useCtPt) next.push(CT_PT_KEY);
     return {
       kind: "remove",
       term: worst.term.key,
@@ -575,7 +684,9 @@ function buildAdvice(
         `It is the least significant term that can be dropped without breaking the ` +
         `hierarchy, and it does not reach ${al}. Removing it returns a degree of ` +
         `freedom to the error, which makes every remaining test sharper. Take out one ` +
-        `term at a time: the others change when it goes.` + ctPtNote,
+        `term at a time: the others change when it goes.` +
+        ctPtNote +
+        blkNote,
       nextTerms: next,
     };
   }
