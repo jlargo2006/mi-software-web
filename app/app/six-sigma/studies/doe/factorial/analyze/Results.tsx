@@ -788,9 +788,9 @@ export default function DoeAnalyzeResults({
                         <td className={td}>{fx(g.f, 2)}</td>
                         <td className={td}>{fp(g.p)}</td>
                       </tr>
-                      {/* La curvatura es un grupo de una sola fila: no se
-                          repite debajo. */}
-                                           {g.members.length > 1 &&
+                      {/* Blocks y Curvature no desglosan: el grupo ya dice todo
+                          lo que hay que decir. */}
+                      {g.members.length > 1 &&
                         g.label !== "Blocks" &&
                         g.members.map((mrow) => (
                           <tr
@@ -818,32 +818,6 @@ export default function DoeAnalyzeResults({
                             <td className={td}>{fp(g.members[0].fP)}</td>
                           </tr>
                         )}
-
-                        g.members.map((mrow) => (
-                          <tr
-                            key={mrow.term.key}
-                            className="border-b border-gray-200"
-                          >
-                            <td className={`${tdL} pl-12`}>{mrow.term.key}</td>
-                            <td className={td}>1</td>
-                            <td className={td}>{fx(mrow.adjSS, 3)}</td>
-                            <td className={td}>{fx(mrow.adjMS, 3)}</td>
-                            <td className={td}>{fx(mrow.fValue, 2)}</td>
-                            <td className={td}>{fp(mrow.fP)}</td>
-                          </tr>
-                        ))}
-                      {g.members.length === 1 && g.members[0].term.order !== 0 && (
-                        <tr className="border-b border-gray-200">
-                          <td className={`${tdL} pl-12`}>
-                            {g.members[0].term.key}
-                          </td>
-                          <td className={td}>1</td>
-                          <td className={td}>{fx(g.members[0].adjSS, 3)}</td>
-                          <td className={td}>{fx(g.members[0].adjMS, 3)}</td>
-                          <td className={td}>{fx(g.members[0].fValue, 2)}</td>
-                          <td className={td}>{fp(g.members[0].fP)}</td>
-                        </tr>
-                      )}
                     </React.Fragment>
                   ))}
                   <tr className="border-b border-gray-200">
