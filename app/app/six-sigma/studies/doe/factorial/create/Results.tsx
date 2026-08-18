@@ -27,6 +27,11 @@ export default function DoeCreateResults({
 
   const title = r.isFull ? "Full Factorial Design" : "Fractional Factorial Design";
 
+  // Un bloque que contiene una replica completa no confunde nada: todas las
+  // esquinas estan dentro, asi que ningun efecto se mezcla con el bloque.
+  const cleanBlocking = r.blocks > 1 && r.blockWithin === 1;
+  const runsPerBlock = Math.round((r.baseRuns * r.replicates) / r.blocks);
+
   return (
     <ReportLayout
       template="chart-text"
@@ -88,18 +93,62 @@ export default function DoeCreateResults({
                 </span>
               )}
             </p>
-
-            {r.blockConfounded.length > 0 && (
-              <p className="mt-1 text-sm text-amber-800">
-                Blocks are confounded with:{" "}
-                <span className="font-mono">
-                  {r.blockConfounded.join(", ")}
-                </span>
-                . Those interactions can no longer be separated from the block
-                effect.
-              </p>
-            )}
           </section>
+
+          {/* Bloqueo */}
+          {r.blocks > 1 && (
+            <section
+              className={`rounded-md border px-4 py-3 text-sm ${
+                cleanBlocking
+                  ? "border-emerald-300 bg-emerald-50 text-emerald-900"
+                  : "border-amber-300 bg-amber-50 text-amber-900"
+              }`}
+            >
+              {cleanBlocking ? (
+                <>
+                  <p className="font-semibold">
+                    Blocking by replicate: nothing is confounded
+                  </p>
+                  <p className="mt-1">
+                    Each of the {r.blocks} blocks holds a complete replicate of{" "}
+                    {runsPerBlock} corner run(s), so every effect stays estimable.
+                    Run one block per day, per batch or per operator: the block
+                    soaks up that variation at no cost in effects. This is the
+                    cheapest blocking there is.
+                  </p>
+                  <p className="mt-2 text-xs">
+                    The price is {r.blocks - 1} degree(s) of freedom taken from
+                    the error, which is a good trade unless the design was already
+                    short of replicates.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="font-semibold">
+                    Blocking splits each replicate: an interaction is lost
+                  </p>
+                  <p className="mt-1">
+                    Each replicate is divided into {r.blockWithin} part(s)
+                    {r.blockRepGroups > 1
+                      ? `, across ${r.blockRepGroups} group(s) of replicates`
+                      : ""}
+                    , giving {r.blocks} blocks of {runsPerBlock} corner run(s). A
+                    block no longer holds every level combination, so the block
+                    effect cannot be told apart from{" "}
+                    <span className="font-mono">
+                      {r.blockConfounded.join(", ")}
+                    </span>
+                    .
+                  </p>
+                  <p className="mt-2 text-xs">
+                    Acceptable when those interactions are expected to be
+                    negligible. If one of them matters to you, either raise the
+                    replicates and block by replicate instead, or run fewer blocks.
+                  </p>
+                </>
+              )}
+            </section>
+          )}
 
           {/* Factores */}
           <section className="overflow-x-auto">
@@ -163,7 +212,10 @@ export default function DoeCreateResults({
                   <th className={th}>Run</th>
                   <th className={th}>Blk</th>
                   {r.factors.map((f) => (
-                    <th key={f.letter} className="px-3 py-1 text-center font-medium text-gray-600">
+                    <th
+                      key={f.letter}
+                      className="px-3 py-1 text-center font-medium text-gray-600"
+                    >
                       {f.letter}
                     </th>
                   ))}
@@ -189,6 +241,13 @@ export default function DoeCreateResults({
                 ? ` Run order was randomized within each block using base ${r.seedUsed}; the same base always reproduces this order.`
                 : " Runs are in standard order, which is not a valid order for actually running the experiment."}
             </p>
+            {r.blocks > 1 && (
+              <p className="mt-1 text-xs text-gray-600">
+                Blocks run one after another, and runs are shuffled only inside
+                each one. Interleaving them would undo the blocking, which exists
+                precisely to keep those runs together.
+              </p>
+            )}
           </section>
 
           <section className="rounded-md border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
@@ -206,10 +265,9 @@ export default function DoeCreateResults({
           <section className="space-y-1 text-xs text-gray-600">
             <p>
               {r.baseRuns} base run(s) {"\u00d7"} {r.replicates} replicate(s)
-              {r.centerTotal > 0
-                ? ` + ${r.centerTotal} center point(s)`
-                : ""}{" "}
-              = {r.totalRuns} run(s).
+              {r.centerTotal > 0 ? ` + ${r.centerTotal} center point(s)` : ""} ={" "}
+              {r.totalRuns} run(s)
+              {r.blocks > 1 ? `, in ${r.blocks} blocks` : ""}.
             </p>
             {!r.randomized && (
               <p className="text-amber-700">
