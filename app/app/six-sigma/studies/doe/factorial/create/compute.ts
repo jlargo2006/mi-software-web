@@ -5,8 +5,10 @@ import {
   aliasStructure,
   availableDesigns,
   blockAssignment,
+  blockOptions,
   mulberry32,
   shuffle,
+  splitBlocks,
   standardMatrix,
 } from "../../../../lib/doe";
 import {
@@ -33,7 +35,9 @@ export function computeDoeCreate(
 ): DoeCreateResult {
   const k = num(params.numFactors);
   if (!Number.isInteger(k) || k < MIN_FACTORS || k > MAX_FACTORS) {
-    return fail(`The number of factors must be a whole number from ${MIN_FACTORS} to ${MAX_FACTORS}.`);
+    return fail(
+      `The number of factors must be a whole number from ${MIN_FACTORS} to ${MAX_FACTORS}.`
+    );
   }
 
   const options = availableDesigns(k);
@@ -42,7 +46,8 @@ export function computeDoeCreate(
   }
 
   const wantRuns = num(params.baseRuns);
-  const design = options.find((o) => o.runs === wantRuns) ?? options[options.length - 1];
+  const design =
+    options.find((o) => o.runs === wantRuns) ?? options[options.length - 1];
 
   const centerPerBlock = num(params.centerPoints);
   if (!Number.isInteger(centerPerBlock) || centerPerBlock < 0 || centerPerBlock > 20) {
@@ -60,16 +65,20 @@ export function computeDoeCreate(
     return fail("Replicates for corner points must be a whole number from 1 to 10.");
   }
 
+  // --- Bloques --------------------------------------------------------------
+  // Se valida DESPUES de las replicas, porque el numero de bloques admisible
+  // depende de ellas: agrupar replicas enteras permite valores que no son
+  // potencia de dos, como 3 bloques con 3 replicas.
   const blocks = num(params.blocks);
   if (!Number.isInteger(blocks) || blocks < 1) {
     return fail("The number of blocks must be a whole number of at least 1.");
   }
-  if ((blocks & (blocks - 1)) !== 0) {
-    return fail("The number of blocks must be a power of two: 1, 2, 4, 8...");
-  }
-  if (blocks > design.runs / 2) {
+  const split = splitBlocks(design.runs, replicates, blocks);
+  if (!split) {
+    const opts = blockOptions(design.runs, replicates);
     return fail(
-      `With ${design.runs} base runs the maximum number of blocks is ${design.runs / 2}.`
+      `${blocks} blocks cannot be built from ${design.runs} base runs and ` +
+        `${replicates} replicate(s). The possible values are ${opts.join(", ")}.`
     );
   }
 
@@ -101,21 +110,33 @@ export function computeDoeCreate(
 
   // --- Matriz base en orden estandar ---------------------------------------
   const matrix = standardMatrix(k, design.base, design.gens);
-  const { blockOf, confounded } = blockAssignment(matrix, design.base, blocks);
+
+  // Solo se confunde algo cuando hay que partir DENTRO de una replica. Con
+  // within = 1 cada bloque lleva las esquinas completas y no se pierde nada:
+  // el bloque absorbe la variacion entre dias o lotes sin coste en efectos.
+  const within = split.within;
+  const { blockOf, confounded } =
+    within > 1
+      ? blockAssignment(matrix, design.base, within)
+      : { blockOf: matrix.map(() => 1), confounded: [] as string[] };
 
   // --- Corridas: replicas y puntos centrales -------------------------------
   // El StdOrder numera de corrido: la segunda replica sigue donde acabo la
   // primera, y los puntos centrales van al final de cada bloque.
+  const repsPerGroup = replicates / split.repGroups;
   const built: DesignRow[] = [];
   let std = 0;
   for (let rep = 0; rep < replicates; rep++) {
+    // Las replicas se reparten en grupos; dentro de cada grupo, la particion
+    // por el signo de una interaccion completa el numero de bloques.
+    const group = Math.floor(rep / repsPerGroup);
     for (let i = 0; i < matrix.length; i++) {
       std++;
       built.push({
         stdOrder: std,
         runOrder: 0,
         centerPt: 1,
-        block: blockOf[i],
+        block: group * within + blockOf[i],
         coded: matrix[i],
       });
     }
@@ -197,6 +218,8 @@ export function computeDoeCreate(
     totalRuns: ordered.length,
     replicates,
     blocks,
+    blockRepGroups: split.repGroups,
+    blockWithin: within,
     centerPerBlock,
     centerTotal: centerPerBlock * blocks,
     randomized: params.randomize,
