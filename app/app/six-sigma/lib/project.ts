@@ -68,6 +68,39 @@ function sanitizeStudies(raw: unknown): SavedStudy[] {
   return out;
 }
 
+export function exportProject(
+  data: WorkbookData,
+  order: string[],
+  studies: SavedStudy[]
+) {
+  const project: ProjectFile = {
+    app: "mi-software-web",
+    kind: "sixsigma-project",
+    version: 1,
+    savedAt: new Date().toISOString(),
+    workbook: { data, order },
+    studies,
+  };
+
+  const blob = new Blob([JSON.stringify(project, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, "0");
+  const fname = `project_${d.getFullYear()}${p(d.getMonth() + 1)}${p(
+    d.getDate()
+  )}_${p(d.getHours())}${p(d.getMinutes())}.sixsigma`;
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fname;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+
 export function importProject(file: File): Promise<ProjectFile> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
