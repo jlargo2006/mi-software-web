@@ -228,3 +228,18 @@ export function uncodedCoefficients(
       value: e.value,
     }));
 }
+
+/** Clave del termino indicador de punto central. */
+export const CT_PT_KEY = "Ct Pt";
+
+/**
+ * Termino ficticio para el punto central. No es producto de factores: es un
+ * indicador que vale 1 en las corridas centrales y 0 en las esquinas. Se le da
+ * orden 0 para que la ANOVA lo agrupe en su propia fila, "Curvature".
+ */
+export const CT_PT_TERM: Term = {
+  key: CT_PT_KEY,
+  members: [],
+  order: 0,
+  letters: "",
+};
