@@ -91,7 +91,7 @@ export default function DoeAnalyzeResults({
   };
 
   /* ---------- Normal plot de efectos ---------- */
-  // Los efectos tipificados se ordenan CON signo y se sitúan en una escala de
+  // Los efectos tipificados se ordenan CON signo y se situan en una escala de
   // probabilidad normal. Los nulos caen sobre la recta; los reales se escapan.
   const sortedEff = [...r.effectsPlot].sort((a, b) => a.signed - b.signed);
   const m = sortedEff.length;
@@ -589,6 +589,21 @@ export default function DoeAnalyzeResults({
             </div>
           )}
 
+          {r.hasCenterPoints && (
+            <div className="rounded-md border border-blue-300 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+              <p className="font-semibold">
+                {r.nCenterPoints} center point{r.nCenterPoints === 1 ? "" : "s"}{" "}
+                detected
+              </p>
+              <p className="mt-1">
+                They are not a third level of {r.centerFactors.join(", ")}:{" "}
+                {params.includeCenterPoints
+                  ? "they enter as a separate Ct Pt indicator that tests curvature. If it is significant, the response is not a plane between the levels and no two-level model will describe it."
+                  : "the Ct Pt term is switched off, so their variability goes into the error and curvature is not being tested. Switch it on unless you have a reason."}
+              </p>
+            </div>
+          )}
+
           {/* Coeficientes codificados */}
           <section className="overflow-x-auto">
             <h4 className="mb-2 text-sm font-semibold text-gray-800">
@@ -634,7 +649,13 @@ export default function DoeAnalyzeResults({
                       <td className={`${tdL} ${drop ? "font-semibold" : ""}`}>
                         {row.term.key}
                       </td>
-                      <td className={td}>{fx(row.effect, 3)}</td>
+                      {/* El indicador de curvatura no tiene efecto: no hay
+                          nivel alto ni bajo entre los que medirlo. */}
+                      <td className={td}>
+                        {Number.isFinite(row.effect)
+                          ? fx(row.effect, 3)
+                          : "\u00a0"}
+                      </td>
                       <td className={td}>{fx(row.coef, 3)}</td>
                       <td className={td}>{fx(row.se, 3)}</td>
                       <td className={td}>{fx(row.t, 2)}</td>
@@ -706,8 +727,8 @@ export default function DoeAnalyzeResults({
                   <tr className="border-b border-gray-200 font-medium">
                     <td className={tdL}>Model</td>
                     <td className={td}>{r.modelDF}</td>
-                    <td className={td}>{fx(r.modelSS, 2)}</td>
-                    <td className={td}>{fx(r.modelMS, 2)}</td>
+                    <td className={td}>{fx(r.modelSS, 3)}</td>
+                    <td className={td}>{fx(r.modelMS, 3)}</td>
                     <td className={td}>{fx(r.modelF, 2)}</td>
                     <td className={td}>{fp(r.modelP)}</td>
                   </tr>
@@ -716,38 +737,53 @@ export default function DoeAnalyzeResults({
                       <tr className="border-b border-gray-200">
                         <td className={`${tdL} pl-6`}>{g.label}</td>
                         <td className={td}>{g.df}</td>
-                        <td className={td}>{fx(g.ss, 2)}</td>
-                        <td className={td}>{fx(g.ms, 2)}</td>
+                        <td className={td}>{fx(g.ss, 3)}</td>
+                        <td className={td}>{fx(g.ms, 3)}</td>
                         <td className={td}>{fx(g.f, 2)}</td>
                         <td className={td}>{fp(g.p)}</td>
                       </tr>
-                      {g.members.map((mrow) => (
-                        <tr
-                          key={mrow.term.key}
-                          className="border-b border-gray-200"
-                        >
-                          <td className={`${tdL} pl-12`}>{mrow.term.key}</td>
+                      {/* La curvatura es un grupo de una sola fila: no se
+                          repite debajo. */}
+                      {g.members.length > 1 &&
+                        g.members.map((mrow) => (
+                          <tr
+                            key={mrow.term.key}
+                            className="border-b border-gray-200"
+                          >
+                            <td className={`${tdL} pl-12`}>{mrow.term.key}</td>
+                            <td className={td}>1</td>
+                            <td className={td}>{fx(mrow.adjSS, 3)}</td>
+                            <td className={td}>{fx(mrow.adjMS, 3)}</td>
+                            <td className={td}>{fx(mrow.fValue, 2)}</td>
+                            <td className={td}>{fp(mrow.fP)}</td>
+                          </tr>
+                        ))}
+                      {g.members.length === 1 && g.members[0].term.order !== 0 && (
+                        <tr className="border-b border-gray-200">
+                          <td className={`${tdL} pl-12`}>
+                            {g.members[0].term.key}
+                          </td>
                           <td className={td}>1</td>
-                          <td className={td}>{fx(mrow.adjSS, 2)}</td>
-                          <td className={td}>{fx(mrow.adjMS, 2)}</td>
-                          <td className={td}>{fx(mrow.fValue, 2)}</td>
-                          <td className={td}>{fp(mrow.fP)}</td>
+                          <td className={td}>{fx(g.members[0].adjSS, 3)}</td>
+                          <td className={td}>{fx(g.members[0].adjMS, 3)}</td>
+                          <td className={td}>{fx(g.members[0].fValue, 2)}</td>
+                          <td className={td}>{fp(g.members[0].fP)}</td>
                         </tr>
-                      ))}
+                      )}
                     </React.Fragment>
                   ))}
                   <tr className="border-b border-gray-200">
                     <td className={tdL}>Error</td>
                     <td className={td}>{f.errDF}</td>
-                    <td className={td}>{fx(f.errSS, 2)}</td>
-                    <td className={td}>{fx(f.errMS, 2)}</td>
+                    <td className={td}>{fx(f.errSS, 3)}</td>
+                    <td className={td}>{fx(f.errMS, 3)}</td>
                     <td className={td}>{"\u00a0"}</td>
                     <td className={td}>{"\u00a0"}</td>
                   </tr>
                   <tr className="border-b border-gray-300 font-medium">
                     <td className={tdL}>Total</td>
                     <td className={td}>{f.totDF}</td>
-                    <td className={td}>{fx(f.totSS, 2)}</td>
+                    <td className={td}>{fx(f.totSS, 3)}</td>
                     <td className={td}>{"\u00a0"}</td>
                     <td className={td}>{"\u00a0"}</td>
                     <td className={td}>{"\u00a0"}</td>
@@ -765,10 +801,20 @@ export default function DoeAnalyzeResults({
             <p className="font-mono text-sm leading-relaxed text-gray-900">
               {r.response} = {eqParts.join("")}
             </p>
-            {r.factors.some((_, i) => r.mainEffects[i].points.some((p) => Number.isNaN(Number(p.label.replace(",", "."))))) && (
+            {r.factors.some((_, i) =>
+              r.mainEffects[i].points.some((p) =>
+                Number.isNaN(Number(p.label.replace(",", ".")))
+              )
+            ) && (
               <p className="mt-1 text-xs text-gray-600">
                 A text factor keeps its {"\u2212"}1 / +1 coding in this equation:
                 there is no real scale to decode it onto.
+              </p>
+            )}
+            {r.hasCenterPoints && params.includeCenterPoints && (
+              <p className="mt-1 text-xs text-gray-600">
+                Ct Pt is an indicator, not a measurable variable: set it to 0 to
+                predict at a corner and to 1 at the centre.
               </p>
             )}
           </section>
@@ -857,6 +903,9 @@ export default function DoeAnalyzeResults({
               {r.aliasClean
                 ? "Every term stands alone: nothing is confounded with anything, so each effect can be attributed to its own term."
                 : "Terms on the same line cannot be told apart by this design. Their estimated effect is the sum of the whole line."}
+              {r.hasCenterPoints
+                ? " Aliasing is worked out from the corner runs only: a center point has every column at zero and would distort the comparison."
+                : ""}
             </p>
           </section>
 
@@ -903,8 +952,13 @@ export default function DoeAnalyzeResults({
               <p className="mt-2 text-xs text-gray-600">
                 Bars past the dashed line at {fx(r.paretoLimit, 2)} are
                 significant. That value is the critical t for{" "}
-                {r.usedLenth ? "Lenth\u2019s pseudo error" : `${f.errDF} error degrees of freedom`}
+                {r.usedLenth
+                  ? "Lenth\u2019s pseudo error"
+                  : `${f.errDF} error degrees of freedom`}
                 , so it tightens as the model gets leaner.
+                {r.hasCenterPoints && params.includeCenterPoints
+                  ? " The Ct Pt term is left out: curvature is not a factorial effect."
+                  : ""}
               </p>
             </section>
           )}
@@ -971,6 +1025,12 @@ export default function DoeAnalyzeResults({
                 factor does nothing on average, which is not the same as doing
                 nothing.
               </p>
+              {r.hasCenterPoints && (
+                <p className="mt-1 text-xs text-gray-600">
+                  The lines join the corner levels. Center points are not drawn:
+                  they are a curvature check, not a third level.
+                </p>
+              )}
             </section>
           )}
 
@@ -1022,12 +1082,22 @@ export default function DoeAnalyzeResults({
                 runs. In a factorial the fitted values sit in a few columns, one
                 per treatment combination, so that clustering is normal.
               </p>
+              {r.hasCenterPoints && (
+                <p className="mt-1 text-xs text-gray-600">
+                  The center points form their own column, near the middle of the
+                  fitted range.
+                </p>
+              )}
             </section>
           )}
 
           <section className="space-y-1 text-xs text-gray-600">
             <p>
-              {r.n} run(s), {r.rows.length} term(s) in the model,{" "}
+              {r.n} run(s)
+              {r.hasCenterPoints
+                ? `, of which ${r.nCenterPoints} at the centre`
+                : ""}
+              , {r.rows.length} term(s) in the model,{" "}
               {r.usedLenth ? "no" : f.errDF} error degree(s) of freedom. Overall
               mean {fx(r.grandMean, 4)}.
             </p>
@@ -1043,4 +1113,3 @@ export default function DoeAnalyzeResults({
     />
   );
 }
-
