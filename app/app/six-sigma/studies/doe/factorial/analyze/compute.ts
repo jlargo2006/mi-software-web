@@ -101,7 +101,7 @@ export function computeDoeAnalyze(
   }
 
   // --- Columna de bloques ---------------------------------------------------
-  const blkName = params.blockColumn.trim();
+  const blkName = (params.blockColumn ?? "").trim();
   if (blkName !== "") {
     if (!data[blkName]) {
       return fail(
@@ -276,7 +276,7 @@ export function computeDoeAnalyze(
     );
   }
 
-  const useCtPt = hasCenterPoints && params.includeCenterPoints;
+  const useCtPt = hasCenterPoints && params.includeCenterPoints !== false;
   const ctPtCol = isCenter.map((c) => (c ? 1 : 0));
 
   // --- Terminos -------------------------------------------------------------
@@ -318,7 +318,7 @@ export function computeDoeAnalyze(
   // Con b bloques hacen falta b-1 columnas, en codificacion de EFECTOS: la
   // columna j vale 1 en el bloque j, -1 en el ultimo y 0 en el resto. Asi los
   // coeficientes suman cero y la constante es la media global.
-  const useBlocks = blockLevels.length >= 2 && params.includeBlocks;
+  const useBlocks = blockLevels.length >= 2 && params.includeBlocks !== false;
   const blkCols = useBlocks ? blockColumns(blockOf, blockLevels) : [];
   const blkTerms = useBlocks
     ? blockLevels.slice(0, -1).map((_, i) => blockTerm(i))
