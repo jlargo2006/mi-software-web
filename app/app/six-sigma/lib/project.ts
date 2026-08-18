@@ -50,14 +50,17 @@ function sanitizeStudies(raw: unknown): SavedStudy[] {
     if (typeof st.type !== "string" || typeof st.id !== "string") continue;
     const def = REGISTRY[st.type];
     if (!def) continue;
+    // Los diagramas (fishbone) no declaran defaultParams: no hay nada que
+    // rellenar y sus params se pasan tal cual.
+    const defaults =
+      "defaultParams" in def
+        ? (def.defaultParams as Record<string, unknown>)
+        : {};
     out.push({
       id: st.id,
       type: st.type,
       name: typeof st.name === "string" ? st.name : st.type,
-      params: mergeParams(
-        st.params,
-        def.defaultParams as Record<string, unknown>
-      ),
+      params: mergeParams(st.params, defaults),
       results: (st.results as Record<string, unknown>) ?? {},
       snapshot:
         st.snapshot && Array.isArray(st.snapshot.cols)
