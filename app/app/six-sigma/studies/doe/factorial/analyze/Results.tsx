@@ -7,6 +7,7 @@ import ResultChart from "../../../../components/ResultChart";
 import { normalInv } from "../../../../lib/regression";
 import { sig4 } from "./compute";
 import { RESID_LABEL, type DoeAnalyzeParams, type DoeAnalyzeResult } from "./types";
+import { blockLabel, isBlockTerm } from "../../../../lib/factorialmodel";
 
 const BLUE = "#1d4ed8";
 const RED = "#b91c1c";
@@ -572,7 +573,9 @@ export default function DoeAnalyzeResults({
       center={
         <div className="w-full space-y-6">
           <h3 className="text-sm font-semibold text-gray-800">
-            Factorial Regression: {r.response} versus {r.factors.join("; ")}
+            Factorial Regression: {r.response} versus{" "}
+            {r.usedBlocks ? "Blocks; " : ""}
+            {r.factors.join("; ")}
           </h3>
 
           {r.usedLenth && (
@@ -603,6 +606,27 @@ export default function DoeAnalyzeResults({
               </p>
             </div>
           )}
+
+          {r.usedBlocks && (
+            <div className="rounded-md border border-blue-300 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+              <p className="font-semibold">
+                {r.blockLevels.length} blocks fitted
+              </p>
+              <p className="mt-1">
+                The block coefficients are not effects: there is no high or low
+                level to measure between. They are deviations from the overall
+                mean, coded so that they sum to zero, which is why only{" "}
+                {r.blockLevels.length - 1} of them are printed {"\u2014"} the last
+                one is whatever makes the total zero. Their VIF exceeds 1,00 for
+                the same reason, and signals nothing wrong.
+              </p>
+              <p className="mt-2 text-xs">
+                Blocks are a nuisance, not a subject: you do not interpret them,
+                you remove them. What they buy you is a smaller error, and with it
+                sharper tests on the factors that do interest you.
+              </p>
+            </div>
+          )}          
 
           {/* Coeficientes codificados */}
           <section className="overflow-x-auto">
@@ -637,47 +661,69 @@ export default function DoeAnalyzeResults({
                   </td>
                   <td className={td}>{"\u00a0"}</td>
                 </tr>
-                {r.rows.map((row) => {
+                {r.rows.map((row, i) => {
                   const drop = adv.term === row.term.key;
+                  const blk = isBlockTerm(row.term);
+                  // Cabecera "Blocks" sobre la primera fila de bloque, con las
+                  // demas sangradas debajo, como en Minitab.
+                  const first =
+                    blk && (i === 0 || !isBlockTerm(r.rows[i - 1].term));
                   return (
-                    <tr
-                      key={row.term.key}
-                      className={`border-b border-gray-200 ${
-                        drop ? "bg-amber-50" : ""
-                      }`}
-                    >
-                      <td className={`${tdL} ${drop ? "font-semibold" : ""}`}>
-                        {row.term.key}
-                      </td>
-                      {/* El indicador de curvatura no tiene efecto: no hay
-                          nivel alto ni bajo entre los que medirlo. */}
-                      <td className={td}>
-                        {Number.isFinite(row.effect)
-                          ? fx(row.effect, 3)
-                          : "\u00a0"}
-                      </td>
-                      <td className={td}>{fx(row.coef, 3)}</td>
-                      <td className={td}>{fx(row.se, 3)}</td>
-                      <td className={td}>{fx(row.t, 2)}</td>
-                      <td
-                        className={`${td} ${
-                          row.significant
-                            ? "font-semibold text-emerald-800"
-                            : "text-amber-700"
+                    <React.Fragment key={row.term.key}>
+                      {first && (
+                        <tr className="border-b border-gray-200">
+                          <td className={tdL}>Blocks</td>
+                          <td className={td} colSpan={6}>
+                            {"\u00a0"}
+                          </td>
+                        </tr>
+                      )}
+                      <tr
+                        className={`border-b border-gray-200 ${
+                          drop ? "bg-amber-50" : ""
                         }`}
                       >
-                        {fp(row.p)}
-                      </td>
-                      <td className={td}>{fx(row.vif, 2)}</td>
-                    </tr>
+                        <td
+                          className={`${tdL} ${blk ? "pl-8" : ""} ${
+                            drop ? "font-semibold" : ""
+                          }`}
+                        >
+                          {blk ? blockLabel(row.term) : row.term.key}
+                        </td>
+                        {/* Bloques y curvatura no tienen efecto: no hay nivel
+                            alto ni bajo entre los que medirlo. */}
+                        <td className={td}>
+                          {Number.isFinite(row.effect)
+                            ? fx(row.effect, 3)
+                            : "\u00a0"}
+                        </td>
+                        <td className={td}>{fx(row.coef, 3)}</td>
+                        <td className={td}>{fx(row.se, 3)}</td>
+                        <td className={td}>{fx(row.t, 2)}</td>
+                        <td
+                          className={`${td} ${
+                            row.significant
+                              ? "font-semibold text-emerald-800"
+                              : "text-amber-700"
+                          }`}
+                        >
+                          {fp(row.p)}
+                        </td>
+                        <td className={td}>{fx(row.vif, 2)}</td>
+                      </tr>
+                    </React.Fragment>
                   );
                 })}
               </tbody>
             </table>
             <p className="mt-2 text-xs text-gray-600">
               Effect is twice the coefficient: the change in {r.response} on
-              going from the low level to the high one. All VIFs equal 1,00 in a
-              balanced design, because the coded columns are orthogonal.
+              going from the low level to the high one. The factor VIFs equal
+              1,00 in a balanced design, because the coded columns are
+              orthogonal.
+              {r.usedBlocks
+                ? " The block VIFs do not, and cannot: with three or more blocks their columns are necessarily correlated with each other."
+                : ""}
             </p>
           </section>
 
@@ -744,7 +790,35 @@ export default function DoeAnalyzeResults({
                       </tr>
                       {/* La curvatura es un grupo de una sola fila: no se
                           repite debajo. */}
-                      {g.members.length > 1 &&
+                                           {g.members.length > 1 &&
+                        g.label !== "Blocks" &&
+                        g.members.map((mrow) => (
+                          <tr
+                            key={mrow.term.key}
+                            className="border-b border-gray-200"
+                          >
+                            <td className={`${tdL} pl-12`}>{mrow.term.key}</td>
+                            <td className={td}>1</td>
+                            <td className={td}>{fx(mrow.adjSS, 3)}</td>
+                            <td className={td}>{fx(mrow.adjMS, 3)}</td>
+                            <td className={td}>{fx(mrow.fValue, 2)}</td>
+                            <td className={td}>{fp(mrow.fP)}</td>
+                          </tr>
+                        ))}
+                      {g.members.length === 1 &&
+                        g.members[0].term.order > 0 && (
+                          <tr className="border-b border-gray-200">
+                            <td className={`${tdL} pl-12`}>
+                              {g.members[0].term.key}
+                            </td>
+                            <td className={td}>1</td>
+                            <td className={td}>{fx(g.members[0].adjSS, 3)}</td>
+                            <td className={td}>{fx(g.members[0].adjMS, 3)}</td>
+                            <td className={td}>{fx(g.members[0].fValue, 2)}</td>
+                            <td className={td}>{fp(g.members[0].fP)}</td>
+                          </tr>
+                        )}
+
                         g.members.map((mrow) => (
                           <tr
                             key={mrow.term.key}
@@ -1097,7 +1171,8 @@ export default function DoeAnalyzeResults({
               {r.hasCenterPoints
                 ? `, of which ${r.nCenterPoints} at the centre`
                 : ""}
-              , {r.rows.length} term(s) in the model,{" "}
+              {r.usedBlocks ? ` in ${r.blockLevels.length} blocks` : ""},{" "}
+              {r.rows.length} term(s) in the model,{" "}
               {r.usedLenth ? "no" : f.errDF} error degree(s) of freedom. Overall
               mean {fx(r.grandMean, 4)}.
             </p>
