@@ -20,6 +20,10 @@ export interface DoeAnalyzeParams {
   excluded: string[];
   /** Ajustar el termino de curvatura cuando hay puntos centrales. */
   includeCenterPoints: boolean;  
+  /** Columna que identifica el bloque. Vacio: sin bloques. */
+  blockColumn: string;
+  /** Ajustar los terminos de bloque. */
+  includeBlocks: boolean;  
   alpha: string;
   residualKind: ResidualKind;
   showPareto: boolean;
@@ -42,6 +46,8 @@ export const DOEANALYZE_DEFAULT: DoeAnalyzeParams = {
   showMainEffects: false,
   showInteraction: false,
   includeCenterPoints: true,
+  blockColumn: "",
+  includeBlocks: true,  
 };
 
 export interface TermRow {
@@ -136,6 +142,10 @@ export interface DoeAnalyzeModel {
   nCenterPoints: number;
   /** Factores con tres niveles cuyo medio es el punto central. */
   centerFactors: string[];
+  
+  /** Bloques ajustados: niveles encontrados en la columna. */
+  blockLevels: number[];
+  usedBlocks: boolean;
   
   /** Metodo de Lenth: solo cuando no quedan grados de libertad. */
   usedLenth: boolean;
