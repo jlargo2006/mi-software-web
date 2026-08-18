@@ -23,9 +23,13 @@ const doeAnalyzeFactorial: AnalysisDefinition<
   Controls,
   Results,
   Theory,
+  // La columna de bloques tiene que entrar aqui: lo que no se declare no llega
+  // al snapshot que recibe compute, y alli aparece como columna inexistente.
   referencedColumns: (p) =>
     Array.from(
-      new Set([p.response, ...p.factors].filter((s) => s.trim() !== ""))
+      new Set(
+        [p.response, ...p.factors, p.blockColumn].filter((s) => s.trim() !== "")
+      )
     ),
 };
 
