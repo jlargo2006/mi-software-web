@@ -2,7 +2,7 @@
 "use client";
 import React from "react";
 import type { ColumnInfo } from "../../../../lib/columns";
-import { availableDesigns, blockOptions } from "../../../../lib/doe";
+import { availableDesigns, blockOptions, splitBlocks } from "../../../../lib/doe";
 import {
   MAX_FACTORS,
   MIN_FACTORS,
@@ -61,7 +61,26 @@ export default function DoeCreateControls({
     set("factors", next);
   };
 
-  const blocksAvail = chosen ? blockOptions(chosen.base) : [1];
+  // Las opciones de bloqueo dependen de las replicas: agrupar replicas enteras
+  // admite valores que no son potencia de dos, como 3 bloques con 3 replicas.
+  const reps = Number(params.replicates);
+  const repsOk = Number.isInteger(reps) && reps >= 1 && reps <= 10;
+  const blocksAvail = chosen && repsOk ? blockOptions(chosen.base, reps) : [1];
+
+  /** Cambiar las replicas invalida la eleccion de bloques. */
+  const changeReplicates = (txt: string) => {
+    onChange({ ...params, replicates: txt, blocks: "1" });
+  };
+
+  /** Cambiar el diseno base cambia cuantas particiones internas caben. */
+  const changeBaseRuns = (runs: number) => {
+    onChange({ ...params, baseRuns: String(runs), blocks: "1" });
+  };
+
+  const chosenSplit =
+    chosen && repsOk
+      ? splitBlocks(chosen.base, reps, Number(params.blocks))
+      : null;
 
   return (
     <div className="space-y-4">
@@ -122,7 +141,7 @@ export default function DoeCreateControls({
                   return (
                     <tr
                       key={o.runs}
-                      onClick={() => set("baseRuns", String(o.runs))}
+                      onClick={() => changeBaseRuns(o.runs)}
                       className={`cursor-pointer border-b border-gray-200 last:border-0 ${
                         sel ? "bg-emerald-50" : "hover:bg-gray-50"
                       }`}
@@ -132,7 +151,7 @@ export default function DoeCreateControls({
                           type="radio"
                           className="h-4 w-4 border-gray-300 text-[#00674d]"
                           checked={sel}
-                          onChange={() => set("baseRuns", String(o.runs))}
+                          onChange={() => changeBaseRuns(o.runs)}
                         />
                       </td>
                       <td className="px-2 py-1">{o.label}</td>
@@ -170,7 +189,7 @@ export default function DoeCreateControls({
           <input
             className={small}
             value={params.replicates}
-            onChange={(e) => set("replicates", e.target.value)}
+            onChange={(e) => changeReplicates(e.target.value)}
             inputMode="numeric"
           />
         </div>
@@ -181,14 +200,40 @@ export default function DoeCreateControls({
             value={params.blocks}
             onChange={(e) => set("blocks", e.target.value)}
           >
-            {blocksAvail.map((b) => (
-              <option key={b} value={String(b)}>
-                {b}
-              </option>
-            ))}
+            {blocksAvail.map((b) => {
+              // Si cada bloque cabe una replica entera, no se confunde nada.
+              const sp = chosen ? splitBlocks(chosen.base, reps, b) : null;
+              const clean = sp !== null && sp.within === 1;
+              return (
+                <option key={b} value={String(b)}>
+                  {b === 1 ? "none" : b}
+                  {b > 1 && (clean ? " \u2014 by replicate" : " \u2014 confounds")}
+                </option>
+              );
+            })}
           </select>
         </div>
       </div>
+
+      {chosenSplit && Number(params.blocks) > 1 && (
+        <div
+          className={`rounded-md border px-3 py-2 text-xs ${
+            chosenSplit.within === 1
+              ? "border-emerald-300 bg-emerald-50 text-emerald-900"
+              : "border-amber-300 bg-amber-50 text-amber-900"
+          }`}
+        >
+          {chosenSplit.within === 1
+            ? `Each block holds a complete replicate, so no effect is confounded ` +
+              `with the blocks. This is the cheapest blocking there is.`
+            : `Each replicate is split into ${chosenSplit.within} parts` +
+              (chosenSplit.repGroups > 1
+                ? `, across ${chosenSplit.repGroups} groups of replicates`
+                : "") +
+              `. Splitting inside a replicate costs an interaction, listed in the ` +
+              `results.`}
+        </div>
+      )}
 
       {/* Factores */}
       <div className="border-t border-gray-200 pt-4">
@@ -269,21 +314,22 @@ export default function DoeCreateControls({
           />
           Randomize runs
         </label>
-        <div>
-          <label className={label}>Base for random data</label>
-          <input
-            className={small}
-            value={params.seed}
-            onChange={(e) => set("seed", e.target.value)}
-            inputMode="numeric"
-            placeholder="(fixed)"
-            disabled={!params.randomize}
-          />
-          <p className="mt-1 text-xs text-gray-500">
-            The same base always gives the same run order. Leave it empty for the
-            built-in one.
-          </p>
-        </div>
+        {params.randomize && (
+          <div>
+            <label className={label}>Base for random data generator</label>
+            <input
+              className={small}
+              value={params.seed}
+              onChange={(e) => set("seed", e.target.value)}
+              inputMode="numeric"
+              placeholder="20240101"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Same seed, same run order. Runs are shuffled within each block, never
+              across blocks: mixing them would undo the blocking.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
