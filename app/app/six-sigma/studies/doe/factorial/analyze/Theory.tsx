@@ -167,6 +167,151 @@ const ES = () => (
       </Warn>
     </Section>
 
+    <Section title="Puntos centrales: la prueba de curvatura">
+      <p>
+        Con dos niveles el modelo es un <strong>plano</strong>: por dos puntos
+        pasa una recta y no hay forma de saber si el camino entre ellos es recto o
+        curvo. Los <strong>puntos centrales</strong> lo resuelven a&ntilde;adiendo
+        corridas en el punto medio de todos los factores.
+      </p>
+      <Formula>
+        Ct Pt = <V>y</V><Sub>centro</Sub> {"\u2212"} <V>y</V><Sub>esquinas</Sub>
+      </Formula>
+      <p>
+        No entran como un tercer nivel. Entran como un{" "}
+        <strong>t&eacute;rmino indicador</strong>: vale 1 en las corridas
+        centrales y 0 en las esquinas. Su coeficiente mide cu&aacute;nto se
+        desv&iacute;a el centro de lo que el plano predice.
+      </p>
+      <ul className="list-disc pl-5 space-y-1">
+        <li>
+          <strong>Ct Pt no significativo:</strong> el centro cae donde el plano
+          dice. El modelo lineal con interacciones basta.
+        </li>
+        <li>
+          <strong>Ct Pt significativo:</strong> hay curvatura. Un modelo de dos
+          niveles <em>no puede</em> describir el proceso, y hace falta un
+          dise&ntilde;o de superficie de respuesta.
+        </li>
+      </ul>
+      <Note>
+        Su error t&iacute;pico es <strong>distinto</strong> del de los
+        dem&aacute;s t&eacute;rminos, y con raz&oacute;n: los puntos centrales son
+        pocos frente a las esquinas, as&iacute; que su coeficiente se estima con
+        menos precisi&oacute;n.
+      </Note>
+      <Warn>
+        <strong>Ct Pt no se retira nunca para ganar un grado de
+        libertad.</strong> Si lo quitas teniendo puntos centrales, su
+        variabilidad se va al error, que queda inflado, y todos los
+        contrastes salen sesgados. Es lo contrario de lo que buscabas.
+      </Warn>
+    </Section>
+
+    <Section title="Bloques: separar la molestia del efecto">
+      <p>
+        Rara vez se corre un experimento entero de una sentada. Se parte en dos
+        d&iacute;as, tres lotes de materia prima, dos operarios. Esa
+        divisi&oacute;n <strong>a&ntilde;ade variaci&oacute;n</strong>, y si no la
+        declaras acaba en el error.
+      </p>
+      <p>
+        Un <strong>bloque</strong> es un grupo de corridas hechas en condiciones
+        homog&eacute;neas. Declararlo le da al modelo un sitio donde poner esa
+        variaci&oacute;n, en vez de dejar que contamine el residuo.
+      </p>
+      <Formula>
+        <V>Z</V><Sub>1</Sub> = (1, 0, {"\u2212"}1){"\u00a0\u00a0\u00a0"}
+        <V>Z</V><Sub>2</Sub> = (0, 1, {"\u2212"}1)
+      </Formula>
+      <p>
+        Con <V>b</V> bloques hacen falta <V>b</V> {"\u2212"} 1 columnas. No son
+        variables indicadoras 0/1, sino <strong>codificaci&oacute;n de
+        efectos</strong>: cada columna vale 1 en su bloque, {"\u2212"}1 en el{" "}
+        <em>&uacute;ltimo</em> y 0 en el resto.
+      </p>
+      <Note>
+        La diferencia importa por tres motivos. Los coeficientes{" "}
+        <strong>suman cero</strong>, de modo que el del &uacute;ltimo bloque es
+        menos la suma de los otros y no se imprime. La constante del modelo es la{" "}
+        <strong>media global</strong>, no la media de un bloque de referencia. Y
+        los VIF de los bloques <strong>pasan de 1</strong> {"\u2014"} con tres
+        bloques valen 1,33 {"\u2014"} porque sus columnas est&aacute;n
+        correlacionadas entre s&iacute;. Es inevitable y no indica ning&uacute;n
+        problema.
+      </Note>
+      <Warn>
+        <strong>Un bloque no es un factor.</strong> No te interesa saber
+        qu&eacute; d&iacute;a fue mejor: no vas a fabricar los martes. Los bloques
+        se declaran para <em>quitarlos de en medio</em>, y no se interpretan ni se
+        podan por su p-valor.
+      </Warn>
+      <p>
+        Lo que compras es un <strong>error m&aacute;s peque&ntilde;o</strong>, y
+        con &eacute;l contrastes m&aacute;s finos sobre los factores que s&iacute;
+        te importan. El precio son <V>b</V> {"\u2212"} 1 grados de libertad.
+      </p>
+    </Section>
+
+    <Section title="Ejemplo: lo que cambia al declarar los bloques">
+      <p>
+        Doce corridas, dos factores, tres bloques. Los mismos datos analizados de
+        las dos maneras:
+      </p>
+      <table className="text-xs border-collapse">
+        <thead>
+          <tr className="border-b border-gray-300">
+            <th className="py-1 pr-4 text-left font-medium text-gray-600">
+              {"\u00a0"}
+            </th>
+            <th className="py-1 pr-4 text-left font-medium text-gray-600">
+              Sin bloques
+            </th>
+            <th className="py-1 text-left font-medium text-gray-600">
+              Con bloques
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {[
+            ["S", "3,2517", "1,8966"],
+            ["R-sq(adj)", "47,18 %", "82,03 %"],
+            ["Error MS", "10,574", "3,597"],
+            ["Error DF", "8", "6"],
+            ["Efecto de A*B", "\u22123,035", "\u22123,035"],
+            ["p de A*B", "0,145", "0,032"],
+          ].map((row) => (
+            <tr key={row[0]} className="border-b border-gray-200">
+              {row.map((c, i) => (
+                <td key={i} className={i < 2 ? "py-1 pr-4" : "py-1"}>
+                  {c}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <Note>
+        Mira las dos &uacute;ltimas filas. <strong>El efecto de A*B no cambia ni
+        un decimal</strong>: sigue siendo {"\u2212"}3,035. Lo &uacute;nico que
+        cambia es el denominador del contraste. Al declarar los bloques, 63,0 de
+        suma de cuadrados salen del error y se van a donde correspond&iacute;an, y
+        el cuadrado medio residual cae de 10,574 a 3,597.
+      </Note>
+      <p>
+        A*B pasa de <strong>no significativa a significativa</strong> sin que el
+        efecto se mueva. Cost&oacute; dos grados de libertad, de 8 a 6, y aun
+        as&iacute; los contrastes salen m&aacute;s potentes: lo que se retira del
+        error es muy superior a lo que cuesta retirarlo.
+      </p>
+      <Warn>
+        La lectura pr&aacute;ctica es inc&oacute;moda. Si <em>no</em> declaras los
+        bloques, la interacci&oacute;n se te escapa y concluyes que no existe.
+        Habr&iacute;as tomado la decisi&oacute;n equivocada con los datos
+        correctos, por no contarle al modelo c&oacute;mo se hizo el experimento.
+      </Warn>
+    </Section>
+    
     <Section title="La ecuación en unidades no codificadas">
       <p>
         La ecuaci&oacute;n codificada sirve para comparar efectos; la{" "}
