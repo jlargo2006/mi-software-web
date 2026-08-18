@@ -135,6 +135,10 @@ export default function DoeAnalyzeControls({
               </label>
             ))}
         </div>
+        <p className="mt-1 text-xs text-gray-500">
+          Do not tick CenterPt: center points are detected from the factor levels
+          themselves. That column is bookkeeping.
+        </p>
       </div>
 
       <div className="border-t border-gray-200 pt-4 grid grid-cols-2 gap-2">
@@ -165,6 +169,24 @@ export default function DoeAnalyzeControls({
             inputMode="decimal"
           />
         </div>
+      </div>
+
+      {/* Puntos centrales */}
+      <div className="border-t border-gray-200 pt-4">
+        <label className="flex items-center gap-2 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            className={check}
+            checked={params.includeCenterPoints}
+            onChange={(e) => set("includeCenterPoints", e.target.checked)}
+          />
+          Include center points in the model
+        </label>
+        <p className="mt-1 pl-6 text-xs text-gray-500">
+          Adds the Ct Pt term, which tests curvature. It only has an effect when
+          the worksheet actually holds center points. Leave it on: unticking it
+          sends their variability into the error.
+        </p>
       </div>
 
       {/* Terminos del modelo */}
