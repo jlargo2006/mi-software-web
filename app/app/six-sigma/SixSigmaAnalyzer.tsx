@@ -307,6 +307,7 @@ export default function SixSigmaAnalyzer({
                     savedSnapshot={savedArtifactSnapshot}
                     onSaveStudy={saveStudy}
                     onWriteData={wb.pasteData}
+                    onCreateSheet={wb.createSheetWithData}
                   />
                 )}
               </div>

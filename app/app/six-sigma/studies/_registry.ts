@@ -19,6 +19,7 @@ import pssAnova from "./pss/anova";
 import pssOneProportion from "./pss/oneproportion";
 import pssTwoProportions from "./pss/twoproportions";
 import pssPairedT from "./pss/pairedt";
+import pssFactorial from "./pss/factorial";
 import ht1SampleT from "./ht/onesamplet";
 import htAnova1Way from "./ht/anova1way";
 import htTwoSampleT from "./ht/twosamplet";
@@ -37,6 +38,13 @@ import impCorrelation from "./improve/correlation";
 import impRegression from "./improve/regression";
 import impBoxCox from "./improve/boxcox";
 import impMatrixPlot from "./improve/matrixplot";
+import impBestSubsets from "./improve/bestsubsets";
+import impFitRegression from "./improve/fitregression";
+import doeCreateFactorial from "./doe/factorial/create";
+import doeMainEffects from "./doe/factorial/maineffects";
+import doeInteraction from "./doe/factorial/interaction";
+import doeAnalyzeFactorial from "./doe/factorial/analyze";
+import doeOptimizer from "./doe/factorial/optimizer";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
@@ -58,6 +66,7 @@ const ALL: ArtifactDefinition[] = [
   pssOneProportion,
   pssTwoProportions,
   pssPairedT,
+  pssFactorial,
   ht1SampleT,
   htAnova1Way,
   htTwoSampleT,
@@ -76,6 +85,13 @@ const ALL: ArtifactDefinition[] = [
   impRegression,
   impBoxCox,
   impMatrixPlot,
+  impBestSubsets,
+  impFitRegression,
+  doeCreateFactorial,
+  doeMainEffects,
+  doeInteraction,
+  doeAnalyzeFactorial,
+  doeOptimizer,
 ];
 
 export const REGISTRY: Record<string, ArtifactDefinition> = Object.fromEntries(

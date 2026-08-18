@@ -172,6 +172,7 @@ export const PHASES: RibbonPhase[] = [
    //       { id: "pssSign",     label: "1-Sample Sign / Wilcoxon",    tool: null,          enabled: false },
           { id: "pssProp1",    label: "1 Proportion",                tool: "pssOneProportion",          enabled: true },
           { id: "pssProp2",    label: "2 Proportions",               tool: "pssTwoProportions",          enabled: true },
+          { id: "pssFactorial", label: "2-Level Factorial Design", tool: "pssFactorial", enabled: true },
         ],
       },
     ],
@@ -199,14 +200,15 @@ export const PHASES: RibbonPhase[] = [
           // p.457 | mtw: Mailing Response vs. Discount.mtw
 //          { id: "regNonlinear", label: "Non-Linear", tool: "impRegression", enabled: true },
           // p.467 | mtw: Flight Regression MLR.mtw
-//          { id: "regMultiple", label: "Multiple Linear", tool: null, enabled: false },
+//          { id: "regMultiple", label: "Multiple Linear", tool: null, enabled: false },          
+            // p.465 | mtw: Transform.MTW
+            { id: "boxCox", label: "Box-Cox Transformation", tool: "impBoxCox", enabled: true },
+            { id: "matrixPlot", label: "Matrix Plot", tool: "impMatrixPlot", enabled: true },
+            { id: "bestSubsets", label: "Best Subsets Regression", tool: "impBestSubsets", enabled: true },
+            { id: "fitRegression", label: "Fit Regression Model", tool: "impFitRegression", enabled: true },          
         ],
       },
-
-      // p.465 | mtw: Transform.MTW
-      { id: "boxCox", label: "Box-Cox Transformation", tool: "impBoxCox", enabled: true },
-      { id: "matrixPlot", label: "Matrix Plot", tool: "impMatrixPlot", enabled: true },
-
+     
       // ---- Design of Experiments (dropdown) ------------------------------
       {
         id: "doe",
@@ -214,12 +216,17 @@ export const PHASES: RibbonPhase[] = [
         tool: null,
         enabled: true,
         children: [
+          { id: "createFactorial", label: "Create Factorial Design", tool: "doeCreateFactorial", enabled: true },
           // p.482 | mtw: Catapult.mtw
-          { id: "doeFull", label: "Full Factorial", tool: null, enabled: false },
+//          { id: "doeFull", label: "Full Factorial", tool: null, enabled: false },
           // p.522 | mtw: Panel Cleaning.MTW
-          { id: "doeCenter", label: "Full Factorial + Center Points", tool: null, enabled: false },
+//          { id: "doeCenter", label: "Full Factorial + Center Points", tool: null, enabled: false },
           // (—) proposed
-          { id: "doeRSM", label: "Response Surface / Contour Plot", tool: null, enabled: false },
+//          { id: "doeRSM", label: "Response Surface / Contour Plot", tool: null, enabled: false },
+          { id: "mainEffects", label: "Main Effects Plot", tool: "doeMainEffects", enabled: true },
+          { id: "interactionPlot", label: "Interaction Plot", tool: "doeInteraction", enabled: true },
+          { id: "analyzeFactorial", label: "Analyze Factorial Design", tool: "doeAnalyzeFactorial", enabled: true },
+          { id: "responseOptimizer", label: "Response Optimizer", tool: "doeOptimizer", enabled: true },
         ],
       },
     ],
