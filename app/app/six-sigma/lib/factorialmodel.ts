@@ -243,3 +243,47 @@ export const CT_PT_TERM: Term = {
   order: 0,
   letters: "",
 };
+
+/** Prefijo de las claves de los terminos de bloque. */
+export const BLOCK_KEY = "Blocks";
+
+/**
+ * Termino ficticio para una columna de bloque.
+ *
+ * Con b bloques hacen falta b-1 columnas. Se les da orden -1 para que la ANOVA
+ * las agrupe en su propia fila, delante de los efectos lineales.
+ */
+export const blockTerm = (i: number): Term => ({
+  key: `${BLOCK_KEY}|${i}`,
+  members: [],
+  order: -1,
+  letters: `Block ${i + 1}`,
+});
+
+export const isBlockTerm = (t: Term): boolean => t.order === -1;
+
+/** Etiqueta que se muestra en la tabla: el numero de bloque. */
+export const blockLabel = (t: Term): string =>
+  String(Number(t.key.split("|")[1]) + 1);
+
+/**
+ * Codificacion de efectos, con suma cero.
+ *
+ * Con b bloques se construyen b-1 columnas: la columna j vale 1 en el bloque j,
+ * -1 en el ULTIMO bloque y 0 en el resto. No son variables indicadoras 0/1, y
+ * la diferencia importa: asi los coeficientes suman cero y la constante del
+ * modelo es la media global, no la media del bloque de referencia.
+ *
+ * El precio es que las columnas no son ortogonales entre si, de modo que el VIF
+ * de los bloques pasa de 1. Con tres bloques vale 1,33; es inevitable y no
+ * indica ningun problema.
+ */
+export function blockColumns(
+  blockOf: number[],
+  levels: number[]
+): number[][] {
+  const last = levels[levels.length - 1];
+  return levels.slice(0, -1).map((lv) =>
+    blockOf.map((b) => (b === lv ? 1 : b === last ? -1 : 0))
+  );
+}
