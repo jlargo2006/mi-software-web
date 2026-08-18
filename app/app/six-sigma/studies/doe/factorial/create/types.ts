@@ -76,6 +76,12 @@ export interface DoeCreateModel {
   totalRuns: number;
   replicates: number;
   blocks: number;
+  /**
+   * Como se han construido los bloques. Agrupar REPLICAS enteras no confunde
+   * nada; partir DENTRO de una replica cuesta una interaccion.
+   */
+  blockRepGroups: number;
+  blockWithin: number;
   centerPerBlock: number;
   centerTotal: number;
   randomized: boolean;
