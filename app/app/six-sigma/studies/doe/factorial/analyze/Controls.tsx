@@ -46,7 +46,13 @@ export default function DoeAnalyzeControls({
       ? cur.filter((s) => s !== name)
       : [...cur, name];
     // Cambiar los factores invalida la seleccion de terminos.
-    onChange({ ...params, factors: next, excluded: [] });
+    onChange({
+      ...params,
+      factors: next,
+      excluded: [],
+      // Si el nuevo factor era la columna de bloques, deja de serlo.
+      blockColumn: params.blockColumn === name ? "" : params.blockColumn,
+    });
   };
 
   /**
@@ -78,6 +84,16 @@ export default function DoeAnalyzeControls({
       excluded: [],
     });
   };
+
+  /** Detecta la columna de bloques por su nombre, como atajo. */
+  const guessBlocks = () => {
+    const hit = columns.find((c) => c.name.trim().toLowerCase() === "blocks");
+    if (hit) set("blockColumn", hit.name);
+  };
+
+  const hasBlocksColumn = columns.some(
+    (c) => c.name.trim().toLowerCase() === "blocks"
+  );
 
   return (
     <div className="space-y-4">
@@ -136,8 +152,8 @@ export default function DoeAnalyzeControls({
             ))}
         </div>
         <p className="mt-1 text-xs text-gray-500">
-          Do not tick CenterPt: center points are detected from the factor levels
-          themselves. That column is bookkeeping.
+          Do not tick CenterPt or Blocks. Center points are detected from the
+          factor levels themselves, and Blocks goes in its own field below.
         </p>
       </div>
 
@@ -189,6 +205,57 @@ export default function DoeAnalyzeControls({
         </p>
       </div>
 
+      {/* Bloques */}
+      <div className="border-t border-gray-200 pt-4">
+        <div className="mb-1 flex items-center justify-between">
+          <span className="text-sm font-medium text-gray-700">
+            Block column (optional)
+          </span>
+          {hasBlocksColumn && params.blockColumn === "" && (
+            <button
+              type="button"
+              onClick={guessBlocks}
+              className="rounded border border-gray-300 px-2 py-0.5 text-xs text-gray-600 hover:bg-gray-50"
+            >
+              Use Blocks
+            </button>
+          )}
+        </div>
+        <select
+          className={small}
+          value={params.blockColumn}
+          onChange={(e) => set("blockColumn", e.target.value)}
+        >
+          <option value="">None: the experiment was not blocked</option>
+          {columns
+            .filter(
+              (c) => c.name !== params.response && !params.factors.includes(c.name)
+            )
+            .map((c) => (
+              <option key={c.index} value={c.name}>
+                {c.name}
+              </option>
+            ))}
+        </select>
+        {params.blockColumn !== "" && (
+          <label className="mt-2 flex items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              className={check}
+              checked={params.includeBlocks}
+              onChange={(e) => set("includeBlocks", e.target.checked)}
+            />
+            Include blocks in the model
+          </label>
+        )}
+        <p className="mt-1 text-xs text-gray-500">
+          Pick the Blocks column if the runs were split across days, batches,
+          operators or machines. Leaving it out does not remove that variation: it
+          hides it inside the error, where it inflates every p-value and can bury
+          a real effect.
+        </p>
+      </div>
+
       {/* Terminos del modelo */}
       {terms.length > 0 && (
         <div className="border-t border-gray-200 pt-4">
@@ -219,7 +286,8 @@ export default function DoeAnalyzeControls({
           </div>
           <p className="mt-1 text-xs text-gray-500">
             Unchecking a term also unchecks the interactions that contain it, so
-            the model stays hierarchical.
+            the model stays hierarchical. Block and curvature terms are not listed:
+            they are not hypotheses to test but facts about how the runs were made.
           </p>
         </div>
       )}
@@ -268,7 +336,7 @@ export default function DoeAnalyzeControls({
           Interaction plot
         </label>
         <p className="text-xs text-gray-500">
-          Both use fitted means from the model, so they follow the terms you keep.
+          Both use fitted means from the model, averaged over the blocks.
         </p>
       </div>
 
