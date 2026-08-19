@@ -1,3 +1,4 @@
+// app/app/six-sigma/SixSigmaAnalyzer.tsx
 "use client";
 
 import React, { useRef, useState } from "react";
@@ -57,6 +58,11 @@ export default function SixSigmaAnalyzer({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const projectInputRef = useRef<HTMLInputElement>(null);
 
+  // --- Project: export / import everything (declared first: used by handleImport/handleNew) ---
+  const handleExportProject = () => {
+    exportProject(wb.data, wb.order, studies);
+  };
+  
   // Nada que perder: libro recien abierto y sin estudios. En ese caso no se
   // pregunta nada, porque no hay trabajo que exportar.
   const nothingToLose =
@@ -65,22 +71,20 @@ export default function SixSigmaAnalyzer({
 
   /**
    * Ofrece exportar antes de una accion destructiva.
-   * Devuelve false si el usuario cancela el flujo por completo.
+   *
+   * No puede abortar la accion: con dos botones, Cancel significa "descartar",
+   * no "no hagas nada". Si en el futuro quieres una tercera salida, hace falta
+   * un modal propio en lugar de window.confirm.
    */
-  const offerExportFirst = (message: string): boolean => {
-    if (nothingToLose) return true;
-    const r = window.confirm(
+  const offerExportFirst = (message: string): void => {
+    if (nothingToLose) return;
+    const exportFirst = window.confirm(
       `${message}\n\nDo you want to export your current project first?` +
         `\n\nOK = export first, Cancel = discard.`
     );
-    if (r) handleExportProject();
-    return true;
+    if (exportFirst) handleExportProject();
   };
-  
-  // --- Project: export / import everything (declared first: used by handleImport/handleNew) ---
-  const handleExportProject = () => {
-    exportProject(wb.data, wb.order, studies);
-  };
+
 
   const handleImportProject = async (file: File) => {
     offerExportFirst("Opening a project will discard your current work.");
@@ -116,7 +120,9 @@ export default function SixSigmaAnalyzer({
 
   const handleNew = () => {
     if (nothingToLose) {
-      // Ya esta vacio: "New" no tiene nada que limpiar ni que preguntar.
+      // Sin datos ni estudios no hay nada que preguntar, pero si el usuario
+      // ha creado hojas vacias hay que dejar el libro en su estado inicial.
+      wb.resetWorkbook();
       setActiveTool(null);
       setViewingId(null);
       return;
