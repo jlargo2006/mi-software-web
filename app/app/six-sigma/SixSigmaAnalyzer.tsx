@@ -134,10 +134,6 @@ export default function SixSigmaAnalyzer({
     setViewingId(null);
   };
 
-  const handleNew = () => {
-    …
-  };
-
   /**
    * Renombra la hoja y arrastra la procedencia de los estudios guardados.
    * Devuelve null si fue bien, o el motivo del rechazo para que SheetTabs
