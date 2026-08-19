@@ -133,6 +133,34 @@ export default function SixSigmaAnalyzer({
     setActiveTool(null);
     setViewingId(null);
   };
+
+  const handleNew = () => {
+    …
+  };
+
+  /**
+   * Renombra la hoja y arrastra la procedencia de los estudios guardados.
+   * Devuelve null si fue bien, o el motivo del rechazo para que SheetTabs
+   * lo muestre sin cerrar la edicion.
+   */
+  const handleRenameSheet = (oldName: string, newName: string): string | null => {
+    const msg = wb.renameSheet(oldName, newName);
+    if (msg) return msg;
+    // El snapshot guarda de que hoja salio: se sigue el renombrado para que la
+    // procedencia no apunte a una hoja inexistente.
+    setStudies((prev) =>
+      prev.map((s) =>
+        s.snapshot.sheetName === oldName
+          ? { ...s, snapshot: { ...s.snapshot, sheetName: newName } }
+          : s
+      )
+    );
+    return null;
+  };
+
+  const saveStudy = (study: SaveStudyInput) => {
+    …
+  };
   
   // GENERIC saveStudy: multi-column snapshot
   const saveStudy = (study: SaveStudyInput) => {
@@ -376,12 +404,8 @@ export default function SixSigmaAnalyzer({
               onSelect={wb.setActiveSheet}
               onAddSheet={wb.addSheet}
               onDeleteSheet={wb.deleteSheet}
-              onAddRow={wb.addRow}
-              onDeleteRow={wb.deleteRow}
-              onAddColumn={wb.addColumn}
-              onDeleteColumn={wb.deleteColumn}
               onMoveSheet={wb.moveSheet}
-              onRenameSheet={wb.renameSheet}              
+              onRenameSheet={handleRenameSheet}
             />
           )}
 
