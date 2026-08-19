@@ -1,8 +1,10 @@
+// app/app/six-sigma/components/MenuBar.tsx
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { PHASES, RibbonTool, ToolId } from "../lib/ribbon";
 import { useRouter } from "next/navigation";
+import { useDismiss } from "../hooks/useDismiss";
 
 interface MenuBarProps {
   userEmail?: string;
@@ -29,22 +31,22 @@ export default function MenuBar({
   const [activePhase, setActivePhase] = useState<string | null>(null);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const fileRef = useRef<HTMLDivElement>(null);
+  const toolsRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // Close the File menu when clicking outside
-  useEffect(() => {
-    const onClick = (e: MouseEvent) => {
-      if (fileRef.current && !fileRef.current.contains(e.target as Node)) {
-        setFileOpen(false);
-      }
-    };
-    window.addEventListener("mousedown", onClick);
-    return () => window.removeEventListener("mousedown", onClick);
-  }, []);
+  // Cada menu flotante se cierra al pulsar fuera o con Escape.
+  const closeFile = useCallback(() => setFileOpen(false), []);
+  useDismiss(fileRef, closeFile, fileOpen);
+
+  const closeGroup = useCallback(() => setOpenGroup(null), []);
+  useDismiss(toolsRef, closeGroup, openGroup !== null);
 
   const togglePhase = (name: string) => {
     setActivePhase((prev) => (prev === name ? null : name));
     setOpenGroup(null);
+    // Abrir una fase cierra el menu File: son dos menus del mismo nivel y no
+    // deben quedar los dos desplegados.
+    setFileOpen(false);
   };
 
   const phaseTools = PHASES.find((p) => p.name === activePhase)?.tools ?? [];
@@ -55,13 +57,22 @@ export default function MenuBar({
       setOpenGroup((prev) => (prev === t.id ? null : t.id));
       return;
     }
-    if (t.tool) onSelectTool(t.tool);
+    if (t.tool) {
+      setOpenGroup(null);
+      onSelectTool(t.tool);
+    }
   };
 
   const handleChildClick = (child: RibbonTool) => {
     if (!child.enabled || !child.tool) return;
     onSelectTool(child.tool);
     setOpenGroup(null);
+  };
+
+  // Ejecuta una accion del menu File cerrandolo primero.
+  const runFile = (action: () => void) => () => {
+    setFileOpen(false);
+    action();
   };
 
   const fileItem =
@@ -75,28 +86,33 @@ export default function MenuBar({
         <div className="relative" ref={fileRef}>
           <button
             onClick={() => setFileOpen((o) => !o)}
+            aria-haspopup="menu"
+            aria-expanded={fileOpen}
             className="px-3 py-1.5 rounded text-sm font-medium hover:bg-white/15"
           >
             File {"\u25BE"}
           </button>
           {fileOpen && (
-            <div className="absolute left-0 top-full mt-1 w-56 bg-white rounded shadow-lg border border-gray-200 py-1 z-50">
-              <button className={fileItem} onClick={() => { setFileOpen(false); onNew(); }}>
+            <div
+              role="menu"
+              className="absolute left-0 top-full mt-1 w-56 bg-white rounded shadow-lg border border-gray-200 py-1 z-50"
+            >
+              <button className={fileItem} onClick={runFile(onNew)}>
                 New
               </button>
-              <button className={fileItem} onClick={() => { setFileOpen(false); onOpen(); }}>
+              <button className={fileItem} onClick={runFile(onOpen)}>
                 Open Excel{"\u2026"}
               </button>
-              <button className={fileItem} onClick={() => { setFileOpen(false); onSave(); }}>
+              <button className={fileItem} onClick={runFile(onSave)}>
                 Save Excel
               </button>
 
               <div className="my-1 border-t border-gray-200" />
 
-              <button className={fileItem} onClick={() => { setFileOpen(false); onExportProject(); }}>
+              <button className={fileItem} onClick={runFile(onExportProject)}>
                 {"\uD83D\uDCBE"} Export project{"\u2026"}
               </button>
-              <button className={fileItem} onClick={() => { setFileOpen(false); onImportProject(); }}>
+              <button className={fileItem} onClick={runFile(onImportProject)}>
                 {"\uD83D\uDCC2"} Import project{"\u2026"}
               </button>
 
@@ -104,7 +120,7 @@ export default function MenuBar({
 
               <button
                 className={`${fileItem} text-red-600`}
-                onClick={() => { setFileOpen(false); onSignOut(); }}
+                onClick={runFile(onSignOut)}
               >
                 Sign out
               </button>
@@ -126,6 +142,7 @@ export default function MenuBar({
           <button
             key={p.name}
             onClick={() => togglePhase(p.name)}
+            aria-pressed={activePhase === p.name}
             className={`px-3 py-1.5 rounded text-sm font-medium ${
               activePhase === p.name
                 ? "bg-white text-[#00674d]"
@@ -148,9 +165,15 @@ export default function MenuBar({
         </div>
       </div>
 
-      {/* SECONDARY ROW: tools for the active phase */}
+      {/* SECONDARY ROW: tools for the active phase.
+          Esta fila es una cinta de opciones y permanece visible a proposito:
+          se recoge pulsando de nuevo la fase. Lo que si se cierra al pulsar
+          fuera son los submenus de cada herramienta. */}
       {activePhase && (
-        <div className="flex flex-wrap items-center gap-1 bg-[#00513d] px-3 py-1.5">
+        <div
+          ref={toolsRef}
+          className="flex flex-wrap items-center gap-1 bg-[#00513d] px-3 py-1.5"
+        >
           {phaseTools.length === 0 && (
             <span className="text-white/60 text-sm">
               No tools available in this phase yet.
@@ -161,6 +184,8 @@ export default function MenuBar({
               <button
                 onClick={() => handleToolClick(t)}
                 disabled={!t.enabled}
+                aria-haspopup={t.children ? "menu" : undefined}
+                aria-expanded={t.children ? openGroup === t.id : undefined}
                 className={`px-3 py-1 text-sm rounded ${
                   t.enabled
                     ? "bg-white/10 hover:bg-white/25 text-white"
@@ -174,7 +199,10 @@ export default function MenuBar({
 
               {/* Sub-menu for grouped tools */}
               {t.children && openGroup === t.id && (
-                <div className="absolute left-0 top-full mt-1 w-48 bg-white rounded shadow-lg border border-gray-200 py-1 z-50">
+                <div
+                  role="menu"
+                  className="absolute left-0 top-full mt-1 w-48 bg-white rounded shadow-lg border border-gray-200 py-1 z-50"
+                >
                   {t.children.map((c) => (
                     <button
                       key={c.id}
