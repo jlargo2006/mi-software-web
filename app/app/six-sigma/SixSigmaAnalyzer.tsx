@@ -154,10 +154,6 @@ export default function SixSigmaAnalyzer({
     return null;
   };
 
-  const saveStudy = (study: SaveStudyInput) => {
-    …
-  };
-  
   // GENERIC saveStudy: multi-column snapshot
   const saveStudy = (study: SaveStudyInput) => {
     setStudies((prev) => [
