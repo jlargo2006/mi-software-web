@@ -1,3 +1,5 @@
+// app/app/six-sigma/hooks/useWorkbook.ts
+
 "use client";
 
 import { useState, useCallback } from "react";
@@ -261,6 +263,54 @@ export function useWorkbook() {
       });
     },
     [activeSheet]
+  );
+
+  // ---- Mover la hoja activa una posicion adelante o atras ----
+  const moveSheet = useCallback((name: string, delta: number) => {
+    setOrder((prev) => {
+      const i = prev.indexOf(name);
+      const j = i + delta;
+      if (i < 0 || j < 0 || j >= prev.length) return prev;
+      const next = [...prev];
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+  }, []);
+
+  /**
+   * Renombra una hoja. Devuelve null si todo fue bien, o un mensaje de error.
+   *
+   * Se validan las mismas restricciones que Excel, porque el libro se exporta
+   * a .xlsx y un nombre invalido reventaria al escribir el fichero.
+   */
+  const renameSheet = useCallback(
+    (oldName: string, rawNew: string): string | null => {
+      const newName = rawNew.trim();
+
+      if (newName === oldName) return null; // sin cambios, sin ruido
+      if (!newName) return "The sheet name cannot be empty.";
+      if (newName.length > 31)
+        return "The sheet name cannot exceed 31 characters.";
+      if (/[:\\/?*[\]]/.test(newName))
+        return "A sheet name cannot contain : \\ / ? * [ ]";
+      if (order.some((n) => n.toLowerCase() === newName.toLowerCase()))
+        return `There is already a sheet named "${newName}".`;
+
+      // Se reconstruye el objeto en el mismo orden de claves: aunque el orden
+      // real lo manda `order`, mantenerlos alineados evita sorpresas al
+      // serializar el proyecto.
+      setData((prev) => {
+        const next: WorkbookData = {};
+        for (const key of Object.keys(prev)) {
+          next[key === oldName ? newName : key] = prev[key];
+        }
+        return next;
+      });
+      setOrder((prev) => prev.map((n) => (n === oldName ? newName : n)));
+      setActiveSheet((curr) => (curr === oldName ? newName : curr));
+      return null;
+    },
+    [order]
   );
   
   return {
