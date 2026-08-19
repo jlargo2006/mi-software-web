@@ -31,6 +31,12 @@ function timestamp(): string {
   )}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
 
+/** ¿Hay algo escrito en la hoja? Cabeceras y celdas, ignorando espacios. */
+function sheetHasData(sheet: { headers: unknown[]; rows: unknown[][] }): boolean {
+  if (sheet.headers.some((h) => String(h ?? "").trim() !== "")) return true;
+  return sheet.rows.some((r) => r.some((v) => String(v ?? "").trim() !== ""));
+}
+
 export default function SixSigmaAnalyzer({
   userEmail,
   onSignOut,
@@ -51,40 +57,53 @@ export default function SixSigmaAnalyzer({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const projectInputRef = useRef<HTMLInputElement>(null);
 
+  // Nada que perder: libro recien abierto y sin estudios. En ese caso no se
+  // pregunta nada, porque no hay trabajo que exportar.
+  const nothingToLose =
+    studies.length === 0 &&
+    !Object.values(wb.data).some((s) => sheetHasData(s));
+
+  /**
+   * Ofrece exportar antes de una accion destructiva.
+   * Devuelve false si el usuario cancela el flujo por completo.
+   */
+  const offerExportFirst = (message: string): boolean => {
+    if (nothingToLose) return true;
+    const r = window.confirm(
+      `${message}\n\nDo you want to export your current project first?` +
+        `\n\nOK = export first, Cancel = discard.`
+    );
+    if (r) handleExportProject();
+    return true;
+  };
+  
   // --- Project: export / import everything (declared first: used by handleImport/handleNew) ---
   const handleExportProject = () => {
     exportProject(wb.data, wb.order, studies);
   };
 
   const handleImportProject = async (file: File) => {
-    const ok = window.confirm(
-      "Opening a project will discard your current work.\n\n" +
-        "Do you want to export your current project first?\n\nOK = export first, Cancel = discard."
-    );
-    if (ok) handleExportProject();
+    offerExportFirst("Opening a project will discard your current work.");
     try {
       const project = await importProject(file);
       wb.loadWorkbook(project.workbook.data, project.workbook.order);
-      setStudies((project.studies as SavedStudy[]) ?? []);
+      setStudies(project.studies ?? []);
       setActiveTool(null);
       setViewingId(null);
-      alert("Project imported successfully");
+      // Sin aviso de exito: los estudios aparecen en la barra lateral y los
+      // datos en la rejilla. Confirmar lo que ya se ve solo estorba.
     } catch (err) {
       alert((err as Error).message);
     }
   };
 
-  // Point 3+4: opening an Excel asks to discard, and does NOT keep studies
   const handleImport = async (file: File) => {
-    const ok = window.confirm(
-      "Opening an Excel file will discard your current work (including saved studies).\n\n" +
-        "Do you want to export your project first?\n\nOK = export first, Cancel = discard."
+    offerExportFirst(
+      "Opening an Excel file will discard your current work (including saved studies)."
     );
-    if (ok) handleExportProject();
     try {
       const { data, order } = await readExcelFile(file);
       wb.loadWorkbook(data, order);
-      // Point 4: an Excel has no studies -> clear them
       setStudies([]);
       setActiveTool(null);
       setViewingId(null);
@@ -95,18 +114,20 @@ export default function SixSigmaAnalyzer({
 
   const handleExport = () => writeExcelFile(wb.data, wb.order);
 
-  // Point 2: "New" saves the PROJECT (not just the Excel)
   const handleNew = () => {
-    const ok = window.confirm(
-      "Do you want to export your project before clearing it?\n\nOK = export first, Cancel = discard."
-    );
-    if (ok) handleExportProject();
+    if (nothingToLose) {
+      // Ya esta vacio: "New" no tiene nada que limpiar ni que preguntar.
+      setActiveTool(null);
+      setViewingId(null);
+      return;
+    }
+    offerExportFirst("This will clear the current project.");
     wb.resetWorkbook();
     setStudies([]);
     setActiveTool(null);
     setViewingId(null);
   };
-
+  
   // GENERIC saveStudy: multi-column snapshot
   const saveStudy = (study: SaveStudyInput) => {
     setStudies((prev) => [
