@@ -227,7 +227,7 @@ export function useWorkbook() {
     },
     []
   );
-  
+
   // ---- Insertar columnas ANTES de `start` (empuja a la derecha, recorta a Z) ----
   const insertColumnsAt = useCallback(
     (start: number, count: number) => {
@@ -312,7 +312,7 @@ export function useWorkbook() {
     },
     [order]
   );
-  
+
   return {
     data,
     order,
@@ -334,5 +334,7 @@ export function useWorkbook() {
     insertColumnsAt,
     insertRowsAt,
     createSheetWithData,
+    moveSheet,
+    renameSheet,
   };
 }
