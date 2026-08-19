@@ -380,6 +380,8 @@ export default function SixSigmaAnalyzer({
               onDeleteRow={wb.deleteRow}
               onAddColumn={wb.addColumn}
               onDeleteColumn={wb.deleteColumn}
+              onMoveSheet={wb.moveSheet}
+              onRenameSheet={wb.renameSheet}              
             />
           )}
 
