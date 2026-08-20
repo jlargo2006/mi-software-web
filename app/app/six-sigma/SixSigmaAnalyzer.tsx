@@ -15,6 +15,7 @@ import Splitter from "./components/Splitter";
 import { getArtifact } from "./studies/_registry";
 import type { ColumnSnapshot } from "./studies/types";
 import AnalysisRunner from "./components/AnalysisRunner";
+import StudyList from "./components/StudyList";
 
 type ViewMode = "split" | "grid" | "graphics";
 
@@ -154,13 +155,20 @@ export default function SixSigmaAnalyzer({
     return null;
   };
 
+  const handleRenameStudy = (id: string, newName: string) => {
+    setStudies((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, name: newName } : s))
+    );
+  };
+
   // GENERIC saveStudy: multi-column snapshot
   const saveStudy = (study: SaveStudyInput) => {
     setStudies((prev) => [
       {
         id: crypto.randomUUID(),
         type: study.type,
-        name: `${timestamp()} - ${study.name}`, // timestamp first
+        name: study.name, // sin fecha: ahora vive en createdAt
+        createdAt: new Date().toISOString(),
         params: study.params,
         results: study.results ?? {},
         snapshot: { sheetName: wb.activeSheet, cols: study.cols },
@@ -168,6 +176,7 @@ export default function SixSigmaAnalyzer({
       ...prev,
     ]);
   };
+
 
   const showTop = view === "split" || view === "graphics";
   const showBottom = view === "split" || view === "grid";
@@ -292,46 +301,26 @@ export default function SixSigmaAnalyzer({
       {/* Body: sidebar + central area */}
       <div className="flex flex-1 min-h-0">
         {/* Saved studies sidebar */}
+        {/* Saved studies sidebar */}
         <aside className="w-52 bg-gray-50 border-r border-gray-300 flex flex-col shrink-0">
-          <div className="px-3 py-2 font-semibold text-sm text-gray-700 border-b border-gray-300">
-            Saved Studies
-          </div>
-          <div className="flex-1 overflow-y-auto p-2 space-y-1">
-            {studies.length === 0 && (
-              <div className="text-sm text-gray-400">No saved studies yet.</div>
-            )}
-            {studies.map((s) => (
-              <div
-                key={s.id}
-                className="group relative flex items-center rounded hover:bg-emerald-50 border border-transparent hover:border-[#00674d]"
-              >
-                <button
-                  onClick={() => {
-                    setActiveTool(s.type as ToolId);
-                    setArtifactParams(s.params);
-                    setViewingId(s.id);
-                    if (view === "grid") setView("split");
-                  }}
-                  className="flex-1 text-left text-sm px-2 py-1.5 pr-6 text-gray-700"
-                >
-                  {s.name}
-                </button>
-                <button
-                  onClick={() => {
-                    setStudies((prev) => prev.filter((x) => x.id !== s.id));
-                    if (viewingId === s.id) {
-                      setViewingId(null);
-                      setActiveTool(null);
-                    }
-                  }}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-600"
-                  title="Delete study"
-                >
-                  {"\u2715"}
-                </button>
-              </div>
-            ))}
-          </div>
+          <StudyList
+            studies={studies}
+            viewingId={viewingId}
+            onSelect={(s) => {
+              setActiveTool(s.type as ToolId);
+              setArtifactParams(s.params);
+              setViewingId(s.id);
+              if (view === "grid") setView("split");
+            }}
+            onDelete={(id) => {
+              setStudies((prev) => prev.filter((x) => x.id !== id));
+              if (viewingId === id) {
+                setViewingId(null);
+                setActiveTool(null);
+              }
+            }}
+            onRename={handleRenameStudy}
+          />
         </aside>
 
         {/* Central area: two frames + splitter */}
