@@ -327,7 +327,7 @@ export default function SixSigmaAnalyzer({
         ) : (
           <>
             <aside
-              ref={sidebar.asideRef}
+              suppressHydrationWarning
               style={{ width: sidebar.width }}
               className="bg-gray-50 border-r border-gray-300 flex flex-col shrink-0 min-w-0"
             >
