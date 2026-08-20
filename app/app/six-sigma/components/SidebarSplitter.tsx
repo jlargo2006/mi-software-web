@@ -33,7 +33,7 @@ export default function SidebarSplitter({
       tabIndex={0}
       onPointerDown={(e) => {
         e.preventDefault();
-        onStartDrag();
+        onStartDrag(e.clientX);
       }}
       onDoubleClick={onReset}
       onKeyDown={(e) => {
