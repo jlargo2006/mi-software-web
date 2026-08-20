@@ -4,7 +4,7 @@
 import React from "react";
 
 interface SidebarSplitterProps {
-  onStartDrag: () => void;
+  onStartDrag: (clientX: number) => void;
   onReset: () => void;
   onNudge: (delta: number) => void;
   dragging: boolean;
