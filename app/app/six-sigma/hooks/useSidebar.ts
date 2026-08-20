@@ -8,40 +8,55 @@ const MAX = 480;
 const DEFAULT = 208; // el w-52 que habia fijo (13rem)
 const KEY = "sixsigma.sidebarWidth";
 
+const clamp = (n: number) => Math.min(MAX, Math.max(MIN, n));
+
+/**
+ * Lee la preferencia guardada. En el render del servidor no hay localStorage,
+ * asi que devuelve el valor por omision: el <aside> lleva
+ * suppressHydrationWarning para tolerar esa diferencia de un solo render.
+ */
+function initialWidth(): number {
+  if (typeof window === "undefined") return DEFAULT;
+  const saved = Number(window.localStorage.getItem(KEY));
+  return Number.isFinite(saved) && saved >= MIN && saved <= MAX ? saved : DEFAULT;
+}
+
 /**
  * Ancho del panel lateral, arrastrable y plegable.
  *
  * El ancho se guarda en localStorage porque es una preferencia de puesto de
- * trabajo, no del proyecto: quien tiene pantalla ancha lo quiere ancho siempre,
- * y no tendria sentido que viajara dentro del fichero .sixsigma.
+ * trabajo, no del proyecto: no tendria sentido que viajara dentro del .sixsigma.
  *
  * Plegar no altera el ancho guardado, para que al desplegar se recupere el que
  * el usuario habia elegido.
  */
 export function useSidebar() {
-  const [width, setWidth] = useState(DEFAULT);
+  const [width, setWidth] = useState<number>(initialWidth);
   const [collapsed, setCollapsed] = useState(false);
   const [dragging, setDragging] = useState(false);
-  const asideRef = useRef<HTMLElement | null>(null);
 
-  // La lectura va en un efecto y no en el estado inicial: en el primer render
-  // del servidor no hay localStorage, y usarlo ahi provoca un desajuste de
-  // hidratacion.
-  useEffect(() => {
-    const saved = Number(window.localStorage.getItem(KEY));
-    if (Number.isFinite(saved) && saved >= MIN && saved <= MAX) setWidth(saved);
+  // Origen del arrastre. Es un ref interno y no sale del hook: devolverlo
+  // haria que el linter tratase todo el objeto como un ref.
+  const origin = useRef({ x: 0, width: DEFAULT });
+
+  /**
+   * El ancho se calcula como desplazamiento respecto al punto de pulsacion, no
+   * midiendo el borde del panel. Asi no hace falta un ref al <aside> y da igual
+   * lo que haya a su izquierda en el layout.
+   */
+  const startDrag = useCallback((clientX: number) => {
+    setDragging(true);
+    setWidth((w) => {
+      origin.current = { x: clientX, width: w };
+      return w;
+    });
   }, []);
-
-  const clamp = (n: number) => Math.min(MAX, Math.max(MIN, n));
-
-  const startDrag = useCallback(() => setDragging(true), []);
 
   useEffect(() => {
     if (!dragging) return;
 
     const onMove = (e: PointerEvent) => {
-      const left = asideRef.current?.getBoundingClientRect().left ?? 0;
-      setWidth(clamp(e.clientX - left));
+      setWidth(clamp(origin.current.width + (e.clientX - origin.current.x)));
     };
     const onUp = () => setDragging(false);
 
@@ -76,7 +91,6 @@ export function useSidebar() {
     width,
     collapsed,
     dragging,
-    asideRef,
     startDrag,
     nudge,
     reset: useCallback(() => setWidth(DEFAULT), []),
