@@ -6,8 +6,7 @@ import { useWorkbook } from "./hooks/useWorkbook";
 import { readExcelFile, writeExcelFile } from "./lib/excel";
 import { exportProject, importProject } from "./lib/project";
 import { ToolId } from "./lib/ribbon";
-import { getColumnByName } from "./lib/columns"; // by NAME (generic recompute)
-import type { SavedStudy, SaveStudyInput, StudyColumn } from "./lib/studies";
+import type { SavedStudy, SaveStudyInput } from "./lib/studies";
 import MenuBar from "./components/MenuBar";
 import DataGrid from "./components/DataGrid";
 import SheetTabs from "./components/SheetTabs";
@@ -24,15 +23,6 @@ type ViewMode = "split" | "grid" | "graphics";
 interface SixSigmaAnalyzerProps {
   userEmail?: string;
   onSignOut: () => void;
-}
-
-// Timestamp yyyy/mm/dd hh:mm:ss
-function timestamp(): string {
-  const d = new Date();
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(
-    d.getHours()
-  )}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
 
 /** ¿Hay algo escrito en la hoja? Cabeceras y celdas, ignorando espacios. */
