@@ -16,6 +16,8 @@ import { getArtifact } from "./studies/_registry";
 import type { ColumnSnapshot } from "./studies/types";
 import AnalysisRunner from "./components/AnalysisRunner";
 import StudyList from "./components/StudyList";
+import { useSidebar } from "./hooks/useSidebar";
+import SidebarSplitter from "./components/SidebarSplitter";
 
 type ViewMode = "split" | "grid" | "graphics";
 
@@ -58,6 +60,7 @@ export default function SixSigmaAnalyzer({
   const splitRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const projectInputRef = useRef<HTMLInputElement>(null);
+  const sidebar = useSidebar();
 
   // --- Project: export / import everything (declared first: used by handleImport/handleNew) ---
   const handleExportProject = () => {
@@ -300,29 +303,74 @@ export default function SixSigmaAnalyzer({
 
       {/* Body: sidebar + central area */}
       <div className="flex flex-1 min-h-0">
-        {/* Saved studies sidebar */}
-        {/* Saved studies sidebar */}
-        <aside className="w-52 bg-gray-50 border-r border-gray-300 flex flex-col shrink-0">
-          <StudyList
-            studies={studies}
-            viewingId={viewingId}
-            onSelect={(s) => {
-              setActiveTool(s.type as ToolId);
-              setArtifactParams(s.params);
-              setViewingId(s.id);
-              if (view === "grid") setView("split");
-            }}
-            onDelete={(id) => {
-              setStudies((prev) => prev.filter((x) => x.id !== id));
-              if (viewingId === id) {
-                setViewingId(null);
-                setActiveTool(null);
-              }
-            }}
-            onRename={handleRenameStudy}
-          />
-        </aside>
+        {/* Saved studies sidebar: plegable y de ancho ajustable */}
+        {sidebar.collapsed ? (
+          // Plegado deja un tirador estrecho, no un panel vacio: asi se
+          // recupera sin tener que buscar el control en un menu.
+          <div className="w-8 shrink-0 bg-gray-50 border-r border-gray-300 flex flex-col items-center pt-2">
+            <button
+              onClick={sidebar.expand}
+              className="text-[#00674d] hover:bg-gray-200 rounded px-1 py-1 text-sm"
+              title="Show saved studies"
+              aria-label="Show saved studies"
+            >
+              {"\u25B6"}
+            </button>
+            <span
+              className="mt-3 text-[11px] text-gray-500 tracking-wide"
+              style={{ writingMode: "vertical-rl" }}
+            >
+              Saved Studies
+              {studies.length > 0 && ` (${studies.length})`}
+            </span>
+          </div>
+        ) : (
+          <>
+            <aside
+              ref={sidebar.asideRef}
+              style={{ width: sidebar.width }}
+              className="bg-gray-50 border-r border-gray-300 flex flex-col shrink-0 min-w-0"
+            >
+              <div className="flex items-center justify-end px-1 pt-1">
+                <button
+                  onClick={sidebar.toggle}
+                  className="text-gray-400 hover:text-[#00674d] px-1 text-sm"
+                  title="Hide panel"
+                  aria-label="Hide saved studies panel"
+                >
+                  {"\u25C0"}
+                </button>
+              </div>
+              <StudyList
+                studies={studies}
+                viewingId={viewingId}
+                onSelect={(s) => {
+                  setActiveTool(s.type as ToolId);
+                  setArtifactParams(s.params);
+                  setViewingId(s.id);
+                  if (view === "grid") setView("split");
+                }}
+                onDelete={(id) => {
+                  setStudies((prev) => prev.filter((x) => x.id !== id));
+                  if (viewingId === id) {
+                    setViewingId(null);
+                    setActiveTool(null);
+                  }
+                }}
+                onRename={handleRenameStudy}
+              />
+            </aside>
 
+            <SidebarSplitter
+              dragging={sidebar.dragging}
+              width={sidebar.width}
+              onStartDrag={sidebar.startDrag}
+              onReset={sidebar.reset}
+              onNudge={sidebar.nudge}
+            />
+          </>
+        )}
+        
         {/* Central area: two frames + splitter */}
         <div className="flex-1 flex flex-col min-w-0">
           <div ref={splitRef} className="flex-1 flex flex-col min-h-0">
