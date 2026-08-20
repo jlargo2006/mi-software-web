@@ -3,6 +3,8 @@ import type { WorkbookData } from "./types";
 import type { SavedStudy } from "./studies";
 // El registro de definiciones, indexado por id de estudio.
 import { REGISTRY } from "../studies/_registry";
+import { splitLegacyName } from "./studies";
+
 
 export interface ProjectFile {
   app: "mi-software-web";
@@ -56,10 +58,20 @@ function sanitizeStudies(raw: unknown): SavedStudy[] {
       "defaultParams" in def
         ? (def.defaultParams as Record<string, unknown>)
         : {};
+    const rawName = typeof st.name === "string" ? st.name : st.type;
+    // Ficheros anteriores llevaban la fecha dentro del nombre. Se extrae para
+    // que el nombre quede limpio y la fecha sirva para ordenar.
+    const legacy = splitLegacyName(rawName);
+    const createdAt =
+      typeof st.createdAt === "string" && !Number.isNaN(Date.parse(st.createdAt))
+        ? st.createdAt
+        : legacy.createdAt ?? new Date(0).toISOString();
+
     out.push({
       id: st.id,
       type: st.type,
-      name: typeof st.name === "string" ? st.name : st.type,
+      name: legacy.name,
+      createdAt,
       params: mergeParams(st.params, defaults),
       results: (st.results as Record<string, unknown>) ?? {},
       snapshot:
