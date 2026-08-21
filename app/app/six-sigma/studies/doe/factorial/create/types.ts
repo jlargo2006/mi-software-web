@@ -98,6 +98,11 @@ export interface DoeCreateModel {
   sheetHeaders: string[];
   sheetRows: Cell[][];
   sheetName: string;
+  
+  /** "I = ABD = ACE = BCDE". Vacio en el factorial completo. */
+  definingRelation: string;
+  /** "D = AB; E = AC". Vacio en el factorial completo. */
+  generators: string;  
 }
 
 export type DoeCreateResult =
