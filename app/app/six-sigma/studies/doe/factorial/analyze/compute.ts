@@ -581,21 +581,25 @@ export function computeDoeAnalyze(
   }
 
   // --- Observaciones inusuales ---------------------------------------------
+  // Con el modelo saturado la palanca vale 1 en toda corrida y el residuo es
+  // cero: marcar las dieciseis como inusuales seria ruido, no informacion.
   const leverageLimit = Math.min(0.99, (3 * fit.p) / n);
   const unusual: UnusualRow[] = [];
-  for (let i = 0; i < n; i++) {
-    const large = Math.abs(fit.stdResid[i]) > 2;
-    const highX = fit.leverage[i] > leverageLimit;
-    if (!large && !highX) continue;
-    unusual.push({
-      obs: i + 1,
-      y: y[i],
-      fit: fit.fitted[i],
-      resid: fit.resid[i],
-      stdResid: fit.stdResid[i],
-      largeResid: large,
-      unusualX: highX,
-    });
+  if (!usedLenth) {
+    for (let i = 0; i < n; i++) {
+      const large = Math.abs(fit.stdResid[i]) > 2;
+      const highX = fit.leverage[i] > leverageLimit;
+      if (!large && !highX) continue;
+      unusual.push({
+        obs: i + 1,
+        y: y[i],
+        fit: fit.fitted[i],
+        resid: fit.resid[i],
+        stdResid: fit.stdResid[i],
+        largeResid: large,
+        unusualX: highX,
+      });
+    }
   }
 
   // --- Graficos de efectos --------------------------------------------------
