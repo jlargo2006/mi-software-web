@@ -136,7 +136,16 @@ export interface DoeAnalyzeModel {
   leverageLimit: number;
   aliases: AliasGroup[];
   aliasClean: boolean;
-
+  /**
+   * Terminos pedidos que resultaron ser alias exactos de otros y se retiraron
+   * para poder ajustar. Vacio cuando el diseno soporta el modelo pedido.
+   */
+  removedAliased: string[];
+  /** El indicador de curvatura no era estimable y se retiro. */
+  droppedCtPt: boolean;
+  /** Terminos que el usuario pidio, antes del descarte por alias. */
+  requestedTerms: number;
+  
   /** Puntos centrales detectados en la hoja. */
   hasCenterPoints: boolean;
   nCenterPoints: number;
