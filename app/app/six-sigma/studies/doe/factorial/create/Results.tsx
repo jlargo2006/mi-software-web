@@ -82,10 +82,36 @@ export default function DoeCreateResults({
               </tbody>
             </table>
 
+            {/* El generador identifica CUAL de las fracciones posibles es esta;
+                "1/4, resolucion III" no lo hace. */}
+            {!r.isFull && (
+              <div className="mt-2 space-y-0.5 font-mono text-xs text-gray-700">
+                <p>
+                  <span className="font-sans text-gray-600">
+                    Design Generators:{" "}
+                  </span>
+                  {r.generators}
+                </p>
+                <p>
+                  <span className="font-sans text-gray-600">
+                    Defining Relation:{" "}
+                  </span>
+                  {r.definingRelation}
+                </p>
+              </div>
+            )}
+
             <p className="mt-3 text-sm">
               {r.isFull ? (
                 <span className="font-medium text-emerald-800">
                   All terms are free from aliasing.
+                </span>
+              ) : r.resolutionLabel === "III" ? (
+                // En resolucion III el problema no es "hay alias": es que los
+                // efectos principales se confunden con interacciones dobles, y
+                // eso cambia por completo lo que se puede concluir.
+                <span className="font-medium text-red-800">
+                  Some main effects are confounded with two-way interactions.
                 </span>
               ) : (
                 <span className="font-medium text-amber-800">
