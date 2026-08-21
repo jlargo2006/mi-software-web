@@ -26,6 +26,16 @@ const num = (s: string): number => {
 
 const fail = (error: string): DoeCreateResult => ({ ok: false, error });
 
+/**
+ * Orden canonico de terminos: primero por numero de letras, luego alfabetico.
+ *
+ * Es el criterio de Minitab, y no es cosmetico: el primer termino de cada
+ * renglon es el nombre con el que ese efecto aparece luego en la tabla de
+ * efectos, asi que ambas salidas tienen que coincidir.
+ */
+const byOrderThenAlpha = (a: string, b: string): number =>
+  a.length - b.length || a.localeCompare(b);
+
 /** Semilla por omision: fija, para que dos Run seguidos den lo mismo. */
 const DEFAULT_SEED = 20240101;
 
@@ -204,16 +214,7 @@ export function computeDoeCreate(
     ...r.coded.map((c, fi) => decode(fi, c)),
   ]);
 
-/**
- * Orden canonico de terminos: primero por numero de letras, luego alfabetico.
- *
- * Es el criterio de Minitab, y no es cosmetico: el primer termino de cada
- * renglon es el nombre con el que ese efecto aparece luego en la tabla de
- * efectos, asi que ambas salidas tienen que coincidir.
- */
-const byOrderThenAlpha = (a: string, b: string): number =>
-  a.length - b.length || a.localeCompare(b);
-
+  // --- Alias ----------------------------------------------------------------
   const rawAlias =
     design.gens.length === 0 ? [] : aliasStructure(k, design.base, design.gens, 2);
 
@@ -232,6 +233,11 @@ const byOrderThenAlpha = (a: string, b: string): number =>
       x.term === "I" ? -1 : y.term === "I" ? 1 : byOrderThenAlpha(x.term, y.term)
     );
 
+  // `gens` guarda solo la palabra ("AB"); la letra del factor generado es
+  // implicita por posicion, la misma convencion que usa definingWords.
+  const generators = design.gens
+    .map((g, i) => `${String.fromCharCode(65 + design.base + i)} = ${g}`)
+    .join("; ");
 
   return {
     ok: true,
@@ -253,13 +259,14 @@ const byOrderThenAlpha = (a: string, b: string): number =>
     factors,
     rows: ordered,
     alias,
+    generators,
     // "I = ABD = ACE = BCDE". Es el renglon de la identidad reescrito: define
     // la fraccion por completo, mientras que "1/4, resolucion III" no dice
     // cual de las fracciones posibles es.
     definingRelation:
       alias.length > 0 && alias[0].term === "I"
         ? ["I", ...alias[0].aliases].join(" = ")
-        : "",    
+        : "",
     blockConfounded: confounded,
     sheetHeaders,
     sheetRows,
