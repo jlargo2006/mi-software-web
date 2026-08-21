@@ -124,6 +124,12 @@ function sseOf(cols: number[][], y: number[]): number | null {
  * el error al quitar SOLO ese termino, con los demas dentro. Por eso no suman
  * la de la regresion cuando los predictores estan correlacionados: la parte
  * compartida no se atribuye a nadie.
+ *
+ * Se admite el modelo SATURADO, n = p. Los coeficientes estan perfectamente
+ * determinados; lo que no hay es error con el que contrastarlos, asi que todo
+ * lo que depende de la varianza residual sale NaN y quien llame decide que
+ * hacer: en DOE, aplicar el metodo de Lenth. Rechazar el ajuste seria mas
+ * simple pero dejaria sin analisis al caso mas comun de los fraccionados.
  */
 export function multiRegressionFit(
   X: number[][],
@@ -133,7 +139,9 @@ export function multiRegressionFit(
   const n = y.length;
   const k = X.length;
   const p = k + 1;
-  if (n <= p) return null;
+  if (n < p) return null;
+  /** Diseno saturado: sin grados de libertad para el error. */
+  const saturated = n === p;
 
   const A: number[][] = Array.from({ length: n }, (_, i) => [
     1,
@@ -182,7 +190,9 @@ export function multiRegressionFit(
   }
 
   const errDF = n - p;
-  const errMS = errSS / errDF;
+  // NaN y no 0/0: el 0/0 de JavaScript ya da NaN, pero dejarlo explicito evita
+  // que un cambio futuro en errSS lo convierta en un cero enganoso.
+  const errMS = saturated ? NaN : errSS / errDF;
   const s = Math.sqrt(errMS);
 
   const my = y.reduce((a, b) => a + b, 0) / n;
@@ -199,11 +209,19 @@ export function multiRegressionFit(
   });
 
   // PRESS por palancas: evita reajustar el modelo n veces.
-  let press = 0;
-  for (let i = 0; i < n; i++) {
-    const om = 1 - leverage[i];
-    const d = om > 1e-8 ? om : 1e-8;
-    press += (resid[i] / d) * (resid[i] / d);
+  //
+  // Con el modelo saturado la palanca vale 1 en toda corrida y el divisor es
+  // cero. El tope de 1e-8 lo convertiria en un numero enorme en vez de en un
+  // fallo, y r2pred saldria como un porcentaje negativo de seis cifras con
+  // aspecto de dato. Mejor NaN, que se imprime como *.
+  let press = NaN;
+  if (!saturated) {
+    press = 0;
+    for (let i = 0; i < n; i++) {
+      const om = 1 - leverage[i];
+      const d = om > 1e-8 ? om : 1e-8;
+      press += (resid[i] / d) * (resid[i] / d);
+    }
   }
 
   const terms: MultiTermStats[] = [];
@@ -211,20 +229,17 @@ export function multiRegressionFit(
     const se = Math.sqrt(inv[j + 1][j + 1] * errMS);
     const t = coefs[j + 1] / se;
 
-    // VIF: se regresa el predictor j sobre los demas predictores.
-    let vif = 1;
-    if (k > 1) {
-      const others = X.filter((_, i) => i !== j);
-      const mj = X[j].reduce((a, b) => a + b, 0) / n;
-      const sstj = X[j].reduce((a, v) => a + (v - mj) * (v - mj), 0);
-      const ssej = sseOf(others, X[j]);
-      if (ssej !== null && sstj > 0) {
-        const r2j = 1 - ssej / sstj;
-        vif = r2j < 1 - 1e-12 ? 1 / (1 - r2j) : Infinity;
-      } else {
-        vif = Infinity;
-      }
-    }
+    // VIF por la identidad VIF_j = (X'X)^-1_jj * S_jj, con S_jj la suma de
+    // cuadrados centrada de la columna.
+    //
+    // La via habitual es regresar el predictor j sobre los demas, pero esa
+    // regresion auxiliar tambien se queda sin grados de libertad cuando el
+    // modelo esta saturado y devuelve VIF infinitos en un diseno que es
+    // perfectamente ortogonal. La identidad es exacta, vale igual en los dos
+    // casos y ahorra k ajustes.
+    const mj = X[j].reduce((a, b) => a + b, 0) / n;
+    const sstj = X[j].reduce((a, v) => a + (v - mj) * (v - mj), 0);
+    const vif = sstj > 0 ? inv[j + 1][j + 1] * sstj : Infinity;
 
     const reduced = X.filter((_, i) => i !== j);
     const sseRed = reduced.length > 0 ? sseOf(reduced, y) : totSS;
@@ -255,8 +270,8 @@ export function multiRegressionFit(
     p,
     s,
     r2: 100 * (1 - errSS / totSS),
-    r2adj: 100 * (1 - errMS / (totSS / totDF)),
-    r2pred: 100 * (1 - press / totSS),
+    r2adj: saturated ? NaN : 100 * (1 - errMS / (totSS / totDF)),
+    r2pred: saturated ? NaN : 100 * (1 - press / totSS),
     regDF,
     regSS,
     regMS,
