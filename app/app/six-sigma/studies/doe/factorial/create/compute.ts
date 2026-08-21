@@ -204,8 +204,34 @@ export function computeDoeCreate(
     ...r.coded.map((c, fi) => decode(fi, c)),
   ]);
 
-  const alias =
+/**
+ * Orden canonico de terminos: primero por numero de letras, luego alfabetico.
+ *
+ * Es el criterio de Minitab, y no es cosmetico: el primer termino de cada
+ * renglon es el nombre con el que ese efecto aparece luego en la tabla de
+ * efectos, asi que ambas salidas tienen que coincidir.
+ */
+const byOrderThenAlpha = (a: string, b: string): number =>
+  a.length - b.length || a.localeCompare(b);
+
+  const rawAlias =
     design.gens.length === 0 ? [] : aliasStructure(k, design.base, design.gens, 2);
+
+  // El generador produce los renglones en orden de Yates, que delata el
+  // algoritmo. Se reordena dentro de cada renglon y entre renglones.
+  const alias = rawAlias
+    .map((row) => {
+      if (row.term === "I") {
+        return { term: "I", aliases: [...row.aliases].sort(byOrderThenAlpha) };
+      }
+      const all = [row.term, ...row.aliases].sort(byOrderThenAlpha);
+      return { term: all[0], aliases: all.slice(1) };
+    })
+    // `I` encabeza siempre: es la relacion de definicion, no un efecto.
+    .sort((x, y) =>
+      x.term === "I" ? -1 : y.term === "I" ? 1 : byOrderThenAlpha(x.term, y.term)
+    );
+
 
   return {
     ok: true,
@@ -227,6 +253,13 @@ export function computeDoeCreate(
     factors,
     rows: ordered,
     alias,
+    // "I = ABD = ACE = BCDE". Es el renglon de la identidad reescrito: define
+    // la fraccion por completo, mientras que "1/4, resolucion III" no dice
+    // cual de las fracciones posibles es.
+    definingRelation:
+      alias.length > 0 && alias[0].term === "I"
+        ? ["I", ...alias[0].aliases].join(" = ")
+        : "",    
     blockConfounded: confounded,
     sheetHeaders,
     sheetRows,
