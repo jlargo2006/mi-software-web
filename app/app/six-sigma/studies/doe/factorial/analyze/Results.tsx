@@ -578,6 +578,44 @@ export default function DoeAnalyzeResults({
             {r.factors.join("; ")}
           </h3>
 
+          {r.removedAliased.length > 0 && (
+            <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <p className="font-semibold">
+                {r.removedAliased.length} of {r.requestedTerms} terms were
+                totally confounded and removed
+              </p>
+              <p className="mt-1">
+                This design cannot tell them apart from terms already in the
+                model, so they carry no information of their own. The survivor of
+                each alias group is the first one in standard order, which is why
+                you see{" "}
+                <span className="font-mono">{r.rows[0]?.term.key}</span>-type
+                terms rather than their partners. Nothing was estimated twice.
+              </p>
+              <p className="mt-2 font-mono text-xs leading-relaxed">
+                {r.removedAliased.join("; ")}
+              </p>
+              <p className="mt-2 text-xs">
+                Lower the model order to stop asking for them. Removing them here
+                is not a fix for the design: those effects remain unknowable
+                without more runs.
+              </p>
+            </div>
+          )}
+
+          {r.droppedCtPt && (
+            <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <p className="font-semibold">
+                The Ct Pt term was removed: it is not estimable here
+              </p>
+              <p className="mt-1">
+                The center-point indicator coincides with a block column, so
+                curvature and the block effect cannot be separated. Curvature is
+                not being tested.
+              </p>
+            </div>
+          )}
+          
           {r.usedLenth && (
             <div className="rounded-md border border-blue-300 bg-blue-50 px-4 py-3 text-sm text-blue-900">
               <p className="font-semibold">
