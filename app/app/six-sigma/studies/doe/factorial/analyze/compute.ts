@@ -73,6 +73,48 @@ export const sig4 = (v: number): string => {
   return v.toFixed(dec).replace(".", ",");
 };
 
+/**
+ * Marca que columnas son linealmente independientes de las anteriores.
+ *
+ * Se usa Gram-Schmidt modificado y NO la inversa de X'X: cuando el diseno esta
+ * saturado esa matriz es singular y no dice cual de las columnas sobra, solo
+ * que sobra alguna. Ortogonalizando en orden, la primera columna de cada
+ * conjunto de alias es la que se queda y las demas caen con residuo nulo.
+ *
+ * De ahi que el orden de entrada sea una decision y no un detalle: los bloques
+ * se pasan primero para que un bloque confundido con un termino elimine el
+ * termino, nunca el bloque.
+ */
+function independentMask(cols: number[][], nRows: number): boolean[] {
+  const basis: number[][] = [];
+  // La constante forma parte del modelo aunque no este en la lista: sin ella,
+  // una columna constante pareceria informativa.
+  const ones = new Array<number>(nRows).fill(1 / Math.sqrt(nRows));
+  basis.push(ones);
+
+  const keep: boolean[] = [];
+  for (const col of cols) {
+    const v = [...col];
+    const norm0 = Math.sqrt(v.reduce((a, x) => a + x * x, 0));
+    for (const b of basis) {
+      let d = 0;
+      for (let i = 0; i < v.length; i++) d += v[i] * b[i];
+      for (let i = 0; i < v.length; i++) v[i] -= d * b[i];
+    }
+    const norm = Math.sqrt(v.reduce((a, x) => a + x * x, 0));
+    // Umbral RELATIVO a la norma original: una columna de ceros y una columna
+    // enorme casi dependiente no se juzgan con la misma vara.
+    if (norm > 1e-8 * Math.max(1, norm0)) {
+      const inv = 1 / norm;
+      basis.push(v.map((x) => x * inv));
+      keep.push(true);
+    } else {
+      keep.push(false);
+    }
+  }
+  return keep;
+}
+
 export function computeDoeAnalyze(
   data: ColumnSnapshot,
   params: DoeAnalyzeParams
@@ -108,7 +150,7 @@ export function computeDoeAnalyze(
         `Column "${blkName}" is not available. If it does exist in the worksheet, ` +
           `it is not being passed to the analysis.`
       );
-    }    
+    }
     if (blkName === resp || facNames.includes(blkName)) {
       return fail(
         `"${blkName}" is already used as the response or as a factor: it cannot ` +
@@ -276,20 +318,22 @@ export function computeDoeAnalyze(
     );
   }
 
-  const useCtPt = hasCenterPoints && params.includeCenterPoints !== false;
+  const wantCtPt = hasCenterPoints && params.includeCenterPoints !== false;
   const ctPtCol = isCenter.map((c) => (c ? 1 : 0));
 
   // --- Terminos -------------------------------------------------------------
   const allTerms = buildTerms(facNames, maxOrder);
   const excluded = new Set(params.excluded);
-  const active = allTerms.filter((t) => !excluded.has(t.key));
-  if (active.length === 0) return fail("Every term has been removed from the model.");
+  const requested = allTerms.filter((t) => !excluded.has(t.key));
+  if (requested.length === 0) {
+    return fail("Every term has been removed from the model.");
+  }
 
   // La jerarquia se comprueba antes de ajustar: un modelo con AB pero sin A no
   // es interpretable, porque los coeficientes dependen del origen de la escala.
-  const activeKeys = new Set(active.map((t) => t.key));
-  for (const t of active) {
-    const missing = parentKeys(t, facNames).filter((p) => !activeKeys.has(p));
+  const requestedKeys = new Set(requested.map((t) => t.key));
+  for (const t of requested) {
+    const missing = parentKeys(t, facNames).filter((p) => !requestedKeys.has(p));
     if (missing.length > 0) {
       return fail(
         `The model is not hierarchical: "${t.key}" is in, but ${missing
@@ -314,7 +358,7 @@ export function computeDoeAnalyze(
     allTerms
   );
 
-  // --- Matriz del modelo ----------------------------------------------------
+  // --- Columnas de bloque ---------------------------------------------------
   // Con b bloques hacen falta b-1 columnas, en codificacion de EFECTOS: la
   // columna j vale 1 en el bloque j, -1 en el ultimo y 0 en el resto. Asi los
   // coeficientes suman cero y la constante es la media global.
@@ -325,6 +369,57 @@ export function computeDoeAnalyze(
     : [];
   const nBlk = blkTerms.length;
 
+  // --- Descarte de terminos no estimables -----------------------------------
+  // Un diseno fraccionado no puede estimar mas terminos que corridas tiene, y
+  // pedir orden 3 con 8 factores en 16 corridas produce 92 terminos que son
+  // alias exactos entre si. Rechazar el modelo seria correcto pero inutil: el
+  // usuario tendria que desmarcar setenta y siete terminos a mano leyendo la
+  // estructura de alias. Se descartan aqui y se dice cuales.
+  const probeCols: number[][] = [
+    ...blkTerms.map((_, i) => blkCols[i]),
+    ...requested.map((t) => termColumn(coded, t)),
+    ...(wantCtPt ? [ctPtCol] : []),
+  ];
+  const keepMask = independentMask(probeCols, n);
+
+  const droppedByAlias = new Set<string>();
+  requested.forEach((t, i) => {
+    if (!keepMask[nBlk + i]) droppedByAlias.add(t.key);
+  });
+
+  // Si cae un termino, caen sus hijos: dejar AB sin A rompe la jerarquia, y el
+  // modelo deja de ser interpretable aunque siga siendo ajustable.
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const t of requested) {
+      if (droppedByAlias.has(t.key)) continue;
+      if (parentKeys(t, facNames).some((p) => droppedByAlias.has(p))) {
+        droppedByAlias.add(t.key);
+        grew = true;
+      }
+    }
+  }
+
+  const active = requested.filter((t) => !droppedByAlias.has(t.key));
+  const removedAliased = requested
+    .filter((t) => droppedByAlias.has(t.key))
+    .map((t) => t.key);
+
+  if (active.length === 0) {
+    return fail(
+      "No term is estimable with these runs: every one is an exact alias of " +
+        "another. Lower the model order, or add runs."
+    );
+  }
+
+  // La curvatura tambien puede ser inestimable: con puntos centrales en un solo
+  // bloque y ese bloque ajustado, el indicador coincide con la columna de bloque.
+  const ctPtEstimable = wantCtPt && keepMask[keepMask.length - 1];
+  const useCtPt = wantCtPt && ctPtEstimable;
+  const droppedCtPt = wantCtPt && !ctPtEstimable;
+
+  // --- Matriz del modelo ----------------------------------------------------
   // Los bloques van delante y la curvatura al final: asi los terminos
   // factoriales ocupan las posiciones nBlk .. nBlk + active.length - 1, que es
   // lo que usan la ecuacion no codificada y las medias ajustadas.
@@ -342,9 +437,8 @@ export function computeDoeAnalyze(
   const fit = multiRegressionFit(X, y, modelTerms.map((t) => t.key));
   if (!fit) {
     return fail(
-      "The model is not estimable: some terms are aliased with each other, or a " +
-        "block is confounded with a term in the model. Lower the model order, or " +
-        "remove the terms flagged in the alias structure."
+      "The model could not be fitted even after removing the aliased terms. " +
+        "This should not happen: please report the design and the response used."
     );
   }
 
@@ -608,6 +702,9 @@ export function computeDoeAnalyze(
     leverageLimit,
     aliases,
     aliasClean,
+    removedAliased,
+    droppedCtPt,
+    requestedTerms: requested.length,
     hasCenterPoints,
     nCenterPoints,
     centerFactors,
