@@ -512,7 +512,9 @@ export function computeDoeAnalyze(
       vif: ft.vif,
       adjSS: ft.adjSS,
       adjMS: ft.adjMS,
-      fValue: ft.f,
+      // MultiTermStats no publica la F del termino. Con 1 gl es t^2, y su
+      // p-valor es el mismo que el de la t, asi que no hace falta pedirla.
+      fValue: ft.t * ft.t,
       fP: ft.p,
       significant: ft.p < alpha,
     };
