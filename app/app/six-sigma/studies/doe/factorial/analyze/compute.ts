@@ -524,9 +524,9 @@ export function computeDoeAnalyze(
   // pero no en cuanto el diseno se desequilibra, y las columnas de bloque NO
   // son ortogonales entre si.
 const groups: AnovaGroup[] = [];
-  const orders = [...new Set(modelTerms.map((t) => t.order))].sort(
-    (a, b) => orderRank(a) - orderRank(b)
-  );
+const orders = [...new Set(modelTerms.map((t) => t.order))].sort(
+  (a, b) => orderRank(a) - orderRank(b)
+);
   for (const o of orders) {
     const members = rows.filter((r) => r.term.order === o);
     const keepIdx = modelTerms
@@ -743,7 +743,7 @@ const groups: AnovaGroup[] = [];
     uncoded,
     unusual,
     leverageLimit,
-    aliases,
+    aliasClean: cleanAliases,
     aliasClean,
     removedAliased,
     droppedCtPt,
