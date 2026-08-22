@@ -677,16 +677,55 @@ export function computeDoeAnalyze(
     }
   }
 
-  // --- Alias ----------------------------------------------------------------
-  // Los bloques aparecen como lineas propias tras la identidad: cuando el
-  // bloqueo es por replica cada uno es estimable por si mismo.
+  // Con que interaccion esta confundido cada bloque. Al partir una replica, la
+  // columna de bloque COINCIDE con una columna de interaccion: esa interaccion
+  // deja de ser estimable y hay que decirlo, o el usuario creera que la tiene.
+  // Se busca sobre todos los ordenes, no solo hasta maxOrder: en un 2^4 en dos
+  // bloques la palabra es ABCD, que con orden 2 no esta en la lista de terminos.
+  const everyTerm = buildTerms(facNames, facNames.length);
+  const everyCol = everyTerm.map((t) => {
+    const col = termColumn(coded, t);
+    return cornerIdx.map((i) => col[i]);
+  });
+
+  const blockConfounded = blkTerms.map((_, bi) => {
+    const bc = cornerIdx.map((i) => blkCols[bi][i]);
+    for (let j = 0; j < everyTerm.length; j++) {
+      const col = everyCol[j];
+      let same = true;
+      let opp = true;
+      for (let i = 0; i < bc.length; i++) {
+        if (bc[i] !== col[i]) same = false;
+        if (bc[i] !== -col[i]) opp = false;
+        if (!same && !opp) break;
+      }
+      // El signo importa para el rotulo: Minitab escribe "Block 1 - ABCD"
+      // cuando la columna de bloque es la interaccion cambiada de signo.
+      if (same) return { term: everyTerm[j].letters, sign: "+" };
+      if (opp) return { term: everyTerm[j].letters, sign: "-" };
+    }
+    // Bloqueo por replica: cada bloque tiene todas las esquinas y no confunde.
+    return null;
+  });
+
   const aliases = useBlocks
     ? [
         ...aliasFac.slice(0, 1),
-        ...blkTerms.map((t) => ({ term: t.letters, aliases: [] as string[] })),
+        ...blkTerms.map((t, i) => {
+          const c = blockConfounded[i];
+          return {
+            term: c === null ? t.letters : `${t.letters} ${c.sign} ${c.term}`,
+            aliases: [] as string[],
+          };
+        }),
         ...aliasFac.slice(1),
       ]
     : aliasFac;
+
+  // Un bloque confundido con una interaccion es aliasing, y el cierre del
+  // informe no puede seguir diciendo que nada lo esta.
+  const cleanAliases =
+    aliasClean && blockConfounded.every((c) => c === null);
 
   return {
     ok: true,
