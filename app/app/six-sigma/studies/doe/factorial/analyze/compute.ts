@@ -523,10 +523,10 @@ export function computeDoeAnalyze(
   // de golpe. En un diseno ortogonal coincide con la suma de las individuales,
   // pero no en cuanto el diseno se desequilibra, y las columnas de bloque NO
   // son ortogonales entre si.
-const groups: AnovaGroup[] = [];
-const orders = [...new Set(modelTerms.map((t) => t.order))].sort(
-  (a, b) => orderRank(a) - orderRank(b)
-);
+  const groups: AnovaGroup[] = [];
+  const orders = [...new Set(modelTerms.map((t) => t.order))].sort(
+    (a, b) => orderRank(a) - orderRank(b)
+  );
   for (const o of orders) {
     const members = rows.filter((r) => r.term.order === o);
     const keepIdx = modelTerms
@@ -744,7 +744,6 @@ const orders = [...new Set(modelTerms.map((t) => t.order))].sort(
     unusual,
     leverageLimit,
     aliasClean: cleanAliases,
-    aliasClean,
     removedAliased,
     droppedCtPt,
     requestedTerms: requested.length,
