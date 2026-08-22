@@ -745,6 +745,7 @@ export function computeDoeAnalyze(
     uncoded,
     unusual,
     leverageLimit,
+    aliases,
     aliasClean: cleanAliases,
     removedAliased,
     droppedCtPt,
