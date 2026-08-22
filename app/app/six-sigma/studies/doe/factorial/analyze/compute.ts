@@ -504,15 +504,17 @@ export function computeDoeAnalyze(
       term,
       effect,
       coef: ft.coef,
-      se: ft.se,
-      t: ft.t,
-      p: ft.p,
+      se: pse / 2,
+      t,
+      p,
       vif: ft.vif,
+      // DF y Adj SS son informacion real aunque no haya error contra el que
+      // contrastar: solo F y su p-valor quedan indefinidos.
       adjSS: ft.adjSS,
       adjMS: ft.adjMS,
-      fValue: ft.fValue,
-      fP: ft.fP,
-      significant: ft.p < alpha,
+      fValue: NaN,
+      fP: NaN,
+      significant: p < alpha,
     };
   });
 
@@ -521,41 +523,39 @@ export function computeDoeAnalyze(
   // de golpe. En un diseno ortogonal coincide con la suma de las individuales,
   // pero no en cuanto el diseno se desequilibra, y las columnas de bloque NO
   // son ortogonales entre si.
-  const groups: AnovaGroup[] = [];
-  if (!usedLenth) {
-    const orders = [...new Set(modelTerms.map((t) => t.order))].sort(
-      (a, b) => orderRank(a) - orderRank(b)
-    );
-    for (const o of orders) {
-      const members = rows.filter((r) => r.term.order === o);
-      const keepIdx = modelTerms
-        .map((t, i) => (t.order === o ? -1 : i))
-        .filter((i) => i >= 0);
-      let ss: number;
-      if (keepIdx.length === 0) {
-        ss = fit.totSS - fit.errSS;
-      } else {
-        const sub = multiRegressionFit(
-          keepIdx.map((i) => X[i]),
-          y,
-          keepIdx.map((i) => modelTerms[i].key)
-        );
-        ss = sub ? sub.errSS - fit.errSS : NaN;
-      }
-      const df = members.length;
-      const ms = ss / df;
-      const f = ms / fit.errMS;
-      groups.push({
-        label: GROUP_LABEL[o] ?? `${o}-Way Interactions`,
-        df,
-        ss,
-        ms,
-        f,
-        p: fSf(f, df, dfe),
-        members,
-      });
+const groups: AnovaGroup[] = [];
+  const orders = [...new Set(modelTerms.map((t) => t.order))].sort(
+    (a, b) => orderRank(a) - orderRank(b)
+  );
+  for (const o of orders) {
+    const members = rows.filter((r) => r.term.order === o);
+    const keepIdx = modelTerms
+      .map((t, i) => (t.order === o ? -1 : i))
+      .filter((i) => i >= 0);
+    let ss: number;
+    if (keepIdx.length === 0) {
+      ss = fit.totSS - fit.errSS;
+    } else {
+      const sub = multiRegressionFit(
+        keepIdx.map((i) => X[i]),
+        y,
+        keepIdx.map((i) => modelTerms[i].key)
+      );
+      ss = sub ? sub.errSS - fit.errSS : NaN;
     }
-  }
+    const df = members.length;
+    const ms = ss / df;
+    const f = ms / fit.errMS;
+    groups.push({
+      label: GROUP_LABEL[o] ?? `${o}-Way Interactions`,
+      df,
+      ss,
+      ms,
+      f,
+      p: fSf(f, df, dfe),
+      members,
+    });
+  }  
 
   // --- Ecuacion en unidades no codificadas ----------------------------------
   // Solo los terminos factoriales se decodifican, y su indice en el ajuste
