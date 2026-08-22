@@ -493,8 +493,10 @@ export function computeDoeAnalyze(
         t,
         p,
         vif: ft.vif,
-        adjSS: NaN,
-        adjMS: NaN,
+        // DF y Adj SS son informacion real aunque no haya error contra el que
+        // contrastar: solo F y su p-valor quedan indefinidos.
+        adjSS: ft.adjSS,
+        adjMS: ft.adjMS,
         fValue: NaN,
         fP: NaN,
         significant: p < alpha,
@@ -504,17 +506,15 @@ export function computeDoeAnalyze(
       term,
       effect,
       coef: ft.coef,
-      se: pse / 2,
-      t,
-      p,
+      se: ft.se,
+      t: ft.t,
+      p: ft.p,
       vif: ft.vif,
-      // DF y Adj SS son informacion real aunque no haya error contra el que
-      // contrastar: solo F y su p-valor quedan indefinidos.
       adjSS: ft.adjSS,
       adjMS: ft.adjMS,
-      fValue: NaN,
-      fP: NaN,
-      significant: p < alpha,
+      fValue: ft.f,
+      fP: ft.p,
+      significant: ft.p < alpha,
     };
   });
 
