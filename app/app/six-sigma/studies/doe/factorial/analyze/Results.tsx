@@ -866,8 +866,6 @@ export default function DoeAnalyzeResults({
                   <td className={td}>{f.errDF}</td>
                   <td className={td}>{r.usedLenth ? "*" : fx(f.errSS, 3)}</td>
                   <td className={td}>{r.usedLenth ? "*" : fx(f.errMS, 3)}</td>                  
-                  <td className={td}>{fx(f.errSS, 3)}</td>
-                  <td className={td}>{fx(f.errMS, 3)}</td>
                   <td className={td}>{"\u00a0"}</td>
                   <td className={td}>{"\u00a0"}</td>
                 </tr>
