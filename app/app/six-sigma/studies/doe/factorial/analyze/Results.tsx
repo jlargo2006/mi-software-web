@@ -18,6 +18,10 @@ const fx = (v: number, dec: number): string =>
   Number.isFinite(v) ? v.toFixed(dec).replace(".", ",") : "*";
 const fp = (v: number): string => (Number.isFinite(v) ? fx(v, 3) : "*");
 
+// El % solo tiene sentido si hay un numero al que pegarselo.
+const pct = (v: number): string =>
+  Number.isFinite(v) ? `${fx(v, 2)}%` : "*";
+
 export default function DoeAnalyzeResults({
   result,
   params,
@@ -782,102 +786,102 @@ export default function DoeAnalyzeResults({
               <tbody>
                 <tr className="border-b border-gray-200">
                   <td className={td}>{fx(f.s, 6)}</td>
-                  <td className={td}>{fx(f.r2, 2)}%</td>
-                  <td className={td}>{fx(f.r2adj, 2)}%</td>
-                  <td className={td}>{fx(f.r2pred, 2)}%</td>
+                  <td className={td}>{pct(f.r2)}</td>
+                  <td className={td}>{pct(f.r2adj)}</td>
+                  <td className={td}>{pct(f.r2pred)}</td>
                 </tr>
               </tbody>
             </table>
           </section>
 
           {/* ANOVA */}
-          {!r.usedLenth && (
-            <section className="overflow-x-auto">
-              <h4 className="mb-2 text-sm font-semibold text-gray-800">
-                Analysis of Variance
-              </h4>
-              <table className="border-collapse text-sm">
-                <thead>
-                  <tr className="border-b border-gray-400">
-                    <th className={thL}>Source</th>
-                    <th className={th}>DF</th>
-                    <th className={th}>Adj SS</th>
-                    <th className={th}>Adj MS</th>
-                    <th className={th}>F-Value</th>
-                    <th className={th}>P-Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b border-gray-200 font-medium">
-                    <td className={tdL}>Model</td>
-                    <td className={td}>{r.modelDF}</td>
-                    <td className={td}>{fx(r.modelSS, 3)}</td>
-                    <td className={td}>{fx(r.modelMS, 3)}</td>
-                    <td className={td}>{fx(r.modelF, 2)}</td>
-                    <td className={td}>{fp(r.modelP)}</td>
-                  </tr>
-                  {r.groups.map((g) => (
-                    <React.Fragment key={g.label}>
-                      <tr className="border-b border-gray-200">
-                        <td className={`${tdL} pl-6`}>{g.label}</td>
-                        <td className={td}>{g.df}</td>
-                        <td className={td}>{fx(g.ss, 3)}</td>
-                        <td className={td}>{fx(g.ms, 3)}</td>
-                        <td className={td}>{fx(g.f, 2)}</td>
-                        <td className={td}>{fp(g.p)}</td>
-                      </tr>
-                      {/* Blocks y Curvature no desglosan: el grupo ya dice todo
-                          lo que hay que decir. */}
-                      {g.members.length > 1 &&
-                        g.label !== "Blocks" &&
-                        g.members.map((mrow) => (
-                          <tr
-                            key={mrow.term.key}
-                            className="border-b border-gray-200"
-                          >
-                            <td className={`${tdL} pl-12`}>{mrow.term.key}</td>
-                            <td className={td}>1</td>
-                            <td className={td}>{fx(mrow.adjSS, 3)}</td>
-                            <td className={td}>{fx(mrow.adjMS, 3)}</td>
-                            <td className={td}>{fx(mrow.fValue, 2)}</td>
-                            <td className={td}>{fp(mrow.fP)}</td>
-                          </tr>
-                        ))}
-                      {g.members.length === 1 &&
-                        g.members[0].term.order > 0 && (
-                          <tr className="border-b border-gray-200">
-                            <td className={`${tdL} pl-12`}>
-                              {g.members[0].term.key}
-                            </td>
-                            <td className={td}>1</td>
-                            <td className={td}>{fx(g.members[0].adjSS, 3)}</td>
-                            <td className={td}>{fx(g.members[0].adjMS, 3)}</td>
-                            <td className={td}>{fx(g.members[0].fValue, 2)}</td>
-                            <td className={td}>{fp(g.members[0].fP)}</td>
-                          </tr>
-                        )}
-                    </React.Fragment>
-                  ))}
-                  <tr className="border-b border-gray-200">
-                    <td className={tdL}>Error</td>
-                    <td className={td}>{f.errDF}</td>
-                    <td className={td}>{fx(f.errSS, 3)}</td>
-                    <td className={td}>{fx(f.errMS, 3)}</td>
-                    <td className={td}>{"\u00a0"}</td>
-                    <td className={td}>{"\u00a0"}</td>
-                  </tr>
-                  <tr className="border-b border-gray-300 font-medium">
-                    <td className={tdL}>Total</td>
-                    <td className={td}>{f.totDF}</td>
-                    <td className={td}>{fx(f.totSS, 3)}</td>
-                    <td className={td}>{"\u00a0"}</td>
-                    <td className={td}>{"\u00a0"}</td>
-                    <td className={td}>{"\u00a0"}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </section>
-          )}
+          <section className="overflow-x-auto">
+            <h4 className="mb-2 text-sm font-semibold text-gray-800">
+              Analysis of Variance
+            </h4>
+            <table className="border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-gray-400">
+                  <th className={thL}>Source</th>
+                  <th className={th}>DF</th>
+                  <th className={th}>Adj SS</th>
+                  <th className={th}>Adj MS</th>
+                  <th className={th}>F-Value</th>
+                  <th className={th}>P-Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-gray-200 font-medium">
+                  <td className={tdL}>Model</td>
+                  <td className={td}>{r.modelDF}</td>
+                  <td className={td}>{fx(r.modelSS, 3)}</td>
+                  <td className={td}>{fx(r.modelMS, 3)}</td>
+                  <td className={td}>{fx(r.modelF, 2)}</td>
+                  <td className={td}>{fp(r.modelP)}</td>
+                </tr>
+                {r.groups.map((g) => (
+                  <React.Fragment key={g.label}>
+                    <tr className="border-b border-gray-200">
+                      <td className={`${tdL} pl-6`}>{g.label}</td>
+                      <td className={td}>{g.df}</td>
+                      <td className={td}>{fx(g.ss, 3)}</td>
+                      <td className={td}>{fx(g.ms, 3)}</td>
+                      <td className={td}>{fx(g.f, 2)}</td>
+                      <td className={td}>{fp(g.p)}</td>
+                    </tr>
+                    {/* Blocks y Curvature no desglosan: el grupo ya dice todo
+                        lo que hay que decir. */}
+                    {g.members.length > 1 &&
+                      g.label !== "Blocks" &&
+                      g.members.map((mrow) => (
+                        <tr
+                          key={mrow.term.key}
+                          className="border-b border-gray-200"
+                        >
+                          <td className={`${tdL} pl-12`}>{mrow.term.key}</td>
+                          <td className={td}>1</td>
+                          <td className={td}>{fx(mrow.adjSS, 3)}</td>
+                          <td className={td}>{fx(mrow.adjMS, 3)}</td>
+                          <td className={td}>{fx(mrow.fValue, 2)}</td>
+                          <td className={td}>{fp(mrow.fP)}</td>
+                        </tr>
+                      ))}
+                    {g.members.length === 1 &&
+                      g.members[0].term.order > 0 && (
+                        <tr className="border-b border-gray-200">
+                          <td className={`${tdL} pl-12`}>
+                            {g.members[0].term.key}
+                          </td>
+                          <td className={td}>1</td>
+                          <td className={td}>{fx(g.members[0].adjSS, 3)}</td>
+                          <td className={td}>{fx(g.members[0].adjMS, 3)}</td>
+                          <td className={td}>{fx(g.members[0].fValue, 2)}</td>
+                          <td className={td}>{fp(g.members[0].fP)}</td>
+                        </tr>
+                      )}
+                  </React.Fragment>
+                ))}
+                <tr className="border-b border-gray-200">
+                  <td className={tdL}>Error</td>
+                  <td className={td}>{f.errDF}</td>
+                  <td className={td}>{r.usedLenth ? "*" : fx(f.errSS, 3)}</td>
+                  <td className={td}>{r.usedLenth ? "*" : fx(f.errMS, 3)}</td>                  
+                  <td className={td}>{fx(f.errSS, 3)}</td>
+                  <td className={td}>{fx(f.errMS, 3)}</td>
+                  <td className={td}>{"\u00a0"}</td>
+                  <td className={td}>{"\u00a0"}</td>
+                </tr>
+                <tr className="border-b border-gray-300 font-medium">
+                  <td className={tdL}>Total</td>
+                  <td className={td}>{f.totDF}</td>
+                  <td className={td}>{fx(f.totSS, 3)}</td>
+                  <td className={td}>{"\u00a0"}</td>
+                  <td className={td}>{"\u00a0"}</td>
+                  <td className={td}>{"\u00a0"}</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
 
           {/* Ecuacion */}
           <section>
