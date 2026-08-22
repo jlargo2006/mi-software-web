@@ -345,10 +345,15 @@ export function blockAssignment(
     chosen.forEach((c, i) => {
       let v = 1;
       for (let j = 0; j < base; j++) if (c & (1 << j)) v *= row[j];
-      if (v < 0) idx |= 1 << i;
+      // Minitab pone en el bloque 1 las corridas con la palabra de bloqueo a
+      // -1. El diseno es el mismo con cualquiera de las dos asignaciones, pero
+      // solo esta empareja corrida a corrida con la suya, que es lo que permite
+      // mover una respuesta entre las dos herramientas sin desalinearla.
+      if (v > 0) idx |= 1 << i;
     });
     return idx + 1;
   });
+
 
   return {
     blockOf,
