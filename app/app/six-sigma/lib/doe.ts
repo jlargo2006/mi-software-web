@@ -29,7 +29,10 @@ const GENERATORS: Record<string, string[]> = {
   "5,4": ["ABCD"],
   "6,4": ["ABC", "ABD"],
   "7,4": ["ABC", "ABD", "ACD"],
-  "8,4": ["ABC", "ABD", "ACD", "BCD"],
+  // El ORDEN de las palabras no altera la resolucion, pero decide que corrida
+  // lleva que combinacion de niveles. Este es el de Minitab, comprobado contra
+  // su estructura de alias: permite pegar alli una respuesta medida aqui.
+  "8,4": ["BCD", "ACD", "ABC", "ABD"],
   "9,4": ["ABC", "ABD", "ACD", "BCD", "ABCD"],
   "10,4": ["ABC", "ABD", "ACD", "BCD", "ABCD", "AB"],
   "11,4": ["ABC", "ABD", "ACD", "BCD", "ABCD", "AB", "AC"],
@@ -49,8 +52,12 @@ const GENERATORS: Record<string, string[]> = {
   "15,5": ["ABC", "ABD", "ABE", "ACD", "ACE", "ADE", "BCD", "BCE", "BDE", "CDE"],
   "7,6": ["ABCDEF"],
   "8,6": ["ABCD", "ABEF"],
-  "9,6": ["ABC", "ABD", "ABE"],
-  "10,6": ["ABCD", "ABCE", "ABDF", "ABEF"],
+  // Minima aberracion. El anterior ["ABC","ABD","ABE"] tenia A4 = 6 frente a
+  // A4 = 1: seguia siendo resolucion IV, pero enredaba entre si seis pares de
+  // interacciones dobles en lugar de uno.
+  "9,6": ["ABC", "ABDE", "ACDF"],
+  // Igual: A4 = 5 en el anterior, A4 = 2 en este.
+  "10,6": ["ABC", "DEF", "ABDE", "ACDF"],
   "11,6": ["ABCD", "ABCE", "ABCF", "ADEF"],
   "12,6": ["ABC", "ABD", "ABE", "ABF", "ACDE", "ACDF"],
   "13,6": ["ABC", "ABD", "ABE", "ABF", "ACD", "ACE", "ACF"],
