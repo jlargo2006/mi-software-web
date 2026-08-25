@@ -1,4 +1,5 @@
 // app/app/six-sigma/studies/doe/factorial/analyze/Results.tsx
+//
 "use client";
 import React from "react";
 import type { Data, Layout, Shape } from "plotly.js";
