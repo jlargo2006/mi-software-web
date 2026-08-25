@@ -135,7 +135,7 @@ export default function ImpFitRegResults({
     line: { color: GREY, width: 1, dash: "dash" },
   });
 
-  const resLayout: Partial<Layout> & Record<string, unknown> = {
+  const resLayout: Record<string, unknown> = {
     margin: { l: 60, r: 25, t: 30, b: 45 },
     plot_bgcolor: "#ffffff",
     showlegend: false,
@@ -217,7 +217,7 @@ export default function ImpFitRegResults({
       yanchor: "bottom" as const,
       font: { size: 11 },
     })),
-  };
+  } as Partial<Layout>;
 
   /* ---------- estilos ---------- */
   const th = "px-3 py-1 text-right font-medium text-gray-600 whitespace-nowrap";
