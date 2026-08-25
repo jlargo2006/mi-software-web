@@ -98,7 +98,7 @@ export default function HTWilcoxonResults({
     yaxis: { title: { text: "Frequency" } },
     bargap: 0.02,
     shapes: eta0Shape,
-  } as Partial<Layout>;
+  };
 
   // --- Individual value plot (jitter reproducible) ---
   const jitter = v.map((_, i) => {
