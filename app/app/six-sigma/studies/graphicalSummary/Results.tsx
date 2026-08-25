@@ -1,7 +1,7 @@
 // studies/graphicalSummary/Results.tsx
 "use client";
 import React from "react";
-import type { Data } from "plotly.js";
+import type { Data, Layout } from "plotly.js";
 import type { ColumnSnapshot } from "../types";
 import type { GraphicalSummaryParams, GraphicalSummaryResult } from "./types";
 import ResultChart from "../../components/ResultChart";
