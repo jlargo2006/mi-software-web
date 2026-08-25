@@ -143,14 +143,14 @@ export default function HTMannWhitneyResults({
       hovertemplate: "[%{x}] \u2014 %{y}<extra></extra>",
     },
   ];
-  const histLayout: Partial<Layout> = {
+  const histLayout = {
     margin: { l: 60, r: 30, t: 10, b: 40 },
     xaxis: { title: { text: "Data" }, range: xRange },
     yaxis: { title: { text: "Frequency" } },
     barmode: "overlay",
     bargap: 0.02,
     legend: { orientation: "h", y: 1.12 },
-  };
+  } as Partial<Layout>;
 
   // --- Individual value plot (jitter reproducible) ---
   const jit = (n: number, seed: number) =>
