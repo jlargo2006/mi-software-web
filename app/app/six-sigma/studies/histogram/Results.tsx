@@ -1,7 +1,7 @@
 // app/app/six-sigma/studies/histogram/Results.tsx
 "use client";
 import React from "react";
-import type { Data, Layout } from "plotly.js";
+import type { Data } from "plotly.js";
 import type { ColumnSnapshot } from "../types";
 import type { HistogramParams, HistogramResult } from "./types";
 import ResultChart from "../../components/ResultChart";
@@ -86,7 +86,7 @@ export default function HistogramResults({
                     yaxis: { title: { text: "Frequency" } },
                     showlegend: true,
                     legend: { orientation: "v", x: 1.02, y: 1 },
-                  } as Partial<Layout>}
+                  }}
                 />
               </div>
             </div>
@@ -121,7 +121,7 @@ export default function HistogramResults({
                     yaxis: { title: { text: "Frequency" } },
                     showlegend: false,
                     bargap: 0.02,
-                  } as Partial<Layout>}
+                  }}
                 />
               </div>
             ))}
