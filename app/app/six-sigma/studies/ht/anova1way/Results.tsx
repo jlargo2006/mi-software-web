@@ -305,7 +305,7 @@ const histogram: Data[] = [
   },
 ];
 
-  const histLayout: Partial<Layout> = {
+  const histLayout: = {
     title: { text: "Histogram", font: { size: 12 } },
     margin: resMargin,
     showlegend: false,
@@ -313,7 +313,7 @@ const histogram: Data[] = [
     plot_bgcolor: "white",
     xaxis: { title: { text: resLabel }, gridcolor: GRID, zeroline: false },
     yaxis: { title: { text: "Frequency" }, gridcolor: GRID, zeroline: false },
-  };
+  } as Partial<Layout>;
 
   // 4) Residuos frente al orden de observacion.
   const vsOrder: Data[] = [
