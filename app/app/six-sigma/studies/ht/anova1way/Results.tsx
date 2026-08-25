@@ -3,7 +3,7 @@
 //   \u03b1 alpha   \u2212 signo menos   \u00b1 mas-menos
 "use client";
 import React from "react";
-import type { Data, Layout } from "plotly.js";
+import type { Data } from "plotly.js";
 import ResultChart from "../../../components/ResultChart";
 import type { Anova1WayParams, Anova1WayResult } from "./types";
 
@@ -313,7 +313,7 @@ const histogram: Data[] = [
     plot_bgcolor: "white",
     xaxis: { title: { text: resLabel }, gridcolor: GRID, zeroline: false },
     yaxis: { title: { text: "Frequency" }, gridcolor: GRID, zeroline: false },
-  } as Partial<Layout>;
+  };
 
   // 4) Residuos frente al orden de observacion.
   const vsOrder: Data[] = [
