@@ -90,7 +90,7 @@ export default function DoeAnalyzeResults({
         font: { color: RED, size: 11 },
         xanchor: "center",
         yanchor: "bottom",
-      },
+      } as unknown as NonNullable<Layout["annotations"]>[number],
     ],
     plot_bgcolor: "#ffffff",
   };
