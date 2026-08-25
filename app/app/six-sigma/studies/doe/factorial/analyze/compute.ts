@@ -547,14 +547,18 @@ export function computeDoeAnalyze(
     }
     const df = members.length;
     const ms = ss / df;
-    const f = ms / fit.errMS;
+    // Sin gl de error no hay nada contra lo que contrastar: ni F ni su p-valor
+    // existen. fSf(Infinity, df, 0) devolveria 1, que afirma lo contrario de
+    // lo que ocurre — que el termino no explica nada, en lugar de que no se
+    // puede saber.
+    const f = dfe > 0 ? ms / fit.errMS : NaN;
     groups.push({
       label: GROUP_LABEL[o] ?? `${o}-Way Interactions`,
       df,
       ss,
       ms,
       f,
-      p: fSf(f, df, dfe),
+      p: dfe > 0 ? fSf(f, df, dfe) : NaN,
       members,
     });
   }  
