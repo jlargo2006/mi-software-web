@@ -1,7 +1,7 @@
 // app/app/six-sigma/studies/gagerr/Results.tsx
 "use client";
 import React from "react";
-import type { Data, Layout } from "plotly.js";
+import type { Data } from "plotly.js";
 import type { ColumnSnapshot } from "../types";
 import type { GageRRParams, GageRRResult } from "./types";
 import ResultChart from "../../components/ResultChart";
@@ -239,7 +239,7 @@ export default function GageRRResults({
           showlegend: legend,
           legend: { orientation: "h", y: -0.25 },
           barmode: "group",
-        } as Partial<Layout>}
+        }}
       />
     </div>
   );
