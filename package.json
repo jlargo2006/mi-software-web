@@ -34,6 +34,7 @@
     "@types/plotly.js": "2.35.2"
   },
   "overrides": {
+    "plotly.js": "2.35.2",
     "@types/plotly.js": "2.35.2"
   }  
 }
