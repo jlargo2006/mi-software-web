@@ -92,13 +92,13 @@ export default function HTWilcoxonResults({
       showlegend: false,
     },
   ];
-  const histLayout: Partial<Layout> = {
+  const histLayout  = {
     margin: { l: 60, r: 30, t: 10, b: 40 },
     xaxis: { title: { text: r.column }, range: xRange },
     yaxis: { title: { text: "Frequency" } },
     bargap: 0.02,
     shapes: eta0Shape,
-  };
+  } as Partial<Layout>;
 
   // --- Individual value plot (jitter reproducible) ---
   const jitter = v.map((_, i) => {
