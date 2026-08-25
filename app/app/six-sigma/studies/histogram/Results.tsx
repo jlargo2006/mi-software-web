@@ -121,7 +121,7 @@ export default function HistogramResults({
                     yaxis: { title: { text: "Frequency" } },
                     showlegend: false,
                     bargap: 0.02,
-                  }}
+                  } as Partial<Layout>}
                 />
               </div>
             ))}
