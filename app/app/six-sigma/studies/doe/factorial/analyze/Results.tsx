@@ -693,13 +693,13 @@ export default function DoeAnalyzeResults({
                   <td className={td}>{"\u00a0"}</td>
                   <td className={td}>{fx(f.constant.coef, 3)}</td>
                   <td className={td}>
-                    {r.usedLenth ? "\u2014" : fx(f.constant.se, 3)}
+                    {r.usedLenth ? "*" : fx(f.constant.se, 3)}
                   </td>
                   <td className={td}>
-                    {r.usedLenth ? "\u2014" : fx(f.constant.t, 2)}
+                    {r.usedLenth ? "*" : fx(f.constant.t, 2)}
                   </td>
                   <td className={td}>
-                    {r.usedLenth ? "\u2014" : fp(f.constant.p)}
+                    {r.usedLenth ? "*" : fp(f.constant.p)}
                   </td>
                   <td className={td}>{"\u00a0"}</td>
                 </tr>
@@ -979,7 +979,7 @@ export default function DoeAnalyzeResults({
               </tbody>
             </table>
             <p className="text-xs font-medium text-gray-700">Aliases</p>
-            <div className="space-y-0.5 font-mono text-xs text-gray-800">
+            <div className="space-y-0 font-mono text-xs leading-tight text-gray-800">
               {r.aliases.map((a) => (
                 <p key={a.term}>
                   {a.term}
