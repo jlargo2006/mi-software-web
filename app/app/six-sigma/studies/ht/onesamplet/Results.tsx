@@ -83,7 +83,7 @@ export default function HT1SampleTResults({
     xaxis: { title: { text: r.column }, range: xRange },
     yaxis: { title: { text: "Frequency" } },
     bargap: 0.02,
-  } as Partial<Layout>;
+  };
 
   // --- Individual value plot (jitter reproducible) ---
   const jitter = r.values.map((_, i) => {
