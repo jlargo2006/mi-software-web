@@ -201,7 +201,7 @@ export default function GraphicalSummaryResults({
                   showlegend: false,
                   margin: { l: 40, r: 10, t: 40, b: 30 },
                   bargap: 0.02,
-                }}
+                } as Partial<Layout>}
               />
             </div>
 
