@@ -135,21 +135,21 @@ export default function ImpFitRegResults({
     line: { color: GREY, width: 1, dash: "dash" },
   });
 
-  const resLayout: Record<string, unknown> = {
+  const resLayout: Partial<Layout> & Record<string, unknown> = {
     margin: { l: 60, r: 25, t: 30, b: 45 },
     plot_bgcolor: "#ffffff",
     showlegend: false,
     shapes: [zeroLine("x2", "y2"), zeroLine("x4", "y4")],
     xaxis: {
       domain: [0, 0.44],
-      anchor: "y",
+      anchor: "y" as never,
       title: { text: "Residual", font: { size: 10 } },
       tickfont: { size: 9 },
       zeroline: false,
     },
     yaxis: {
       domain: [0.58, 1],
-      anchor: "x",
+      anchor: "x" as never,
       title: { text: "Percent", font: { size: 10 } },
       tickmode: "array",
       tickvals: pctTicks.map((v) => normalInv(v / 100)),
@@ -159,42 +159,42 @@ export default function ImpFitRegResults({
     },
     xaxis2: {
       domain: [0.56, 1],
-      anchor: "y2",
+      anchor: "y2" as never,
       title: { text: "Fitted Value", font: { size: 10 } },
       tickfont: { size: 9 },
       zeroline: false,
     },
     yaxis2: {
       domain: [0.58, 1],
-      anchor: "x2",
+      anchor: "x2" as never,
       title: { text: "Residual", font: { size: 10 } },
       tickfont: { size: 9 },
       zeroline: false,
     },
     xaxis3: {
       domain: [0, 0.44],
-      anchor: "y3",
+      anchor: "y3" as never,
       title: { text: "Residual", font: { size: 10 } },
       tickfont: { size: 9 },
       zeroline: false,
     },
     yaxis3: {
       domain: [0, 0.42],
-      anchor: "x3",
+      anchor: "x3" as never,
       title: { text: "Frequency", font: { size: 10 } },
       tickfont: { size: 9 },
       zeroline: false,
     },
     xaxis4: {
       domain: [0.56, 1],
-      anchor: "y4",
+      anchor: "y4" as never,
       title: { text: "Observation Order", font: { size: 10 } },
       tickfont: { size: 9 },
       zeroline: false,
     },
     yaxis4: {
       domain: [0, 0.42],
-      anchor: "x4",
+      anchor: "x4" as never,
       title: { text: "Residual", font: { size: 10 } },
       tickfont: { size: 9 },
       zeroline: false,
@@ -217,7 +217,7 @@ export default function ImpFitRegResults({
       yanchor: "bottom" as const,
       font: { size: 11 },
     })),
-  } as Partial<Layout>;
+  };
 
   /* ---------- estilos ---------- */
   const th = "px-3 py-1 text-right font-medium text-gray-600 whitespace-nowrap";
