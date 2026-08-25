@@ -150,7 +150,7 @@ export default function HTMannWhitneyResults({
     barmode: "overlay",
     bargap: 0.02,
     legend: { orientation: "h", y: 1.12 },
-  } as Partial<Layout>;
+  };
 
   // --- Individual value plot (jitter reproducible) ---
   const jit = (n: number, seed: number) =>
