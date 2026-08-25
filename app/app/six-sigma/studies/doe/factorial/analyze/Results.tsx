@@ -348,7 +348,7 @@ export default function DoeAnalyzeResults({
       yanchor: "bottom" as const,
       font: { size: 11 },
     })),
-  };
+  } as unknown as Partial<Layout> & Record<string, unknown>;
 
   /* ---------- Main effects ---------- */
   const meAll = r.mainEffects.flatMap((e) => e.points.map((p) => p.mean));
@@ -364,7 +364,7 @@ export default function DoeAnalyzeResults({
     margin: { l: 70, r: 20, t: 20, b: 55 },
     plot_bgcolor: "#ffffff",
     showlegend: false,
-  };
+  } as unknown as Partial<Layout> & Record<string, unknown>;
   r.mainEffects.forEach((e, i) => {
     const id = i + 1;
     const sfx = id === 1 ? "" : String(id);
@@ -437,7 +437,7 @@ export default function DoeAnalyzeResults({
     margin: { l: 70, r: 20, t: 20, b: 55 },
     plot_bgcolor: "#ffffff",
     showlegend: false,
-  };
+  } as unknown as Partial<Layout> & Record<string, unknown>;
   const PAIR_COLOR = [BLUE, RED];
 
   for (let i = 0; i < k; i++) {
