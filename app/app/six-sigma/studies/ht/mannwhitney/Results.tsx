@@ -143,7 +143,7 @@ export default function HTMannWhitneyResults({
       hovertemplate: "[%{x}] \u2014 %{y}<extra></extra>",
     },
   ];
-  const histLayout = {
+  const histLayout: Partial<Layout> = {
     margin: { l: 60, r: 30, t: 10, b: 40 },
     xaxis: { title: { text: "Data" }, range: xRange },
     yaxis: { title: { text: "Frequency" } },
