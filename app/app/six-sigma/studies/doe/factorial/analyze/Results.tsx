@@ -349,7 +349,7 @@ export default function DoeAnalyzeResults({
       yanchor: "bottom" as const,
       font: { size: 11 },
     })),
-  } as unknown as Partial<Layout> & Record<string, unknown>;
+  };
 
   /* ---------- Main effects ---------- */
   const meAll = r.mainEffects.flatMap((e) => e.points.map((p) => p.mean));
