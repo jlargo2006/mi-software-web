@@ -1,7 +1,7 @@
 // studies/graphicalSummary/Results.tsx
 "use client";
 import React from "react";
-import type { Data, Layout } from "plotly.js";
+import type { Data } from "plotly.js";
 import type { ColumnSnapshot } from "../types";
 import type { GraphicalSummaryParams, GraphicalSummaryResult } from "./types";
 import ResultChart from "../../components/ResultChart";
@@ -201,7 +201,7 @@ export default function GraphicalSummaryResults({
                   showlegend: false,
                   margin: { l: 40, r: 10, t: 40, b: 30 },
                   bargap: 0.02,
-                } as Partial<Layout>}
+                }}
               />
             </div>
 
