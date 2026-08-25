@@ -89,7 +89,7 @@ export default function HTChiSqAssocResults({
     xaxis: { title: { text: "Contribution to Chi-Square" } },
     yaxis: { automargin: true, fixedrange: true },
     bargap: 0.35,
-  } as Partial<Layout>;
+  };
 
   return (
     <ReportLayout
