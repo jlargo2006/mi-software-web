@@ -30,6 +30,10 @@
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "@types/react-plotly.js": "^2.6.3"
-  }
+    "@types/react-plotly.js": "^2.6.3",
+    "@types/plotly.js": "2.35.2"
+  },
+  "overrides": {
+    "@types/plotly.js": "2.35.2"
+  }  
 }
