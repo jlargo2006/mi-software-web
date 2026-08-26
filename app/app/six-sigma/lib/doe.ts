@@ -124,6 +124,36 @@ export function resolutionOf(k: number, base: number, gens: string[]): number {
   return Math.min(...words.map(popcount));
 }
 
+/**
+ * Resolucion contando los bloques. El bloque se trata como un factor mas: si
+ * Blk = ABCD, la palabra es Blk·ABCD y mide 5, de ahi la resolucion V que
+ * declara Minitab en un 2^4 completo partido en dos bloques.
+ *
+ * Puede ser MENOR que la resolucion sin bloques, nunca mayor.
+ */
+export function resolutionWithBlocksOf(
+  k: number,
+  base: number,
+  gens: string[],
+  blockConfounded: string[]
+): number {
+  const plain = resolutionOf(k, base, gens);
+  if (blockConfounded.length === 0) return plain;
+  const words = gens.length === 0 ? [] : definingWords(k, base, gens);
+  let best = Infinity;
+  for (const w of blockConfounded) {
+    const m = maskOf(w);
+    // El termino confundido con el bloque arrastra a todos sus alias: cuenta
+    // el mas corto del grupo.
+    const shortest = Math.min(
+      popcount(m),
+      ...words.map((d) => popcount(m ^ d))
+    );
+    best = Math.min(best, shortest + 1);
+  }
+  return Math.min(plain, best);
+}
+
 export interface AliasRow {
   /** Termino principal, "A" o "AB". */
   term: string;
