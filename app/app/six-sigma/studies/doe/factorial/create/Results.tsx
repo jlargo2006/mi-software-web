@@ -76,7 +76,7 @@ export default function DoeCreateResults({
                     {r.resolutionLabel}{" "}
                     <span className="font-mono text-xs text-gray-500">
                       {r.notation}
-                    </span>
+                    </span>{" "}
                     {r.resolutionWithBlocks && (
                       <span className="ml-2 text-xs text-gray-600">
                         (with blocks: {r.resolutionWithBlocks})
