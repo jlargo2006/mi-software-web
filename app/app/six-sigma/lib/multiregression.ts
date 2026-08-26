@@ -256,7 +256,12 @@ export function multiRegressionFit(
       adjSS,
       adjMS: adjSS,
       fValue,
-      fP: fSf(fValue, 1, errDF),
+      // fSf devuelve 1 con entrada no finita, al contrario que tSf, que da
+      // NaN. Con el modelo saturado fValue es NaN y sin la guarda esta fila
+      // afirmaria que el termino no explica nada, en lugar de que no hay
+      // contraste posible. La guarda va aqui y no en fSf porque esa funcion
+      // la usan otros modulos que no he verificado.
+      fP: saturated ? NaN : fSf(fValue, 1, errDF),
     });
   }
 
@@ -276,7 +281,8 @@ export function multiRegressionFit(
     regSS,
     regMS,
     regF,
-    regP: fSf(regF, regDF, errDF),
+    // Misma razon que en fP: sin gl de error el contraste global no existe.
+    regP: saturated ? NaN : fSf(regF, regDF, errDF),
     errDF,
     errSS,
     errMS,
