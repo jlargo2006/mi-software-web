@@ -102,10 +102,10 @@ export default function DoeCreateResults({
             )}
 
             <p className="mt-3 text-sm">
-              {/* isFull solo mira si el diseno es fraccionado: no sabe nada de
-                  bloques. Un factorial completo partido dentro de la replica
-                  confunde el bloque con una interaccion, asi que la frase
-                  limpia exige ademas que blockConfounded este vacio. */}
+              {/* isFull sale de design.gens.length === 0: dice si el diseno es
+                  fraccionado, y no sabe nada de bloques. Un factorial completo
+                  partido dentro de la replica confunde el bloque con una
+                  interaccion, asi que la frase limpia exige las dos cosas. */}
               {r.isFull && r.blockConfounded.length === 0 ? (
                 <span className="font-medium text-emerald-800">
                   All terms are free from aliasing.
