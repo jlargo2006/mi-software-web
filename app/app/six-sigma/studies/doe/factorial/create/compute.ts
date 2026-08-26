@@ -137,15 +137,13 @@ export function computeDoeCreate(
   // primera, y los puntos centrales van al final de cada bloque.
   const repsPerGroup = replicates / split.repGroups;
   const built: DesignRow[] = [];
-  let std = 0;
   for (let rep = 0; rep < replicates; rep++) {
     // Las replicas se reparten en grupos; dentro de cada grupo, la particion
     // por el signo de una interaccion completa el numero de bloques.
     const group = Math.floor(rep / repsPerGroup);
     for (let i = 0; i < matrix.length; i++) {
-      std++;
       built.push({
-        stdOrder: std,
+        stdOrder: 0,
         runOrder: 0,
         centerPt: 1,
         block: group * within + blockOf[i],
@@ -155,9 +153,8 @@ export function computeDoeCreate(
   }
   for (let b = 1; b <= blocks; b++) {
     for (let c = 0; c < centerPerBlock; c++) {
-      std++;
       built.push({
-        stdOrder: std,
+        stdOrder: 0,
         runOrder: 0,
         centerPt: 0,
         block: b,
@@ -166,6 +163,16 @@ export function computeDoeCreate(
     }
   }
 
+  // El StdOrder se numera con las filas YA agrupadas por bloque, no en orden
+  // de Yates: es lo que hace Minitab, y lo que permite que sin aleatorizar
+  // StdOrder y RunOrder coincidan. Numerar antes de reordenar dejaria una
+  // columna que no describe ningun orden real de la hoja.
+  const byBlock: DesignRow[] = [];
+  for (let b = 1; b <= blocks; b++) {
+    byBlock.push(...built.filter((r) => r.block === b));
+  }
+  const numbered = byBlock.map((r, i) => ({ ...r, stdOrder: i + 1 }));
+  
   // --- Aleatorizacion -------------------------------------------------------
   // Se aleatoriza DENTRO de cada bloque: mezclar entre bloques destruiria el
   // bloqueo, que existe justamente para agrupar corridas contiguas.
@@ -176,11 +183,11 @@ export function computeDoeCreate(
   if (params.randomize) {
     const rnd = mulberry32(seedUsed);
     for (let b = 1; b <= blocks; b++) {
-      ordered.push(...shuffle(built.filter((r) => r.block === b), rnd));
+      ordered.push(...shuffle(numbered.filter((r) => r.block === b), rnd));
     }
   } else {
     for (let b = 1; b <= blocks; b++) {
-      ordered.push(...built.filter((r) => r.block === b));
+      ordered.push(...numbered.filter((r) => r.block === b));
     }
   }
   ordered = ordered.map((r, i) => ({ ...r, runOrder: i + 1 }));
