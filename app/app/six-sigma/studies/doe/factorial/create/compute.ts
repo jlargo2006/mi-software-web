@@ -7,6 +7,8 @@ import {
   blockAssignment,
   blockOptions,
   mulberry32,
+  resolutionWithBlocksOf,
+  ROMAN,
   shuffle,
   splitBlocks,
   standardMatrix,
@@ -239,6 +241,18 @@ export function computeDoeCreate(
     .map((g, i) => `${String.fromCharCode(65 + design.base + i)} = ${g}`)
     .join("; ");
 
+  // Resolucion contando los bloques. Minitab la declara aparte porque puede
+  // ser distinta de la del diseno: trata el bloque como un factor mas, asi
+  // que Blk = ABCD es una palabra de longitud 5 y da resolucion V incluso en
+  // un factorial completo, que sin bloques no tiene resolucion finita.
+  //
+  // Vacia cuando no hay nada confundido: sin bloques, o con bloques que
+  // agrupan replicas enteras. En ese caso la linea no se imprime.
+  const resWithBlocks =
+    confounded.length === 0
+      ? 0
+      : resolutionWithBlocksOf(k, design.base, design.gens, confounded);
+  
   return {
     ok: true,
     numFactors: k,
@@ -246,6 +260,8 @@ export function computeDoeCreate(
     designLabel: design.label,
     notation: design.notation,
     resolutionLabel: design.resolutionLabel,
+    resolutionWithBlocks:
+      resWithBlocks === 0 ? "" : (ROMAN[resWithBlocks] ?? String(resWithBlocks)),    
     isFull: design.gens.length === 0,
     totalRuns: ordered.length,
     replicates,
