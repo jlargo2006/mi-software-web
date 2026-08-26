@@ -77,6 +77,11 @@ export default function DoeCreateResults({
                     <span className="font-mono text-xs text-gray-500">
                       {r.notation}
                     </span>
+                    {r.resolutionWithBlocks && (
+                      <span className="ml-2 text-xs text-gray-600">
+                        (with blocks: {r.resolutionWithBlocks})
+                      </span>
+                    )}
                   </td>
                 </tr>
               </tbody>
