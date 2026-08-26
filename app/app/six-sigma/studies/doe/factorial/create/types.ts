@@ -71,6 +71,8 @@ export interface DoeCreateModel {
   designLabel: string;
   notation: string;
   resolutionLabel: string;
+  /** Resolucion contando los bloques. Vacio si no hay nada confundido. */
+  resolutionWithBlocks: string;  
   isFull: boolean;
 
   totalRuns: number;
