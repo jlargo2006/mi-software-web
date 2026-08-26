@@ -102,14 +102,24 @@ export default function DoeCreateResults({
             )}
 
             <p className="mt-3 text-sm">
-              {r.isFull ? (
+              {/* isFull solo mira si el diseno es fraccionado: no sabe nada de
+                  bloques. Un factorial completo partido dentro de la replica
+                  confunde el bloque con una interaccion, asi que la frase
+                  limpia exige ademas que blockConfounded este vacio. */}
+              {r.isFull && r.blockConfounded.length === 0 ? (
                 <span className="font-medium text-emerald-800">
                   All terms are free from aliasing.
                 </span>
+              ) : r.isFull ? (
+                <span className="font-medium text-amber-800">
+                  All factorial terms are free from aliasing, but the block
+                  effect is confounded with{" "}
+                  <span className="font-mono">
+                    {r.blockConfounded.join(", ")}
+                  </span>
+                  .
+                </span>
               ) : r.resolutionLabel === "III" ? (
-                // En resolucion III el problema no es "hay alias": es que los
-                // efectos principales se confunden con interacciones dobles, y
-                // eso cambia por completo lo que se puede concluir.
                 <span className="font-medium text-red-800">
                   Some main effects are confounded with two-way interactions.
                 </span>
@@ -119,6 +129,7 @@ export default function DoeCreateResults({
                 </span>
               )}
             </p>
+
           </section>
 
           {/* Bloqueo */}
