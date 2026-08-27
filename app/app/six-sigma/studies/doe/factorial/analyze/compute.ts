@@ -815,7 +815,7 @@ export function computeDoeAnalyze(
         ...blkTerms.map((t, i) => {
           const c = blockConfounded[i];
           return {
-            term: c === null ? t.letters : `${t.letters} ${c.term}`,
+            term: c === null ? t.letters : `${t.letters} + ${c.term}`,
             aliases: [] as string[],
           };
         }),
