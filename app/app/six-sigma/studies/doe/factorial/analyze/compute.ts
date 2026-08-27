@@ -26,6 +26,7 @@ import {
   type DoeAnalyzeModel,
   type DoeAnalyzeParams,
   type DoeAnalyzeResult,
+  type ErrorPart,  
   type TermRow,
   type UncodedTerm,
   type UnusualRow,
