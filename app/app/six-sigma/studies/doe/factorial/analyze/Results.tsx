@@ -816,7 +816,7 @@ export default function DoeAnalyzeResults({
                   <td className={tdL}>Model</td>
                   <td className={td}>{r.modelDF}</td>
                   <td className={td}>{fx(r.modelSS, 3)}</td>
-                  <td className={td}>{fx(r.modelMS, 3)}</td>
+                  <td className={td}>{fx(r.modelMS, 4)}</td>
                   <td className={td}>{fx(r.modelF, 2)}</td>
                   <td className={td}>{fp(r.modelP)}</td>
                 </tr>
@@ -826,7 +826,7 @@ export default function DoeAnalyzeResults({
                       <td className={`${tdL} pl-6`}>{g.label}</td>
                       <td className={td}>{g.df}</td>
                       <td className={td}>{fx(g.ss, 3)}</td>
-                      <td className={td}>{fx(g.ms, 3)}</td>
+                      <td className={td}>{fx(g.ms, 4)}</td>
                       <td className={td}>{fx(g.f, 2)}</td>
                       <td className={td}>{fp(g.p)}</td>
                     </tr>
@@ -842,7 +842,7 @@ export default function DoeAnalyzeResults({
                           <td className={`${tdL} pl-12`}>{mrow.term.key}</td>
                           <td className={td}>1</td>
                           <td className={td}>{fx(mrow.adjSS, 3)}</td>
-                          <td className={td}>{fx(mrow.adjMS, 3)}</td>
+                          <td className={td}>{fx(mrow.adjMS, 4)}</td>
                           <td className={td}>{fx(mrow.fValue, 2)}</td>
                           <td className={td}>{fp(mrow.fP)}</td>
                         </tr>
@@ -855,7 +855,7 @@ export default function DoeAnalyzeResults({
                           </td>
                           <td className={td}>1</td>
                           <td className={td}>{fx(g.members[0].adjSS, 3)}</td>
-                          <td className={td}>{fx(g.members[0].adjMS, 3)}</td>
+                          <td className={td}>{fx(g.members[0].adjMS, 4)}</td>
                           <td className={td}>{fx(g.members[0].fValue, 2)}</td>
                           <td className={td}>{fp(g.members[0].fP)}</td>
                         </tr>
@@ -866,7 +866,7 @@ export default function DoeAnalyzeResults({
                   <td className={tdL}>Error</td>
                   <td className={td}>{f.errDF}</td>
                   <td className={td}>{r.usedLenth ? "*" : fx(f.errSS, 3)}</td>
-                  <td className={td}>{r.usedLenth ? "*" : fx(f.errMS, 3)}</td>                  
+                  <td className={td}>{r.usedLenth ? "*" : fx(f.errMS, 4)}</td>                  
                   <td className={td}>{"\u00a0"}</td>
                   <td className={td}>{"\u00a0"}</td>
                 </tr>
