@@ -214,7 +214,7 @@ export default function DoeCubeResults({
   }
 
   const layout: Partial<Layout> = {
-    margin: { l: 110, r: 100, t: 20, b: 60 },
+    margin: { l: 110, r: 100, t: 10, b: 40 },
     plot_bgcolor: "#ffffff",
     hovermode: "closest",
     annotations,
@@ -262,7 +262,7 @@ export default function DoeCubeResults({
           </h3>
 
           <section className="mb-6">
-            <div className="border border-gray-200 rounded" style={{ height: 460 }}>
+            <div className="border border-gray-200 rounded" style={{ height: 640 }}>
               <ResultChart data={traces} layout={{ autosize: true, ...layout }} />
             </div>
             <p className="mt-2 text-xs text-gray-600">
