@@ -870,6 +870,25 @@ export default function DoeAnalyzeResults({
                   <td className={td}>{"\u00a0"}</td>
                   <td className={td}>{"\u00a0"}</td>
                 </tr>
+                {/* Desglose del error, sangrado bajo su fila igual que los
+                    terminos bajo su grupo. Pure Error va un nivel mas adentro
+                    cuando hay falta de ajuste, porque es parte de ella. */}
+                {r.errorParts.map((e) => (
+                  <tr key={e.label} className="border-b border-gray-200">
+                    <td className={`${tdL} ${e.indent === 1 ? "pl-6" : "pl-12"}`}>
+                      {e.label}
+                    </td>
+                    <td className={td}>{e.df}</td>
+                    <td className={td}>{fx(e.ss, 3)}</td>
+                    <td className={td}>{fx(e.ms, 4)}</td>
+                    <td className={td}>
+                      {Number.isFinite(e.f) ? fx(e.f, 2) : "\u00a0"}
+                    </td>
+                    <td className={td}>
+                      {Number.isFinite(e.p) ? fp(e.p) : "\u00a0"}
+                    </td>
+                  </tr>
+                ))}                
                 <tr className="border-b border-gray-300 font-medium">
                   <td className={tdL}>Total</td>
                   <td className={td}>{f.totDF}</td>
@@ -880,6 +899,21 @@ export default function DoeAnalyzeResults({
                 </tr>
               </tbody>
             </table>
+            {r.errorParts.length > 0 && (
+              <p className="mt-2 text-xs text-gray-600">
+                Pure Error is the scatter between runs made at identical
+                settings: no model can explain it, so it is the yardstick for
+                everything else. Lack-of-Fit is what the model misses on top of
+                that
+                {r.errorParts.some((e) => e.label === "Curvature")
+                  ? ", once curvature is set aside. Curvature shows up here " +
+                    "rather than in the model because the Ct Pt term is off: " +
+                    "its variability is inflating the error"
+                  : ""}
+                . A significant Lack-of-Fit means the model is the wrong shape,
+                not just imprecise.
+              </p>
+            )}            
           </section>
 
           {/* Ecuacion */}
