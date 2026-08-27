@@ -185,7 +185,7 @@ export default function DoeCubeResults({
       xanchor: "left",
       yanchor: "middle",
       xshift: 34,
-      textangle: -Math.round((Math.atan2(DY, DX) * 180) / Math.PI),
+      textangle: String(-Math.round((Math.atan2(DY, DX) * 180) / Math.PI)),
       font: { size: 12, color: "#374151" },
     });
   }
