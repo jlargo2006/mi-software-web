@@ -178,21 +178,43 @@ export default function DoeCubeResults({
     // Factor 3, a la derecha, en los dos extremos de la diagonal.
     tick(r.levels[2][0], 1, 0, "left", "middle", 12, -4);
     tick(r.levels[2][1], 1 + DX, DY, "left", "middle", 12, -4);
+  }
+
+  // Nombre de cada factor en el centro de SU arista, no del grafico. Los
+  // titulos de eje de Plotly se centran sobre el area de dibujo, que con la
+  // proyeccion isometrica no coincide con ninguna arista.
+  const name = (
+    text: string,
+    x: number,
+    y: number,
+    xa: "left" | "center" | "right",
+    ya: "top" | "middle" | "bottom",
+    dx = 0,
+    dy = 0
+  ) =>
     annotations.push({
-      x: 1 + DX,
-      y: DY,
-      text: `<b>${r.factors[2]}</b>`,
+      x,
+      y,
+      text,
       showarrow: false,
-      xanchor: "left",
-      yanchor: "middle",
-      xshift: 12,
-      yshift: 18,
+      xanchor: xa,
+      yanchor: ya,
+      xshift: dx,
+      yshift: dy,
       font: { size: 12, color: "#374151" },
     });
+
+  // Factor 1: bajo el centro de la arista inferior, por debajo de sus niveles.
+  name(r.factors[0], 0.5, 0, "center", "top", 0, -32);
+  // Factor 2: a la izquierda del centro de la arista vertical.
+  name(r.factors[1], 0, 0.5, "right", "middle", -34, 0);
+  if (has3) {
+    // Factor 3: bajo el centro de la diagonal inferior derecha.
+    name(r.factors[2], 1 + DX / 2, DY / 2, "left", "top", 6, -10);
   }
 
   const layout: Partial<Layout> = {
-    margin: { l: 90, r: 100, t: 20, b: 70 },
+    margin: { l: 110, r: 100, t: 20, b: 60 },
     plot_bgcolor: "#ffffff",
     hovermode: "closest",
     annotations,
@@ -212,7 +234,6 @@ export default function DoeCubeResults({
       showticklabels: false,
       showgrid: false,
       zeroline: false,
-      title: { text: r.factors[0], font: { size: 12 } },
     },
     yaxis: {
       range: [-0.42, 1 + (has3 ? DY : 0) + 0.42],
@@ -220,7 +241,6 @@ export default function DoeCubeResults({
       showgrid: false,
       zeroline: false,
       scaleanchor: "x",
-      title: { text: r.factors[1], font: { size: 12 } },
     },
   };
 
