@@ -771,7 +771,7 @@ export default function DoeAnalyzeResults({
               going from the low level to the high one. The factor VIFs equal
               1,00 in a balanced design, because the coded columns are
               orthogonal.
-              {r.usedBlocks
+              {r.usedBlocks && r.blockLevels.length > 2
                 ? " The block VIFs do not, and cannot: with three or more blocks their columns are necessarily correlated with each other."
                 : ""}
             </p>
