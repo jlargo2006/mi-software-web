@@ -336,7 +336,10 @@ export default function DoeAnalyzeControls({
           Interaction plot
         </label>
         <p className="text-xs text-gray-500">
-          Both use fitted means from the model, averaged over the blocks.
+          Both use fitted means from the model
+          {params.blockColumn !== "" && params.includeBlocks
+            ? ", averaged over the blocks."
+            : "."}
         </p>
       </div>
 
