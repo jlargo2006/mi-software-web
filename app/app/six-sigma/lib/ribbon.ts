@@ -217,6 +217,8 @@ export const PHASES: RibbonPhase[] = [
         enabled: true,
         children: [
           { id: "createFactorial", label: "Create Factorial Design", tool: "doeCreateFactorial", enabled: true },
+          { id: "analyzeFactorial", label: "Analyze Factorial Design", tool: "doeAnalyzeFactorial", enabled: true },
+          { id: "responseOptimizer", label: "Response Optimizer", tool: "doeOptimizer", enabled: true },
           // p.482 | mtw: Catapult.mtw
 //          { id: "doeFull", label: "Full Factorial", tool: null, enabled: false },
           // p.522 | mtw: Panel Cleaning.MTW
@@ -225,8 +227,8 @@ export const PHASES: RibbonPhase[] = [
 //          { id: "doeRSM", label: "Response Surface / Contour Plot", tool: null, enabled: false },
           { id: "mainEffects", label: "Main Effects Plot", tool: "doeMainEffects", enabled: true },
           { id: "interactionPlot", label: "Interaction Plot", tool: "doeInteraction", enabled: true },
-          { id: "analyzeFactorial", label: "Analyze Factorial Design", tool: "doeAnalyzeFactorial", enabled: true },
-          { id: "responseOptimizer", label: "Response Optimizer", tool: "doeOptimizer", enabled: true },
+          { id: "cubePlot", label: "Cube Plot", tool: "doeCube", enabled: true },          
+          { id: "contourPlot", label: "Contour Plot", tool: "doeContour", enabled: true },
         ],
       },
     ],

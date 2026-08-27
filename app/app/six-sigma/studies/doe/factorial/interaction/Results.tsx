@@ -121,7 +121,7 @@ export default function DoeIntResults({
           size: nCols > 4 ? 6 : 8,
           symbol: SYMBOL[s.levelIndex % SYMBOL.length],
         },
-        connectgaps: false,
+        connectgaps: true,
         showlegend: false,
         customdata: p.xLabels.map((lb, j) => [lb, s.ns[j]]),
         hovertemplate:
@@ -384,7 +384,8 @@ export default function DoeIntResults({
             {r.pairs.some((p) => p.emptyCells > 0) && (
               <p className="text-amber-700">
                 Some factor combinations were never run, so those lines are
-                broken. A fractional design cannot show every pair.
+                bridged with a straight segment: there is no observation at that
+                level, and the line only helps compare slopes.
               </p>
             )}
             {r.nMissing > 0 && (

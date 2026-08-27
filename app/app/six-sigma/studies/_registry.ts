@@ -45,6 +45,8 @@ import doeMainEffects from "./doe/factorial/maineffects";
 import doeInteraction from "./doe/factorial/interaction";
 import doeAnalyzeFactorial from "./doe/factorial/analyze";
 import doeOptimizer from "./doe/factorial/optimizer";
+import doeCube from "./doe/factorial/cube";
+import doeContour from "./doe/factorial/contour";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
@@ -92,6 +94,8 @@ const ALL: ArtifactDefinition[] = [
   doeInteraction,
   doeAnalyzeFactorial,
   doeOptimizer,
+  doeCube,
+  doeContour,
 ];
 
 export const REGISTRY: Record<string, ArtifactDefinition> = Object.fromEntries(
