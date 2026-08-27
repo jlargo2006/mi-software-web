@@ -809,17 +809,26 @@ export function computeDoeAnalyze(
     return null;
   });
 
+  // Lo confundido con un bloque no se lista dos veces: su sitio es la linea del
+  // bloque. Si ademas arrastraba alias propios, se llevan alli, porque todo lo
+  // de esa linea es indistinguible entre si.
+  const blockPartners = new Set(
+    blockConfounded.filter((c) => c !== null).map((c) => c!.term)
+  );
+  const aliasRest = aliasFac.filter((g) => !blockPartners.has(g.term));
   const aliases = useBlocks
     ? [
-        ...aliasFac.slice(0, 1),
+        ...aliasRest.slice(0, 1),
         ...blkTerms.map((t, i) => {
           const c = blockConfounded[i];
+          if (c === null) return { term: t.letters, aliases: [] as string[] };
+          const grp = aliasFac.find((g) => g.term === c.term);
           return {
-            term: c === null ? t.letters : `${t.letters} + ${c.term}`,
-            aliases: [] as string[],
+            term: `${t.letters} + ${c.term}`,
+            aliases: grp ? [...grp.aliases] : [],
           };
         }),
-        ...aliasFac.slice(1),
+        ...aliasRest.slice(1),
       ]
     : aliasFac;
 
