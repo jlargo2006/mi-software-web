@@ -594,8 +594,10 @@ export default function DoeAnalyzeResults({
                 model, so they carry no information of their own. The survivor of
                 each alias group is the first one in standard order, which is why
                 you see{" "}
-                <span className="font-mono">{r.rows[0]?.term.key}</span>-type
-                terms rather than their partners. Nothing was estimated twice.
+                <span className="font-mono">
+                  {r.rows.find((x) => x.term.order > 0)?.term.key}
+                </span>
+                -type terms rather than their partners. Nothing was estimated twice.
               </p>
               <p className="mt-2 font-mono text-xs leading-relaxed">
                 {r.removedAliased.join("; ")}
