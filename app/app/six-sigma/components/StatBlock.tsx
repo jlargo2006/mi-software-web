@@ -13,13 +13,16 @@ export interface StatSection {
   rows: StatRow[];
 }
 
-// Formatea números con coma decimal (estilo Minitab/ES)
+// Formatea números con coma decimal (estilo Minitab/ES).
+// El redondeo va antes del toFixed: asi los empates exactos caen a la cifra
+// par como en Minitab, y el toFixed solo rellena ceros a la derecha.
 export function fmt(
   v: number | null,
   decimals = 4
 ): string {
   if (v === null || v === undefined || Number.isNaN(v)) return "*";
-  return v
+  if (!Number.isFinite(v)) return "*";
+  return roundHalfEven(v, decimals)
     .toFixed(decimals)
     .replace(".", ",");
 }
@@ -57,16 +60,4 @@ export default function StatBlock({ sections }: { sections: StatSection[] }) {
   );
 }
 
-// Formatea números con coma decimal (estilo Minitab/ES).
-// El redondeo va antes del toFixed: asi los empates exactos caen a la cifra
-// par como en Minitab, y el toFixed solo rellena ceros a la derecha.
-export function fmt(
-  v: number | null,
-  decimals = 4
-): string {
-  if (v === null || v === undefined || Number.isNaN(v)) return "*";
-  if (!Number.isFinite(v)) return "*";
-  return roundHalfEven(v, decimals)
-    .toFixed(decimals)
-    .replace(".", ",");
-}
+
