@@ -121,7 +121,7 @@ export default function DoeIntResults({
           size: nCols > 4 ? 6 : 8,
           symbol: SYMBOL[s.levelIndex % SYMBOL.length],
         },
-        connectgaps: false,
+        connectgaps: true,
         showlegend: false,
         customdata: p.xLabels.map((lb, j) => [lb, s.ns[j]]),
         hovertemplate:
