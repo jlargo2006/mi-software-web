@@ -354,9 +354,16 @@ export function computeDoeAnalyze(
     return fail("Every run sits at the centre: there are no corner points to analyse.");
   }
   const codedCorners = coded.map((col) => cornerIdx.map((i) => col[i]));
+  // La estructura de alias describe el DISENO, no el modelo: los pares
+  // confundidos siguen ahi aunque el usuario no los ajuste, y saber que no
+  // puede distinguirlos es justo lo que necesita antes de decidir. Se llega
+  // siempre a orden 2 como minimo, porque es donde vive el aliasing que
+  // importa; mas alla de eso la lista crece hasta ser ilegible.
+  const aliasOrder = Math.max(2, maxOrder);
+  const aliasTerms = buildTerms(facNames, aliasOrder);
   const { groups: aliasFac, clean: aliasClean } = detectAliases(
     codedCorners,
-    allTerms
+    aliasTerms
   );
 
   // --- Columnas de bloque ---------------------------------------------------
@@ -792,10 +799,11 @@ export function computeDoeAnalyze(
         if (bc[i] !== -col[i]) opp = false;
         if (!same && !opp) break;
       }
-      // El signo importa para el rotulo: Minitab escribe "Block 1 - ABCD"
-      // cuando la columna de bloque es la interaccion cambiada de signo.
-      if (same) return { term: everyTerm[j].letters, sign: "+" };
-      if (opp) return { term: everyTerm[j].letters, sign: "-" };
+      // El signo de la coincidencia no se rotula: lo confundido es el bloque
+      // con la interaccion en ambos casos, y solo cambiaria el signo de una
+      // estimacion que no se imprime. Escribirlo como resta contradice el pie
+      // de la tabla, que promete una suma.
+      if (same || opp) return { term: everyTerm[j].letters };
     }
     // Bloqueo por replica: cada bloque tiene todas las esquinas y no confunde.
     return null;
@@ -807,7 +815,7 @@ export function computeDoeAnalyze(
         ...blkTerms.map((t, i) => {
           const c = blockConfounded[i];
           return {
-            term: c === null ? t.letters : `${t.letters} ${c.sign} ${c.term}`,
+            term: c === null ? t.letters : `${t.letters} ${c.term}`,
             aliases: [] as string[],
           };
         }),
@@ -905,8 +913,8 @@ function buildAdvice(
       `the response is a plane between the levels.`
     : "";
   const blkNote = useBlocks
-    ? ` Neither are the block terms: they record how the experiment was actually ` +
-      `run, not a hypothesis about the process.`
+    ? ` The block terms are never proposed for removal either: they record how ` +
+      `the experiment was actually run, not a hypothesis about the process.`
     : "";
 
   if (worst && worst.p > alpha) {
