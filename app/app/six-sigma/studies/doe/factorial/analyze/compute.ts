@@ -1,5 +1,5 @@
 // app/app/six-sigma/studies/doe/factorial/analyze/compute.ts
-import type { ColumnSnapshot, ErrorPart } from "../../../types";
+import type { ColumnSnapshot } from "../../../types";
 import { multiRegressionFit } from "../../../../lib/multiregression";
 import { fSf, tQuantile } from "../../../../lib/regression";
 import {
