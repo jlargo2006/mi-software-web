@@ -659,9 +659,14 @@ export default function DoeAnalyzeResults({
                 The block coefficients are not effects: there is no high or low
                 level to measure between. They are deviations from the overall
                 mean, coded so that they sum to zero, which is why only{" "}
-                {r.blockLevels.length - 1} of them are printed {"\u2014"} the last
-                one is whatever makes the total zero. Their VIF exceeds 1,00 for
-                the same reason, and signals nothing wrong.
+                {r.blockLevels.length - 1 === 1
+                  ? "1 of them is"
+                  : `${r.blockLevels.length - 1} of them are`}{" "}
+                printed {"\u2014"} the last
+                one is whatever makes the total zero.
+                {r.blockLevels.length > 2
+                  ? " Their VIF exceeds 1,00 for the same reason, and signals nothing wrong."
+                  : ""}
               </p>
               <p className="mt-2 text-xs">
                 Blocks are a nuisance, not a subject: you do not interpret them,
@@ -1047,11 +1052,13 @@ export default function DoeAnalyzeResults({
                 </p>
               )}
             </div>
-            <p className="mt-2 text-xs text-gray-600">
-              Uncheck the highlighted term in the controls and run again. The
-              hierarchy is kept for you: a main effect never leaves while one of
-              its interactions is still in.
-            </p>
+            {adv.term && (            
+              <p className="mt-2 text-xs text-gray-600">
+                Uncheck the highlighted term in the controls and run again. The
+                hierarchy is kept for you: a main effect never leaves while one of
+                its interactions is still in.
+              </p>
+            )}          
           </section>
 
           {/* Pareto */}
