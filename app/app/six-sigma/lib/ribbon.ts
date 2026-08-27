@@ -228,6 +228,7 @@ export const PHASES: RibbonPhase[] = [
           { id: "mainEffects", label: "Main Effects Plot", tool: "doeMainEffects", enabled: true },
           { id: "interactionPlot", label: "Interaction Plot", tool: "doeInteraction", enabled: true },
           { id: "cubePlot", label: "Cube Plot", tool: "doeCube", enabled: true },          
+          { id: "contourPlot", label: "Contour Plot", tool: "doeContour", enabled: true },
         ],
       },
     ],
