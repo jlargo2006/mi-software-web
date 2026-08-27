@@ -108,15 +108,17 @@ export default function DoeCubeResults({
     // La caja se aparta del centro del cubo para no taparse con las aristas.
     const outX = v.code[0] === 0 ? -1 : 1;
     const outY = v.code[1] === 0 ? -1 : 1;
+    // Siempre encima del vertice, centrada. Minitab no la aparta segun la
+    // esquina: con desplazamientos distintos las cajas de una misma arista
+    // quedan a alturas distintas y el cubo se lee peor.
     annotations.push({
       x: px(v.code),
       y: py(v.code),
       text: fx(v.value, 4),
       showarrow: false,
-      xanchor: outX < 0 ? "right" : "left",
-      yanchor: outY < 0 ? "top" : "bottom",
-      xshift: outX * 8,
-      yshift: outY * 8,
+      xanchor: "center",
+      yanchor: "bottom",
+      yshift: 10,
       font: { size: 11, color: "#111827" },
       bgcolor: "#ffffff",
       bordercolor: "#9ca3af",
@@ -130,10 +132,9 @@ export default function DoeCubeResults({
       y: (1 + (has3 ? DY : 0)) / 2,
       text: fx(r.centerMean, 4),
       showarrow: false,
-      xanchor: "left",
-      yanchor: "bottom",
-      xshift: 8,
-      yshift: 6,
+      xanchor: "center",
+      yanchor: "top",
+      yshift: -10,
       font: { size: 11, color: "#b91c1c" },
       bgcolor: "#ffffff",
       bordercolor: "#fca5a5",
@@ -142,8 +143,9 @@ export default function DoeCubeResults({
     });
   }
 
-  // Los niveles van sobre su propia arista, no en el vertice: en el origen
-  // coinciden los tres niveles bajos y apilados alli no se lee ninguno.
+  // Niveles: los tres ejes salen por lados distintos, asi que no se solapan
+  // aunque en el origen coincidan los tres niveles bajos. Todo en horizontal:
+  // el texto girado se lee peor y no aporta nada.
   const tick = (
     text: string,
     x: number,
@@ -165,33 +167,32 @@ export default function DoeCubeResults({
       font: { size: 11, color: "#374151" },
     });
 
-  // Factor 1: bajo el borde inferior del cubo.
-  tick(r.levels[0][0], 0, 0, "center", "top", 0, -16);
-  tick(r.levels[0][1], 1, 0, "center", "top", 0, -16);
-  // Factor 2: a la izquierda del borde vertical.
-  tick(r.levels[1][0], 0, 0, "right", "middle", -14, 0);
-  tick(r.levels[1][1], 0, 1, "right", "middle", -14, 0);
+  // Factor 1, debajo de la arista inferior.
+  tick(r.levels[0][0], 0, 0, "center", "top", 0, -14);
+  tick(r.levels[0][1], 1, 0, "center", "top", 0, -14);
+  // Factor 2, a la izquierda de la arista vertical.
+  tick(r.levels[1][0], 0, 0, "right", "middle", -12, 0);
+  tick(r.levels[1][1], 0, 1, "right", "middle", -12, 0);
 
   if (has3) {
-    // Factor 3: a lo largo de la diagonal de la cara derecha, mas el nombre
-    // del factor, que en los otros dos ejes lo pone el titulo del eje.
-    tick(r.levels[2][0], 1, 0, "left", "top", 10, -6);
-    tick(r.levels[2][1], 1 + DX, DY, "left", "top", 10, -6);
+    // Factor 3, a la derecha, en los dos extremos de la diagonal.
+    tick(r.levels[2][0], 1, 0, "left", "middle", 12, -4);
+    tick(r.levels[2][1], 1 + DX, DY, "left", "middle", 12, -4);
     annotations.push({
-      x: 1 + DX / 2,
-      y: DY / 2,
+      x: 1 + DX,
+      y: DY,
       text: `<b>${r.factors[2]}</b>`,
       showarrow: false,
       xanchor: "left",
       yanchor: "middle",
-      xshift: 34,
-      textangle: String(-Math.round((Math.atan2(DY, DX) * 180) / Math.PI)),
+      xshift: 12,
+      yshift: 18,
       font: { size: 12, color: "#374151" },
     });
   }
 
   const layout: Partial<Layout> = {
-    margin: { l: 90, r: 90, t: 20, b: 70 },
+    margin: { l: 90, r: 100, t: 20, b: 70 },
     plot_bgcolor: "#ffffff",
     hovermode: "closest",
     annotations,
