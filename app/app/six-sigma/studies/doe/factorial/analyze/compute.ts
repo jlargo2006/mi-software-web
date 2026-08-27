@@ -1,5 +1,5 @@
 // app/app/six-sigma/studies/doe/factorial/analyze/compute.ts
-import type { ColumnSnapshot } from "../../../types";
+import type { ColumnSnapshot, ErrorPart } from "../../../types";
 import { multiRegressionFit } from "../../../../lib/multiregression";
 import { fSf, tQuantile } from "../../../../lib/regression";
 import {
@@ -563,6 +563,92 @@ export function computeDoeAnalyze(
     });
   }  
 
+  // --- Desglose del error ---------------------------------------------------
+  // El error puro son las corridas con IDENTICA combinacion de niveles: su
+  // dispersion no la explica ningun modelo, porque no hay nada que la
+  // distinga. Se agrupa por la clave de niveles codificados, asi que sirve
+  // igual para replicas de esquina que para puntos centrales.
+  const errorParts: ErrorPart[] = [];
+  if (!usedLenth && dfe > 0) {
+    const byLevels = new Map<string, number[]>();
+    for (let i = 0; i < n; i++) {
+      const key = coded.map((c) => c[i]).join("|");
+      const g = byLevels.get(key);
+      if (g) g.push(y[i]);
+      else byLevels.set(key, [y[i]]);
+    }
+    let ssPE = 0;
+    let dfPE = 0;
+    for (const vals of byLevels.values()) {
+      if (vals.length < 2) continue;
+      const mu = vals.reduce((a, b) => a + b, 0) / vals.length;
+      ssPE += vals.reduce((a, v) => a + (v - mu) * (v - mu), 0);
+      dfPE += vals.length - 1;
+    }
+
+    if (dfPE > 0 && dfPE < dfe) {
+      // La curvatura solo se desglosa aqui cuando NO esta en el modelo: si lo
+      // esta, ya tiene su propia fila entre los grupos.
+      let ssCurv = 0;
+      let dfCurv = 0;
+      let mseCurv = fit.errMS;
+      if (!useCtPt && hasCenterPoints) {
+        const sub = multiRegressionFit(
+          [...X, ctPtCol],
+          y,
+          [...modelTerms.map((t) => t.key), CT_PT_KEY]
+        );
+        if (sub && sub.errDF > 0) {
+          ssCurv = fit.errSS - sub.errSS;
+          dfCurv = 1;
+          // El MS del error CON la curvatura dentro: contrastarla contra un
+          // error que ella misma infla la esconderia.
+          mseCurv = sub.errMS;
+        }
+      }
+
+      const msPE = ssPE / dfPE;
+      const dfLOF = dfe - dfCurv - dfPE;
+      const ssLOF = fit.errSS - ssCurv - ssPE;
+
+      if (dfCurv > 0) {
+        const f = ssCurv / dfCurv / mseCurv;
+        errorParts.push({
+          label: "Curvature",
+          df: dfCurv,
+          ss: ssCurv,
+          ms: ssCurv / dfCurv,
+          f,
+          p: fSf(f, dfCurv, dfe - dfCurv),
+          indent: 1,
+        });
+      }
+      if (dfLOF > 0) {
+        // La falta de ajuste se contrasta contra el error PURO: la pregunta es
+        // si el desajuste supera el ruido de repetir la misma corrida.
+        const f = ssLOF / dfLOF / msPE;
+        errorParts.push({
+          label: "Lack-of-Fit",
+          df: dfLOF,
+          ss: ssLOF,
+          ms: ssLOF / dfLOF,
+          f,
+          p: fSf(f, dfLOF, dfPE),
+          indent: 1,
+        });
+      }
+      errorParts.push({
+        label: "Pure Error",
+        df: dfPE,
+        ss: ssPE,
+        ms: msPE,
+        f: NaN,
+        p: NaN,
+        indent: dfLOF > 0 ? 2 : 1,
+      });
+    }
+  }
+  
   // --- Ecuacion en unidades no codificadas ----------------------------------
   // Solo los terminos factoriales se decodifican, y su indice en el ajuste
   // arranca en nBlk porque los bloques van delante.
@@ -741,6 +827,7 @@ export function computeDoeAnalyze(
     fit,
     rows,
     groups,
+    errorParts,
     modelDF: fit.regDF,
     modelSS: fit.regSS,
     modelMS: fit.regMS,
