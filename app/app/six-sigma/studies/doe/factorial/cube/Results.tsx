@@ -142,53 +142,56 @@ export default function DoeCubeResults({
     });
   }
 
-  // Rotulos de nivel en los dos ejes del plano, y del tercer factor sobre la
-  // diagonal, que es por donde crece.
-  const axTick = (text: string, x: number, y: number, ax: "x" | "y") =>
+  // Los niveles van sobre su propia arista, no en el vertice: en el origen
+  // coinciden los tres niveles bajos y apilados alli no se lee ninguno.
+  const tick = (
+    text: string,
+    x: number,
+    y: number,
+    xa: "left" | "center" | "right",
+    ya: "top" | "middle" | "bottom",
+    dx = 0,
+    dy = 0
+  ) =>
     annotations.push({
       x,
       y,
       text,
       showarrow: false,
-      xanchor: ax === "y" ? "right" : "center",
-      yanchor: ax === "y" ? "middle" : "top",
-      xshift: ax === "y" ? -10 : 0,
-      yshift: ax === "y" ? 0 : -10,
+      xanchor: xa,
+      yanchor: ya,
+      xshift: dx,
+      yshift: dy,
       font: { size: 11, color: "#374151" },
     });
 
-  axTick(r.levels[0][0], 0, 0, "x");
-  axTick(r.levels[0][1], 1, 0, "x");
-  axTick(r.levels[1][0], 0, 0, "y");
-  axTick(r.levels[1][1], 0, 1, "y");
+  // Factor 1: bajo el borde inferior del cubo.
+  tick(r.levels[0][0], 0, 0, "center", "top", 0, -16);
+  tick(r.levels[0][1], 1, 0, "center", "top", 0, -16);
+  // Factor 2: a la izquierda del borde vertical.
+  tick(r.levels[1][0], 0, 0, "right", "middle", -14, 0);
+  tick(r.levels[1][1], 0, 1, "right", "middle", -14, 0);
+
   if (has3) {
-    annotations.push(
-      {
-        x: 1 + DX * 0.5,
-        y: DY * 0.5,
-        text: r.levels[2][1],
-        showarrow: false,
-        xanchor: "left",
-        yanchor: "top",
-        xshift: 6,
-        font: { size: 11, color: "#374151" },
-      },
-      {
-        x: 1,
-        y: 0,
-        text: r.levels[2][0],
-        showarrow: false,
-        xanchor: "left",
-        yanchor: "top",
-        xshift: 6,
-        yshift: -6,
-        font: { size: 11, color: "#374151" },
-      }
-    );
+    // Factor 3: a lo largo de la diagonal de la cara derecha, mas el nombre
+    // del factor, que en los otros dos ejes lo pone el titulo del eje.
+    tick(r.levels[2][0], 1, 0, "left", "top", 10, -6);
+    tick(r.levels[2][1], 1 + DX, DY, "left", "top", 10, -6);
+    annotations.push({
+      x: 1 + DX / 2,
+      y: DY / 2,
+      text: `<b>${r.factors[2]}</b>`,
+      showarrow: false,
+      xanchor: "left",
+      yanchor: "middle",
+      xshift: 34,
+      textangle: -Math.round((Math.atan2(DY, DX) * 180) / Math.PI),
+      font: { size: 12, color: "#374151" },
+    });
   }
 
   const layout: Partial<Layout> = {
-    margin: { l: 90, r: 40, t: 20, b: 70 },
+    margin: { l: 90, r: 90, t: 20, b: 70 },
     plot_bgcolor: "#ffffff",
     hovermode: "closest",
     annotations,
@@ -236,11 +239,6 @@ export default function DoeCubeResults({
             Cube Plot ({r.fittedMeans ? "fitted means" : "data means"}) for{" "}
             {r.response}
           </h3>
-          {has3 && (
-            <p className="-mt-4 text-xs text-gray-500">
-              Third factor: {r.factors[2]}, increasing along the diagonal.
-            </p>
-          )}
 
           <section className="mb-6">
             <div className="border border-gray-200 rounded" style={{ height: 460 }}>
