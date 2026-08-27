@@ -221,9 +221,9 @@ export default function DoeContourResults({
                 <>
                   {" "}
                   The centre runs averaged {fx(r.centerMean, 4)} over {r.centerN}{" "}
-                  runs: compare it with the centre row above. A wide gap is
-                  curvature, and this surface is a plane — it cannot bend to
-                  follow it.
+                  runs, against {fx(r.constant, 4)} predicted with every factor at
+                  its centre. A wide gap is curvature, and this surface is a plane
+                  — it cannot bend to follow it.
                 </>
               )}
             </p>
