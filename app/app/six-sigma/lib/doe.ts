@@ -29,7 +29,10 @@ const GENERATORS: Record<string, string[]> = {
   "5,4": ["ABCD"],
   "6,4": ["ABC", "ABD"],
   "7,4": ["ABC", "ABD", "ACD"],
-  "8,4": ["ABC", "ABD", "ACD", "BCD"],
+  // El ORDEN de las palabras no altera la resolucion, pero decide que corrida
+  // lleva que combinacion de niveles. Este es el de Minitab, comprobado contra
+  // su estructura de alias: permite pegar alli una respuesta medida aqui.
+  "8,4": ["BCD", "ACD", "ABC", "ABD"],
   "9,4": ["ABC", "ABD", "ACD", "BCD", "ABCD"],
   "10,4": ["ABC", "ABD", "ACD", "BCD", "ABCD", "AB"],
   "11,4": ["ABC", "ABD", "ACD", "BCD", "ABCD", "AB", "AC"],
@@ -49,8 +52,12 @@ const GENERATORS: Record<string, string[]> = {
   "15,5": ["ABC", "ABD", "ABE", "ACD", "ACE", "ADE", "BCD", "BCE", "BDE", "CDE"],
   "7,6": ["ABCDEF"],
   "8,6": ["ABCD", "ABEF"],
-  "9,6": ["ABC", "ABD", "ABE"],
-  "10,6": ["ABCD", "ABCE", "ABDF", "ABEF"],
+  // Minima aberracion. El anterior ["ABC","ABD","ABE"] tenia A4 = 6 frente a
+  // A4 = 1: seguia siendo resolucion IV, pero enredaba entre si seis pares de
+  // interacciones dobles en lugar de uno.
+  "9,6": ["ABC", "ABDE", "ACDF"],
+  // Igual: A4 = 5 en el anterior, A4 = 2 en este.
+  "10,6": ["ABC", "DEF", "ABDE", "ACDF"],
   "11,6": ["ABCD", "ABCE", "ABCF", "ADEF"],
   "12,6": ["ABC", "ABD", "ABE", "ABF", "ACDE", "ACDF"],
   "13,6": ["ABC", "ABD", "ABE", "ABF", "ACD", "ACE", "ACF"],
@@ -115,6 +122,36 @@ export function resolutionOf(k: number, base: number, gens: string[]): number {
   if (gens.length === 0) return Infinity;
   const words = definingWords(k, base, gens);
   return Math.min(...words.map(popcount));
+}
+
+/**
+ * Resolucion contando los bloques. El bloque se trata como un factor mas: si
+ * Blk = ABCD, la palabra es Blk·ABCD y mide 5, de ahi la resolucion V que
+ * declara Minitab en un 2^4 completo partido en dos bloques.
+ *
+ * Puede ser MENOR que la resolucion sin bloques, nunca mayor.
+ */
+export function resolutionWithBlocksOf(
+  k: number,
+  base: number,
+  gens: string[],
+  blockConfounded: string[]
+): number {
+  const plain = resolutionOf(k, base, gens);
+  if (blockConfounded.length === 0) return plain;
+  const words = gens.length === 0 ? [] : definingWords(k, base, gens);
+  let best = Infinity;
+  for (const w of blockConfounded) {
+    const m = maskOf(w);
+    // El termino confundido con el bloque arrastra a todos sus alias: cuenta
+    // el mas corto del grupo.
+    const shortest = Math.min(
+      popcount(m),
+      ...words.map((d) => popcount(m ^ d))
+    );
+    best = Math.min(best, shortest + 1);
+  }
+  return Math.min(plain, best);
 }
 
 export interface AliasRow {
@@ -338,10 +375,15 @@ export function blockAssignment(
     chosen.forEach((c, i) => {
       let v = 1;
       for (let j = 0; j < base; j++) if (c & (1 << j)) v *= row[j];
-      if (v < 0) idx |= 1 << i;
+      // Minitab pone en el bloque 1 las corridas con la palabra de bloqueo a
+      // -1. El diseno es el mismo con cualquiera de las dos asignaciones, pero
+      // solo esta empareja corrida a corrida con la suya, que es lo que permite
+      // mover una respuesta entre las dos herramientas sin desalinearla.
+      if (v > 0) idx |= 1 << i;
     });
     return idx + 1;
   });
+
 
   return {
     blockOf,

@@ -1,4 +1,5 @@
 // app/app/six-sigma/studies/doe/factorial/analyze/Results.tsx
+//
 "use client";
 import React from "react";
 import type { Data, Layout, Shape } from "plotly.js";
@@ -17,6 +18,10 @@ const BAR = "#a5c8e1";
 const fx = (v: number, dec: number): string =>
   Number.isFinite(v) ? v.toFixed(dec).replace(".", ",") : "*";
 const fp = (v: number): string => (Number.isFinite(v) ? fx(v, 3) : "*");
+
+// El % solo tiene sentido si hay un numero al que pegarselo.
+const pct = (v: number): string =>
+  Number.isFinite(v) ? `${fx(v, 2)}%` : "*";
 
 export default function DoeAnalyzeResults({
   result,
@@ -86,7 +91,7 @@ export default function DoeAnalyzeResults({
         font: { color: RED, size: 11 },
         xanchor: "center",
         yanchor: "bottom",
-      },
+      } as unknown as NonNullable<Layout["annotations"]>[number],
     ],
     plot_bgcolor: "#ffffff",
   };
@@ -578,6 +583,46 @@ export default function DoeAnalyzeResults({
             {r.factors.join("; ")}
           </h3>
 
+          {r.removedAliased.length > 0 && (
+            <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <p className="font-semibold">
+                {r.removedAliased.length} of {r.requestedTerms} terms were
+                totally confounded and removed
+              </p>
+              <p className="mt-1">
+                This design cannot tell them apart from terms already in the
+                model, so they carry no information of their own. The survivor of
+                each alias group is the first one in standard order, which is why
+                you see{" "}
+                <span className="font-mono">
+                  {r.rows.find((x) => x.term.order > 0)?.term.key}
+                </span>
+                -type terms rather than their partners. Nothing was estimated twice.
+              </p>
+              <p className="mt-2 font-mono text-xs leading-relaxed">
+                {r.removedAliased.join("; ")}
+              </p>
+              <p className="mt-2 text-xs">
+                Lower the model order to stop asking for them. Removing them here
+                is not a fix for the design: those effects remain unknowable
+                without more runs.
+              </p>
+            </div>
+          )}
+
+          {r.droppedCtPt && (
+            <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <p className="font-semibold">
+                The Ct Pt term was removed: it is not estimable here
+              </p>
+              <p className="mt-1">
+                The center-point indicator coincides with a block column, so
+                curvature and the block effect cannot be separated. Curvature is
+                not being tested.
+              </p>
+            </div>
+          )}
+          
           {r.usedLenth && (
             <div className="rounded-md border border-blue-300 bg-blue-50 px-4 py-3 text-sm text-blue-900">
               <p className="font-semibold">
@@ -616,9 +661,14 @@ export default function DoeAnalyzeResults({
                 The block coefficients are not effects: there is no high or low
                 level to measure between. They are deviations from the overall
                 mean, coded so that they sum to zero, which is why only{" "}
-                {r.blockLevels.length - 1} of them are printed {"\u2014"} the last
-                one is whatever makes the total zero. Their VIF exceeds 1,00 for
-                the same reason, and signals nothing wrong.
+                {r.blockLevels.length - 1 === 1
+                  ? "1 of them is"
+                  : `${r.blockLevels.length - 1} of them are`}{" "}
+                printed {"\u2014"} the last
+                one is whatever makes the total zero.
+                {r.blockLevels.length > 2
+                  ? " Their VIF exceeds 1,00 for the same reason, and signals nothing wrong."
+                  : ""}
               </p>
               <p className="mt-2 text-xs">
                 Blocks are a nuisance, not a subject: you do not interpret them,
@@ -651,13 +701,13 @@ export default function DoeAnalyzeResults({
                   <td className={td}>{"\u00a0"}</td>
                   <td className={td}>{fx(f.constant.coef, 3)}</td>
                   <td className={td}>
-                    {r.usedLenth ? "\u2014" : fx(f.constant.se, 3)}
+                    {r.usedLenth ? "*" : fx(f.constant.se, 3)}
                   </td>
                   <td className={td}>
-                    {r.usedLenth ? "\u2014" : fx(f.constant.t, 2)}
+                    {r.usedLenth ? "*" : fx(f.constant.t, 2)}
                   </td>
                   <td className={td}>
-                    {r.usedLenth ? "\u2014" : fp(f.constant.p)}
+                    {r.usedLenth ? "*" : fp(f.constant.p)}
                   </td>
                   <td className={td}>{"\u00a0"}</td>
                 </tr>
@@ -721,7 +771,7 @@ export default function DoeAnalyzeResults({
               going from the low level to the high one. The factor VIFs equal
               1,00 in a balanced design, because the coded columns are
               orthogonal.
-              {r.usedBlocks
+              {r.usedBlocks && r.blockLevels.length > 2
                 ? " The block VIFs do not, and cannot: with three or more blocks their columns are necessarily correlated with each other."
                 : ""}
             </p>
@@ -744,102 +794,134 @@ export default function DoeAnalyzeResults({
               <tbody>
                 <tr className="border-b border-gray-200">
                   <td className={td}>{fx(f.s, 6)}</td>
-                  <td className={td}>{fx(f.r2, 2)}%</td>
-                  <td className={td}>{fx(f.r2adj, 2)}%</td>
-                  <td className={td}>{fx(f.r2pred, 2)}%</td>
+                  <td className={td}>{pct(f.r2)}</td>
+                  <td className={td}>{pct(f.r2adj)}</td>
+                  <td className={td}>{pct(f.r2pred)}</td>
                 </tr>
               </tbody>
             </table>
           </section>
 
           {/* ANOVA */}
-          {!r.usedLenth && (
-            <section className="overflow-x-auto">
-              <h4 className="mb-2 text-sm font-semibold text-gray-800">
-                Analysis of Variance
-              </h4>
-              <table className="border-collapse text-sm">
-                <thead>
-                  <tr className="border-b border-gray-400">
-                    <th className={thL}>Source</th>
-                    <th className={th}>DF</th>
-                    <th className={th}>Adj SS</th>
-                    <th className={th}>Adj MS</th>
-                    <th className={th}>F-Value</th>
-                    <th className={th}>P-Value</th>
+          <section className="overflow-x-auto">
+            <h4 className="mb-2 text-sm font-semibold text-gray-800">
+              Analysis of Variance
+            </h4>
+            <table className="border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-gray-400">
+                  <th className={thL}>Source</th>
+                  <th className={th}>DF</th>
+                  <th className={th}>Adj SS</th>
+                  <th className={th}>Adj MS</th>
+                  <th className={th}>F-Value</th>
+                  <th className={th}>P-Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-gray-200 font-medium">
+                  <td className={tdL}>Model</td>
+                  <td className={td}>{r.modelDF}</td>
+                  <td className={td}>{fx(r.modelSS, 3)}</td>
+                  <td className={td}>{fx(r.modelMS, 4)}</td>
+                  <td className={td}>{fx(r.modelF, 2)}</td>
+                  <td className={td}>{fp(r.modelP)}</td>
+                </tr>
+                {r.groups.map((g) => (
+                  <React.Fragment key={g.label}>
+                    <tr className="border-b border-gray-200">
+                      <td className={`${tdL} pl-6`}>{g.label}</td>
+                      <td className={td}>{g.df}</td>
+                      <td className={td}>{fx(g.ss, 3)}</td>
+                      <td className={td}>{fx(g.ms, 4)}</td>
+                      <td className={td}>{fx(g.f, 2)}</td>
+                      <td className={td}>{fp(g.p)}</td>
+                    </tr>
+                    {/* Blocks y Curvature no desglosan: el grupo ya dice todo
+                        lo que hay que decir. */}
+                    {g.members.length > 1 &&
+                      g.label !== "Blocks" &&
+                      g.members.map((mrow) => (
+                        <tr
+                          key={mrow.term.key}
+                          className="border-b border-gray-200"
+                        >
+                          <td className={`${tdL} pl-12`}>{mrow.term.key}</td>
+                          <td className={td}>1</td>
+                          <td className={td}>{fx(mrow.adjSS, 3)}</td>
+                          <td className={td}>{fx(mrow.adjMS, 4)}</td>
+                          <td className={td}>{fx(mrow.fValue, 2)}</td>
+                          <td className={td}>{fp(mrow.fP)}</td>
+                        </tr>
+                      ))}
+                    {g.members.length === 1 &&
+                      g.members[0].term.order > 0 && (
+                        <tr className="border-b border-gray-200">
+                          <td className={`${tdL} pl-12`}>
+                            {g.members[0].term.key}
+                          </td>
+                          <td className={td}>1</td>
+                          <td className={td}>{fx(g.members[0].adjSS, 3)}</td>
+                          <td className={td}>{fx(g.members[0].adjMS, 4)}</td>
+                          <td className={td}>{fx(g.members[0].fValue, 2)}</td>
+                          <td className={td}>{fp(g.members[0].fP)}</td>
+                        </tr>
+                      )}
+                  </React.Fragment>
+                ))}
+                <tr className="border-b border-gray-200">
+                  <td className={tdL}>Error</td>
+                  <td className={td}>{f.errDF}</td>
+                  <td className={td}>{r.usedLenth ? "*" : fx(f.errSS, 3)}</td>
+                  <td className={td}>{r.usedLenth ? "*" : fx(f.errMS, 4)}</td>                  
+                  <td className={td}>{"\u00a0"}</td>
+                  <td className={td}>{"\u00a0"}</td>
+                </tr>
+                {/* Desglose del error, sangrado bajo su fila igual que los
+                    terminos bajo su grupo. Pure Error va un nivel mas adentro
+                    cuando hay falta de ajuste, porque es parte de ella. */}
+                {r.errorParts.map((e) => (
+                  <tr key={e.label} className="border-b border-gray-200">
+                    <td className={`${tdL} ${e.indent === 1 ? "pl-6" : "pl-12"}`}>
+                      {e.label}
+                    </td>
+                    <td className={td}>{e.df}</td>
+                    <td className={td}>{fx(e.ss, 3)}</td>
+                    <td className={td}>{fx(e.ms, 4)}</td>
+                    <td className={td}>
+                      {Number.isFinite(e.f) ? fx(e.f, 2) : "\u00a0"}
+                    </td>
+                    <td className={td}>
+                      {Number.isFinite(e.p) ? fp(e.p) : "\u00a0"}
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b border-gray-200 font-medium">
-                    <td className={tdL}>Model</td>
-                    <td className={td}>{r.modelDF}</td>
-                    <td className={td}>{fx(r.modelSS, 3)}</td>
-                    <td className={td}>{fx(r.modelMS, 3)}</td>
-                    <td className={td}>{fx(r.modelF, 2)}</td>
-                    <td className={td}>{fp(r.modelP)}</td>
-                  </tr>
-                  {r.groups.map((g) => (
-                    <React.Fragment key={g.label}>
-                      <tr className="border-b border-gray-200">
-                        <td className={`${tdL} pl-6`}>{g.label}</td>
-                        <td className={td}>{g.df}</td>
-                        <td className={td}>{fx(g.ss, 3)}</td>
-                        <td className={td}>{fx(g.ms, 3)}</td>
-                        <td className={td}>{fx(g.f, 2)}</td>
-                        <td className={td}>{fp(g.p)}</td>
-                      </tr>
-                      {/* Blocks y Curvature no desglosan: el grupo ya dice todo
-                          lo que hay que decir. */}
-                      {g.members.length > 1 &&
-                        g.label !== "Blocks" &&
-                        g.members.map((mrow) => (
-                          <tr
-                            key={mrow.term.key}
-                            className="border-b border-gray-200"
-                          >
-                            <td className={`${tdL} pl-12`}>{mrow.term.key}</td>
-                            <td className={td}>1</td>
-                            <td className={td}>{fx(mrow.adjSS, 3)}</td>
-                            <td className={td}>{fx(mrow.adjMS, 3)}</td>
-                            <td className={td}>{fx(mrow.fValue, 2)}</td>
-                            <td className={td}>{fp(mrow.fP)}</td>
-                          </tr>
-                        ))}
-                      {g.members.length === 1 &&
-                        g.members[0].term.order > 0 && (
-                          <tr className="border-b border-gray-200">
-                            <td className={`${tdL} pl-12`}>
-                              {g.members[0].term.key}
-                            </td>
-                            <td className={td}>1</td>
-                            <td className={td}>{fx(g.members[0].adjSS, 3)}</td>
-                            <td className={td}>{fx(g.members[0].adjMS, 3)}</td>
-                            <td className={td}>{fx(g.members[0].fValue, 2)}</td>
-                            <td className={td}>{fp(g.members[0].fP)}</td>
-                          </tr>
-                        )}
-                    </React.Fragment>
-                  ))}
-                  <tr className="border-b border-gray-200">
-                    <td className={tdL}>Error</td>
-                    <td className={td}>{f.errDF}</td>
-                    <td className={td}>{fx(f.errSS, 3)}</td>
-                    <td className={td}>{fx(f.errMS, 3)}</td>
-                    <td className={td}>{"\u00a0"}</td>
-                    <td className={td}>{"\u00a0"}</td>
-                  </tr>
-                  <tr className="border-b border-gray-300 font-medium">
-                    <td className={tdL}>Total</td>
-                    <td className={td}>{f.totDF}</td>
-                    <td className={td}>{fx(f.totSS, 3)}</td>
-                    <td className={td}>{"\u00a0"}</td>
-                    <td className={td}>{"\u00a0"}</td>
-                    <td className={td}>{"\u00a0"}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </section>
-          )}
+                ))}                
+                <tr className="border-b border-gray-300 font-medium">
+                  <td className={tdL}>Total</td>
+                  <td className={td}>{f.totDF}</td>
+                  <td className={td}>{fx(f.totSS, 3)}</td>
+                  <td className={td}>{"\u00a0"}</td>
+                  <td className={td}>{"\u00a0"}</td>
+                  <td className={td}>{"\u00a0"}</td>
+                </tr>
+              </tbody>
+            </table>
+            {r.errorParts.length > 0 && (
+              <p className="mt-2 text-xs text-gray-600">
+                Pure Error is the scatter between runs made at identical
+                settings: no model can explain it, so it is the yardstick for
+                everything else. Lack-of-Fit is what the model misses on top of
+                that
+                {r.errorParts.some((e) => e.label === "Curvature")
+                  ? ", once curvature is set aside. Curvature shows up here " +
+                    "rather than in the model because the Ct Pt term is off: " +
+                    "its variability is inflating the error"
+                  : ""}
+                . A significant Lack-of-Fit means the model is the wrong shape,
+                not just imprecise.
+              </p>
+            )}            
+          </section>
 
           {/* Ecuacion */}
           <section>
@@ -939,7 +1021,7 @@ export default function DoeAnalyzeResults({
               </tbody>
             </table>
             <p className="text-xs font-medium text-gray-700">Aliases</p>
-            <div className="space-y-0.5 font-mono text-xs text-gray-800">
+            <div className="space-y-0 font-mono text-xs leading-tight text-gray-800">
               {r.aliases.map((a) => (
                 <p key={a.term}>
                   {a.term}
@@ -972,11 +1054,13 @@ export default function DoeAnalyzeResults({
                 </p>
               )}
             </div>
-            <p className="mt-2 text-xs text-gray-600">
-              Uncheck the highlighted term in the controls and run again. The
-              hierarchy is kept for you: a main effect never leaves while one of
-              its interactions is still in.
-            </p>
+            {adv.term && (            
+              <p className="mt-2 text-xs text-gray-600">
+                Uncheck the highlighted term in the controls and run again. The
+                hierarchy is kept for you: a main effect never leaves while one of
+                its interactions is still in.
+              </p>
+            )}          
           </section>
 
           {/* Pareto */}

@@ -305,7 +305,7 @@ const histogram: Data[] = [
   },
 ];
 
-  const histLayout: Partial<Layout> = {
+  const histLayout = {
     title: { text: "Histogram", font: { size: 12 } },
     margin: resMargin,
     showlegend: false,

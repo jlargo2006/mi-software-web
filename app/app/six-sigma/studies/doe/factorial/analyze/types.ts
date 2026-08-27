@@ -125,6 +125,8 @@ export interface DoeAnalyzeModel {
   fit: MultiRegFit;
   rows: TermRow[];
   groups: AnovaGroup[];
+  /** Desglose de Error. Vacio cuando no hay corridas repetidas. */
+  errorParts: ErrorPart[];  
   modelDF: number;
   modelSS: number;
   modelMS: number;
@@ -136,7 +138,16 @@ export interface DoeAnalyzeModel {
   leverageLimit: number;
   aliases: AliasGroup[];
   aliasClean: boolean;
-
+  /**
+   * Terminos pedidos que resultaron ser alias exactos de otros y se retiraron
+   * para poder ajustar. Vacio cuando el diseno soporta el modelo pedido.
+   */
+  removedAliased: string[];
+  /** El indicador de curvatura no era estimable y se retiro. */
+  droppedCtPt: boolean;
+  /** Terminos que el usuario pidio, antes del descarte por alias. */
+  requestedTerms: number;
+  
   /** Puntos centrales detectados en la hoja. */
   hasCenterPoints: boolean;
   nCenterPoints: number;
@@ -173,6 +184,25 @@ export interface DoeAnalyzeModel {
   nMissing: number;
   residualKind: ResidualKind;
 }
+
+/**
+ * Una fila del desglose del error.
+ *
+ * El error se parte en lo que el modelo no explica pero podria (curvatura y
+ * falta de ajuste) y lo que no explicaria ningun modelo (el ruido de
+ * repeticion). Sin corridas repetidas no hay error puro y no hay desglose.
+ */
+export interface ErrorPart {
+  label: string;
+  df: number;
+  ss: number;
+  ms: number;
+  f: number;
+  p: number;
+  /** 1 se sangra bajo Error, 2 bajo la fila anterior. */
+  indent: 1 | 2;
+}
+
 
 export type DoeAnalyzeResult =
   | ({ ok: true; error?: undefined } & DoeAnalyzeModel)

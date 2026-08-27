@@ -58,7 +58,13 @@ export function tSf(t: number, df: number): number {
 
 /** Cola superior de la F de Snedecor. */
 export function fSf(f: number, df1: number, df2: number): number {
-  if (!(f > 0) || df1 <= 0 || df2 <= 0) return 1;
+  // Una F no calculable devuelve NaN, no 1: un p-valor de 1,000 es un
+  // resultado creible y ocultaria que no habia nada que contrastar.
+  if (!Number.isFinite(f) || !Number.isFinite(df1) || !Number.isFinite(df2)) {
+    return NaN;
+  }
+  if (df1 <= 0 || df2 <= 0) return NaN;
+  if (f <= 0) return 1;
   return Math.min(1, Math.max(0, betaInc(df2 / (df2 + df1 * f), df2 / 2, df1 / 2)));
 }
 

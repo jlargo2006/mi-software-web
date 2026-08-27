@@ -78,7 +78,7 @@ export default function HT1SampleTResults({
       showlegend: false,
     },
   ];
-  const histLayout: Partial<Layout> = {
+  const histLayout = {
     margin: { l: 60, r: 30, t: 10, b: 40 },
     xaxis: { title: { text: r.column }, range: xRange },
     yaxis: { title: { text: "Frequency" } },

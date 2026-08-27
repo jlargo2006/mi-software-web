@@ -71,6 +71,8 @@ export interface DoeCreateModel {
   designLabel: string;
   notation: string;
   resolutionLabel: string;
+  /** Resolucion contando los bloques. Vacio si no hay nada confundido. */
+  resolutionWithBlocks: string;  
   isFull: boolean;
 
   totalRuns: number;
@@ -98,6 +100,11 @@ export interface DoeCreateModel {
   sheetHeaders: string[];
   sheetRows: Cell[][];
   sheetName: string;
+  
+  /** "I = ABD = ACE = BCDE". Vacio en el factorial completo. */
+  definingRelation: string;
+  /** "D = AB; E = AC". Vacio en el factorial completo. */
+  generators: string;  
 }
 
 export type DoeCreateResult =

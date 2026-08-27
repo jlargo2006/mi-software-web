@@ -1,3 +1,4 @@
+// app/app/six-sigma/SixSigmaAnalyzer.tsx
 "use client";
 
 import React, { useRef, useState } from "react";
@@ -5,8 +6,7 @@ import { useWorkbook } from "./hooks/useWorkbook";
 import { readExcelFile, writeExcelFile } from "./lib/excel";
 import { exportProject, importProject } from "./lib/project";
 import { ToolId } from "./lib/ribbon";
-import { getColumnByName } from "./lib/columns"; // by NAME (generic recompute)
-import type { SavedStudy, SaveStudyInput, StudyColumn } from "./lib/studies";
+import type { SavedStudy, SaveStudyInput } from "./lib/studies";
 import MenuBar from "./components/MenuBar";
 import DataGrid from "./components/DataGrid";
 import SheetTabs from "./components/SheetTabs";
@@ -14,6 +14,9 @@ import Splitter from "./components/Splitter";
 import { getArtifact } from "./studies/_registry";
 import type { ColumnSnapshot } from "./studies/types";
 import AnalysisRunner from "./components/AnalysisRunner";
+import StudyList from "./components/StudyList";
+import { useSidebar } from "./hooks/useSidebar";
+import SidebarSplitter from "./components/SidebarSplitter";
 
 type ViewMode = "split" | "grid" | "graphics";
 
@@ -22,13 +25,10 @@ interface SixSigmaAnalyzerProps {
   onSignOut: () => void;
 }
 
-// Timestamp yyyy/mm/dd hh:mm:ss
-function timestamp(): string {
-  const d = new Date();
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(
-    d.getHours()
-  )}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+/** ¿Hay algo escrito en la hoja? Cabeceras y celdas, ignorando espacios. */
+function sheetHasData(sheet: { headers: unknown[]; rows: unknown[][] }): boolean {
+  if (sheet.headers.some((h) => String(h ?? "").trim() !== "")) return true;
+  return sheet.rows.some((r) => r.some((v) => String(v ?? "").trim() !== ""));
 }
 
 export default function SixSigmaAnalyzer({
@@ -50,41 +50,58 @@ export default function SixSigmaAnalyzer({
   const splitRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const projectInputRef = useRef<HTMLInputElement>(null);
+  const sidebar = useSidebar();
 
   // --- Project: export / import everything (declared first: used by handleImport/handleNew) ---
   const handleExportProject = () => {
     exportProject(wb.data, wb.order, studies);
   };
+  
+  // Nada que perder: libro recien abierto y sin estudios. En ese caso no se
+  // pregunta nada, porque no hay trabajo que exportar.
+  const nothingToLose =
+    studies.length === 0 &&
+    !Object.values(wb.data).some((s) => sheetHasData(s));
+
+  /**
+   * Ofrece exportar antes de una accion destructiva.
+   *
+   * No puede abortar la accion: con dos botones, Cancel significa "descartar",
+   * no "no hagas nada". Si en el futuro quieres una tercera salida, hace falta
+   * un modal propio en lugar de window.confirm.
+   */
+  const offerExportFirst = (message: string): void => {
+    if (nothingToLose) return;
+    const exportFirst = window.confirm(
+      `${message}\n\nDo you want to export your current project first?` +
+        `\n\nOK = export first, Cancel = discard.`
+    );
+    if (exportFirst) handleExportProject();
+  };
+
 
   const handleImportProject = async (file: File) => {
-    const ok = window.confirm(
-      "Opening a project will discard your current work.\n\n" +
-        "Do you want to export your current project first?\n\nOK = export first, Cancel = discard."
-    );
-    if (ok) handleExportProject();
+    offerExportFirst("Opening a project will discard your current work.");
     try {
       const project = await importProject(file);
       wb.loadWorkbook(project.workbook.data, project.workbook.order);
-      setStudies((project.studies as SavedStudy[]) ?? []);
+      setStudies(project.studies ?? []);
       setActiveTool(null);
       setViewingId(null);
-      alert("Project imported successfully");
+      // Sin aviso de exito: los estudios aparecen en la barra lateral y los
+      // datos en la rejilla. Confirmar lo que ya se ve solo estorba.
     } catch (err) {
       alert((err as Error).message);
     }
   };
 
-  // Point 3+4: opening an Excel asks to discard, and does NOT keep studies
   const handleImport = async (file: File) => {
-    const ok = window.confirm(
-      "Opening an Excel file will discard your current work (including saved studies).\n\n" +
-        "Do you want to export your project first?\n\nOK = export first, Cancel = discard."
+    offerExportFirst(
+      "Opening an Excel file will discard your current work (including saved studies)."
     );
-    if (ok) handleExportProject();
     try {
       const { data, order } = await readExcelFile(file);
       wb.loadWorkbook(data, order);
-      // Point 4: an Excel has no studies -> clear them
       setStudies([]);
       setActiveTool(null);
       setViewingId(null);
@@ -95,16 +112,46 @@ export default function SixSigmaAnalyzer({
 
   const handleExport = () => writeExcelFile(wb.data, wb.order);
 
-  // Point 2: "New" saves the PROJECT (not just the Excel)
   const handleNew = () => {
-    const ok = window.confirm(
-      "Do you want to export your project before clearing it?\n\nOK = export first, Cancel = discard."
-    );
-    if (ok) handleExportProject();
+    if (nothingToLose) {
+      // Sin datos ni estudios no hay nada que preguntar, pero si el usuario
+      // ha creado hojas vacias hay que dejar el libro en su estado inicial.
+      wb.resetWorkbook();
+      setActiveTool(null);
+      setViewingId(null);
+      return;
+    }
+    offerExportFirst("This will clear the current project.");
     wb.resetWorkbook();
     setStudies([]);
     setActiveTool(null);
     setViewingId(null);
+  };
+
+  /**
+   * Renombra la hoja y arrastra la procedencia de los estudios guardados.
+   * Devuelve null si fue bien, o el motivo del rechazo para que SheetTabs
+   * lo muestre sin cerrar la edicion.
+   */
+  const handleRenameSheet = (oldName: string, newName: string): string | null => {
+    const msg = wb.renameSheet(oldName, newName);
+    if (msg) return msg;
+    // El snapshot guarda de que hoja salio: se sigue el renombrado para que la
+    // procedencia no apunte a una hoja inexistente.
+    setStudies((prev) =>
+      prev.map((s) =>
+        s.snapshot.sheetName === oldName
+          ? { ...s, snapshot: { ...s.snapshot, sheetName: newName } }
+          : s
+      )
+    );
+    return null;
+  };
+
+  const handleRenameStudy = (id: string, newName: string) => {
+    setStudies((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, name: newName } : s))
+    );
   };
 
   // GENERIC saveStudy: multi-column snapshot
@@ -113,7 +160,8 @@ export default function SixSigmaAnalyzer({
       {
         id: crypto.randomUUID(),
         type: study.type,
-        name: `${timestamp()} - ${study.name}`, // timestamp first
+        name: study.name, // sin fecha: ahora vive en createdAt
+        createdAt: new Date().toISOString(),
         params: study.params,
         results: study.results ?? {},
         snapshot: { sheetName: wb.activeSheet, cols: study.cols },
@@ -121,6 +169,7 @@ export default function SixSigmaAnalyzer({
       ...prev,
     ]);
   };
+
 
   const showTop = view === "split" || view === "graphics";
   const showBottom = view === "split" || view === "grid";
@@ -244,49 +293,74 @@ export default function SixSigmaAnalyzer({
 
       {/* Body: sidebar + central area */}
       <div className="flex flex-1 min-h-0">
-        {/* Saved studies sidebar */}
-        <aside className="w-52 bg-gray-50 border-r border-gray-300 flex flex-col shrink-0">
-          <div className="px-3 py-2 font-semibold text-sm text-gray-700 border-b border-gray-300">
-            Saved Studies
+        {/* Saved studies sidebar: plegable y de ancho ajustable */}
+        {sidebar.collapsed ? (
+          // Plegado deja un tirador estrecho, no un panel vacio: asi se
+          // recupera sin tener que buscar el control en un menu.
+          <div className="w-8 shrink-0 bg-gray-50 border-r border-gray-300 flex flex-col items-center pt-2">
+            <button
+              onClick={sidebar.expand}
+              className="text-[#00674d] hover:bg-gray-200 rounded px-1 py-1 text-sm"
+              title="Show saved studies"
+              aria-label="Show saved studies"
+            >
+              {"\u25B6"}
+            </button>
+            <span
+              className="mt-3 text-[11px] text-gray-500 tracking-wide"
+              style={{ writingMode: "vertical-rl" }}
+            >
+              Saved Studies
+              {studies.length > 0 && ` (${studies.length})`}
+            </span>
           </div>
-          <div className="flex-1 overflow-y-auto p-2 space-y-1">
-            {studies.length === 0 && (
-              <div className="text-sm text-gray-400">No saved studies yet.</div>
-            )}
-            {studies.map((s) => (
-              <div
-                key={s.id}
-                className="group relative flex items-center rounded hover:bg-emerald-50 border border-transparent hover:border-[#00674d]"
-              >
+        ) : (
+          <>
+            <aside
+              suppressHydrationWarning
+              style={{ width: sidebar.width }}
+              className="bg-gray-50 border-r border-gray-300 flex flex-col shrink-0 min-w-0"
+            >
+              <div className="flex items-center justify-end px-1 pt-1">
                 <button
-                  onClick={() => {
-                    setActiveTool(s.type as ToolId);
-                    setArtifactParams(s.params);
-                    setViewingId(s.id);
-                    if (view === "grid") setView("split");
-                  }}
-                  className="flex-1 text-left text-sm px-2 py-1.5 pr-6 text-gray-700"
+                  onClick={sidebar.toggle}
+                  className="text-gray-400 hover:text-[#00674d] px-1 text-sm"
+                  title="Hide panel"
+                  aria-label="Hide saved studies panel"
                 >
-                  {s.name}
-                </button>
-                <button
-                  onClick={() => {
-                    setStudies((prev) => prev.filter((x) => x.id !== s.id));
-                    if (viewingId === s.id) {
-                      setViewingId(null);
-                      setActiveTool(null);
-                    }
-                  }}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-600"
-                  title="Delete study"
-                >
-                  {"\u2715"}
+                  {"\u25C0"}
                 </button>
               </div>
-            ))}
-          </div>
-        </aside>
+              <StudyList
+                studies={studies}
+                viewingId={viewingId}
+                onSelect={(s) => {
+                  setActiveTool(s.type as ToolId);
+                  setArtifactParams(s.params);
+                  setViewingId(s.id);
+                  if (view === "grid") setView("split");
+                }}
+                onDelete={(id) => {
+                  setStudies((prev) => prev.filter((x) => x.id !== id));
+                  if (viewingId === id) {
+                    setViewingId(null);
+                    setActiveTool(null);
+                  }
+                }}
+                onRename={handleRenameStudy}
+              />
+            </aside>
 
+            <SidebarSplitter
+              dragging={sidebar.dragging}
+              width={sidebar.width}
+              onStartDrag={sidebar.startDrag}
+              onReset={sidebar.reset}
+              onNudge={sidebar.nudge}
+            />
+          </>
+        )}
+        
         {/* Central area: two frames + splitter */}
         <div className="flex-1 flex flex-col min-w-0">
           <div ref={splitRef} className="flex-1 flex flex-col min-h-0">
@@ -349,10 +423,8 @@ export default function SixSigmaAnalyzer({
               onSelect={wb.setActiveSheet}
               onAddSheet={wb.addSheet}
               onDeleteSheet={wb.deleteSheet}
-              onAddRow={wb.addRow}
-              onDeleteRow={wb.deleteRow}
-              onAddColumn={wb.addColumn}
-              onDeleteColumn={wb.deleteColumn}
+              onMoveSheet={wb.moveSheet}
+              onRenameSheet={handleRenameSheet}
             />
           )}
 

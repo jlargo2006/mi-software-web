@@ -76,16 +76,57 @@ export default function DoeCreateResults({
                     {r.resolutionLabel}{" "}
                     <span className="font-mono text-xs text-gray-500">
                       {r.notation}
-                    </span>
+                    </span>{" "}
+                    {r.resolutionWithBlocks && (
+                      <span className="ml-2 text-xs text-gray-600">
+                        (with blocks: {r.resolutionWithBlocks})
+                      </span>
+                    )}
                   </td>
                 </tr>
               </tbody>
             </table>
 
+            {/* El generador identifica CUAL de las fracciones posibles es esta;
+                "1/4, resolucion III" no lo hace. */}
+            {!r.isFull && (
+              <div className="mt-2 space-y-0.5 font-mono text-xs text-gray-700">
+                <p>
+                  <span className="font-sans text-gray-600">
+                    Design Generators:{" "}
+                  </span>
+                  {r.generators}
+                </p>
+                <p>
+                  <span className="font-sans text-gray-600">
+                    Defining Relation:{" "}
+                  </span>
+                  {r.definingRelation}
+                </p>
+              </div>
+            )}
+
             <p className="mt-3 text-sm">
-              {r.isFull ? (
+              {/* isFull sale de design.gens.length === 0: dice si el diseno es
+                  fraccionado, y no sabe nada de bloques. Un factorial completo
+                  partido dentro de la replica confunde el bloque con una
+                  interaccion, asi que la frase limpia exige las dos cosas. */}
+              {r.isFull && r.blockConfounded.length === 0 ? (
                 <span className="font-medium text-emerald-800">
                   All terms are free from aliasing.
+                </span>
+              ) : r.isFull ? (
+                <span className="font-medium text-amber-800">
+                  All factorial terms are free from aliasing, but the block
+                  effect is confounded with{" "}
+                  <span className="font-mono">
+                    {r.blockConfounded.join(", ")}
+                  </span>
+                  .
+                </span>
+              ) : r.resolutionLabel === "III" ? (
+                <span className="font-medium text-red-800">
+                  Some main effects are confounded with two-way interactions.
                 </span>
               ) : (
                 <span className="font-medium text-amber-800">
@@ -93,6 +134,7 @@ export default function DoeCreateResults({
                 </span>
               )}
             </p>
+
           </section>
 
           {/* Bloqueo */}

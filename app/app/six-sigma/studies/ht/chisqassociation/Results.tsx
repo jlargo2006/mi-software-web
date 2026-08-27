@@ -84,7 +84,7 @@ export default function HTChiSqAssocResults({
       showlegend: false,
     } as unknown as Data,
   ];
-  const chartLayout: Partial<Layout> = {
+  const chartLayout  = {
     margin: { l: 150, r: 30, t: 10, b: 40 },
     xaxis: { title: { text: "Contribution to Chi-Square" } },
     yaxis: { automargin: true, fixedrange: true },

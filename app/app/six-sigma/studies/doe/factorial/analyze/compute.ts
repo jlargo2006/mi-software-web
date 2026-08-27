@@ -26,6 +26,7 @@ import {
   type DoeAnalyzeModel,
   type DoeAnalyzeParams,
   type DoeAnalyzeResult,
+  type ErrorPart,  
   type TermRow,
   type UncodedTerm,
   type UnusualRow,
@@ -73,6 +74,48 @@ export const sig4 = (v: number): string => {
   return v.toFixed(dec).replace(".", ",");
 };
 
+/**
+ * Marca que columnas son linealmente independientes de las anteriores.
+ *
+ * Se usa Gram-Schmidt modificado y NO la inversa de X'X: cuando el diseno esta
+ * saturado esa matriz es singular y no dice cual de las columnas sobra, solo
+ * que sobra alguna. Ortogonalizando en orden, la primera columna de cada
+ * conjunto de alias es la que se queda y las demas caen con residuo nulo.
+ *
+ * De ahi que el orden de entrada sea una decision y no un detalle: los bloques
+ * se pasan primero para que un bloque confundido con un termino elimine el
+ * termino, nunca el bloque.
+ */
+function independentMask(cols: number[][], nRows: number): boolean[] {
+  const basis: number[][] = [];
+  // La constante forma parte del modelo aunque no este en la lista: sin ella,
+  // una columna constante pareceria informativa.
+  const ones = new Array<number>(nRows).fill(1 / Math.sqrt(nRows));
+  basis.push(ones);
+
+  const keep: boolean[] = [];
+  for (const col of cols) {
+    const v = [...col];
+    const norm0 = Math.sqrt(v.reduce((a, x) => a + x * x, 0));
+    for (const b of basis) {
+      let d = 0;
+      for (let i = 0; i < v.length; i++) d += v[i] * b[i];
+      for (let i = 0; i < v.length; i++) v[i] -= d * b[i];
+    }
+    const norm = Math.sqrt(v.reduce((a, x) => a + x * x, 0));
+    // Umbral RELATIVO a la norma original: una columna de ceros y una columna
+    // enorme casi dependiente no se juzgan con la misma vara.
+    if (norm > 1e-8 * Math.max(1, norm0)) {
+      const inv = 1 / norm;
+      basis.push(v.map((x) => x * inv));
+      keep.push(true);
+    } else {
+      keep.push(false);
+    }
+  }
+  return keep;
+}
+
 export function computeDoeAnalyze(
   data: ColumnSnapshot,
   params: DoeAnalyzeParams
@@ -101,14 +144,14 @@ export function computeDoeAnalyze(
   }
 
   // --- Columna de bloques ---------------------------------------------------
-  const blkName = params.blockColumn.trim();
+  const blkName = (params.blockColumn ?? "").trim();
   if (blkName !== "") {
     if (!data[blkName]) {
       return fail(
         `Column "${blkName}" is not available. If it does exist in the worksheet, ` +
           `it is not being passed to the analysis.`
       );
-    }    
+    }
     if (blkName === resp || facNames.includes(blkName)) {
       return fail(
         `"${blkName}" is already used as the response or as a factor: it cannot ` +
@@ -276,20 +319,22 @@ export function computeDoeAnalyze(
     );
   }
 
-  const useCtPt = hasCenterPoints && params.includeCenterPoints;
+  const wantCtPt = hasCenterPoints && params.includeCenterPoints !== false;
   const ctPtCol = isCenter.map((c) => (c ? 1 : 0));
 
   // --- Terminos -------------------------------------------------------------
   const allTerms = buildTerms(facNames, maxOrder);
   const excluded = new Set(params.excluded);
-  const active = allTerms.filter((t) => !excluded.has(t.key));
-  if (active.length === 0) return fail("Every term has been removed from the model.");
+  const requested = allTerms.filter((t) => !excluded.has(t.key));
+  if (requested.length === 0) {
+    return fail("Every term has been removed from the model.");
+  }
 
   // La jerarquia se comprueba antes de ajustar: un modelo con AB pero sin A no
   // es interpretable, porque los coeficientes dependen del origen de la escala.
-  const activeKeys = new Set(active.map((t) => t.key));
-  for (const t of active) {
-    const missing = parentKeys(t, facNames).filter((p) => !activeKeys.has(p));
+  const requestedKeys = new Set(requested.map((t) => t.key));
+  for (const t of requested) {
+    const missing = parentKeys(t, facNames).filter((p) => !requestedKeys.has(p));
     if (missing.length > 0) {
       return fail(
         `The model is not hierarchical: "${t.key}" is in, but ${missing
@@ -309,22 +354,80 @@ export function computeDoeAnalyze(
     return fail("Every run sits at the centre: there are no corner points to analyse.");
   }
   const codedCorners = coded.map((col) => cornerIdx.map((i) => col[i]));
+  // La estructura de alias describe el DISENO, no el modelo: los pares
+  // confundidos siguen ahi aunque el usuario no los ajuste, y saber que no
+  // puede distinguirlos es justo lo que necesita antes de decidir. Se llega
+  // siempre a orden 2 como minimo, porque es donde vive el aliasing que
+  // importa; mas alla de eso la lista crece hasta ser ilegible.
+  const aliasOrder = Math.max(2, maxOrder);
+  const aliasTerms = buildTerms(facNames, aliasOrder);
   const { groups: aliasFac, clean: aliasClean } = detectAliases(
     codedCorners,
-    allTerms
+    aliasTerms
   );
 
-  // --- Matriz del modelo ----------------------------------------------------
+  // --- Columnas de bloque ---------------------------------------------------
   // Con b bloques hacen falta b-1 columnas, en codificacion de EFECTOS: la
   // columna j vale 1 en el bloque j, -1 en el ultimo y 0 en el resto. Asi los
   // coeficientes suman cero y la constante es la media global.
-  const useBlocks = blockLevels.length >= 2 && params.includeBlocks;
+  const useBlocks = blockLevels.length >= 2 && params.includeBlocks !== false;
   const blkCols = useBlocks ? blockColumns(blockOf, blockLevels) : [];
   const blkTerms = useBlocks
     ? blockLevels.slice(0, -1).map((_, i) => blockTerm(i))
     : [];
   const nBlk = blkTerms.length;
 
+  // --- Descarte de terminos no estimables -----------------------------------
+  // Un diseno fraccionado no puede estimar mas terminos que corridas tiene, y
+  // pedir orden 3 con 8 factores en 16 corridas produce 92 terminos que son
+  // alias exactos entre si. Rechazar el modelo seria correcto pero inutil: el
+  // usuario tendria que desmarcar setenta y siete terminos a mano leyendo la
+  // estructura de alias. Se descartan aqui y se dice cuales.
+  const probeCols: number[][] = [
+    ...blkTerms.map((_, i) => blkCols[i]),
+    ...requested.map((t) => termColumn(coded, t)),
+    ...(wantCtPt ? [ctPtCol] : []),
+  ];
+  const keepMask = independentMask(probeCols, n);
+
+  const droppedByAlias = new Set<string>();
+  requested.forEach((t, i) => {
+    if (!keepMask[nBlk + i]) droppedByAlias.add(t.key);
+  });
+
+  // Si cae un termino, caen sus hijos: dejar AB sin A rompe la jerarquia, y el
+  // modelo deja de ser interpretable aunque siga siendo ajustable.
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const t of requested) {
+      if (droppedByAlias.has(t.key)) continue;
+      if (parentKeys(t, facNames).some((p) => droppedByAlias.has(p))) {
+        droppedByAlias.add(t.key);
+        grew = true;
+      }
+    }
+  }
+
+  const active = requested.filter((t) => !droppedByAlias.has(t.key));
+  const removedAliased = requested
+    .filter((t) => droppedByAlias.has(t.key))
+    .map((t) => t.key);
+
+  if (active.length === 0) {
+    return fail(
+      "No term is estimable with these runs: every one is an exact alias of " +
+        "another. Lower the model order, or add runs."
+    );
+  }
+
+  // La curvatura tambien puede ser inestimable: con puntos centrales en un solo
+  // bloque y ese bloque ajustado, el indicador coincide con la columna de bloque.
+  const ctPtEstimable = wantCtPt && keepMask[keepMask.length - 1];
+  const useCtPt = wantCtPt && ctPtEstimable;
+  const droppedCtPt = wantCtPt && !ctPtEstimable;
+
+  // --- Matriz del modelo ----------------------------------------------------
   // Los bloques van delante y la curvatura al final: asi los terminos
   // factoriales ocupan las posiciones nBlk .. nBlk + active.length - 1, que es
   // lo que usan la ecuacion no codificada y las medias ajustadas.
@@ -342,9 +445,8 @@ export function computeDoeAnalyze(
   const fit = multiRegressionFit(X, y, modelTerms.map((t) => t.key));
   if (!fit) {
     return fail(
-      "The model is not estimable: some terms are aliased with each other, or a " +
-        "block is confounded with a term in the model. Lower the model order, or " +
-        "remove the terms flagged in the alias structure."
+      "The model could not be fitted even after removing the aliased terms. " +
+        "This should not happen: please report the design and the response used."
     );
   }
 
@@ -399,8 +501,10 @@ export function computeDoeAnalyze(
         t,
         p,
         vif: ft.vif,
-        adjSS: NaN,
-        adjMS: NaN,
+        // DF y Adj SS son informacion real aunque no haya error contra el que
+        // contrastar: solo F y su p-valor quedan indefinidos.
+        adjSS: ft.adjSS,
+        adjMS: ft.adjMS,
         fValue: NaN,
         fP: NaN,
         significant: p < alpha,
@@ -416,8 +520,10 @@ export function computeDoeAnalyze(
       vif: ft.vif,
       adjSS: ft.adjSS,
       adjMS: ft.adjMS,
-      fValue: ft.fValue,
-      fP: ft.fP,
+      // MultiTermStats no publica la F del termino. Con 1 gl es t^2, y su
+      // p-valor es el mismo que el de la t, asi que no hace falta pedirla.
+      fValue: ft.t * ft.t,
+      fP: ft.p,
       significant: ft.p < alpha,
     };
   });
@@ -428,41 +534,129 @@ export function computeDoeAnalyze(
   // pero no en cuanto el diseno se desequilibra, y las columnas de bloque NO
   // son ortogonales entre si.
   const groups: AnovaGroup[] = [];
-  if (!usedLenth) {
-    const orders = [...new Set(modelTerms.map((t) => t.order))].sort(
-      (a, b) => orderRank(a) - orderRank(b)
-    );
-    for (const o of orders) {
-      const members = rows.filter((r) => r.term.order === o);
-      const keepIdx = modelTerms
-        .map((t, i) => (t.order === o ? -1 : i))
-        .filter((i) => i >= 0);
-      let ss: number;
-      if (keepIdx.length === 0) {
-        ss = fit.totSS - fit.errSS;
-      } else {
+  const orders = [...new Set(modelTerms.map((t) => t.order))].sort(
+    (a, b) => orderRank(a) - orderRank(b)
+  );
+  for (const o of orders) {
+    const members = rows.filter((r) => r.term.order === o);
+    const keepIdx = modelTerms
+      .map((t, i) => (t.order === o ? -1 : i))
+      .filter((i) => i >= 0);
+    let ss: number;
+    if (keepIdx.length === 0) {
+      ss = fit.totSS - fit.errSS;
+    } else {
+      const sub = multiRegressionFit(
+        keepIdx.map((i) => X[i]),
+        y,
+        keepIdx.map((i) => modelTerms[i].key)
+      );
+      ss = sub ? sub.errSS - fit.errSS : NaN;
+    }
+    const df = members.length;
+    const ms = ss / df;
+    // Sin gl de error no hay nada contra lo que contrastar: ni F ni su p-valor
+    // existen. fSf(Infinity, df, 0) devolveria 1, que afirma lo contrario de
+    // lo que ocurre — que el termino no explica nada, en lugar de que no se
+    // puede saber.
+    const f = dfe > 0 ? ms / fit.errMS : NaN;
+    groups.push({
+      label: GROUP_LABEL[o] ?? `${o}-Way Interactions`,
+      df,
+      ss,
+      ms,
+      f,
+      p: dfe > 0 ? fSf(f, df, dfe) : NaN,
+      members,
+    });
+  }  
+
+  // --- Desglose del error ---------------------------------------------------
+  // El error puro son las corridas con IDENTICA combinacion de niveles: su
+  // dispersion no la explica ningun modelo, porque no hay nada que la
+  // distinga. Se agrupa por la clave de niveles codificados, asi que sirve
+  // igual para replicas de esquina que para puntos centrales.
+  const errorParts: ErrorPart[] = [];
+  if (!usedLenth && dfe > 0) {
+    const byLevels = new Map<string, number[]>();
+    for (let i = 0; i < n; i++) {
+      const key = coded.map((c) => c[i]).join("|");
+      const g = byLevels.get(key);
+      if (g) g.push(y[i]);
+      else byLevels.set(key, [y[i]]);
+    }
+    let ssPE = 0;
+    let dfPE = 0;
+    for (const vals of byLevels.values()) {
+      if (vals.length < 2) continue;
+      const mu = vals.reduce((a, b) => a + b, 0) / vals.length;
+      ssPE += vals.reduce((a, v) => a + (v - mu) * (v - mu), 0);
+      dfPE += vals.length - 1;
+    }
+
+    if (dfPE > 0 && dfPE < dfe) {
+      // La curvatura solo se desglosa aqui cuando NO esta en el modelo: si lo
+      // esta, ya tiene su propia fila entre los grupos.
+      let ssCurv = 0;
+      let dfCurv = 0;
+      let mseCurv = fit.errMS;
+      if (!useCtPt && hasCenterPoints) {
         const sub = multiRegressionFit(
-          keepIdx.map((i) => X[i]),
+          [...X, ctPtCol],
           y,
-          keepIdx.map((i) => modelTerms[i].key)
+          [...modelTerms.map((t) => t.key), CT_PT_KEY]
         );
-        ss = sub ? sub.errSS - fit.errSS : NaN;
+        if (sub && sub.errDF > 0) {
+          ssCurv = fit.errSS - sub.errSS;
+          dfCurv = 1;
+          // El MS del error CON la curvatura dentro: contrastarla contra un
+          // error que ella misma infla la esconderia.
+          mseCurv = sub.errMS;
+        }
       }
-      const df = members.length;
-      const ms = ss / df;
-      const f = ms / fit.errMS;
-      groups.push({
-        label: GROUP_LABEL[o] ?? `${o}-Way Interactions`,
-        df,
-        ss,
-        ms,
-        f,
-        p: fSf(f, df, dfe),
-        members,
+
+      const msPE = ssPE / dfPE;
+      const dfLOF = dfe - dfCurv - dfPE;
+      const ssLOF = fit.errSS - ssCurv - ssPE;
+
+      if (dfCurv > 0) {
+        const f = ssCurv / dfCurv / mseCurv;
+        errorParts.push({
+          label: "Curvature",
+          df: dfCurv,
+          ss: ssCurv,
+          ms: ssCurv / dfCurv,
+          f,
+          p: fSf(f, dfCurv, dfe - dfCurv),
+          indent: 1,
+        });
+      }
+      if (dfLOF > 0) {
+        // La falta de ajuste se contrasta contra el error PURO: la pregunta es
+        // si el desajuste supera el ruido de repetir la misma corrida.
+        const f = ssLOF / dfLOF / msPE;
+        errorParts.push({
+          label: "Lack-of-Fit",
+          df: dfLOF,
+          ss: ssLOF,
+          ms: ssLOF / dfLOF,
+          f,
+          p: fSf(f, dfLOF, dfPE),
+          indent: 1,
+        });
+      }
+      errorParts.push({
+        label: "Pure Error",
+        df: dfPE,
+        ss: ssPE,
+        ms: msPE,
+        f: NaN,
+        p: NaN,
+        indent: dfLOF > 0 ? 2 : 1,
       });
     }
   }
-
+  
   // --- Ecuacion en unidades no codificadas ----------------------------------
   // Solo los terminos factoriales se decodifican, y su indice en el ajuste
   // arranca en nBlk porque los bloques van delante.
@@ -487,21 +681,25 @@ export function computeDoeAnalyze(
   }
 
   // --- Observaciones inusuales ---------------------------------------------
+  // Con el modelo saturado la palanca vale 1 en toda corrida y el residuo es
+  // cero: marcar las dieciseis como inusuales seria ruido, no informacion.
   const leverageLimit = Math.min(0.99, (3 * fit.p) / n);
   const unusual: UnusualRow[] = [];
-  for (let i = 0; i < n; i++) {
-    const large = Math.abs(fit.stdResid[i]) > 2;
-    const highX = fit.leverage[i] > leverageLimit;
-    if (!large && !highX) continue;
-    unusual.push({
-      obs: i + 1,
-      y: y[i],
-      fit: fit.fitted[i],
-      resid: fit.resid[i],
-      stdResid: fit.stdResid[i],
-      largeResid: large,
-      unusualX: highX,
-    });
+  if (!usedLenth) {
+    for (let i = 0; i < n; i++) {
+      const large = Math.abs(fit.stdResid[i]) > 2;
+      const highX = fit.leverage[i] > leverageLimit;
+      if (!large && !highX) continue;
+      unusual.push({
+        obs: i + 1,
+        y: y[i],
+        fit: fit.fitted[i],
+        resid: fit.resid[i],
+        stdResid: fit.stdResid[i],
+        largeResid: large,
+        unusualX: highX,
+      });
+    }
   }
 
   // --- Graficos de efectos --------------------------------------------------
@@ -579,16 +777,65 @@ export function computeDoeAnalyze(
     }
   }
 
-  // --- Alias ----------------------------------------------------------------
-  // Los bloques aparecen como lineas propias tras la identidad: cuando el
-  // bloqueo es por replica cada uno es estimable por si mismo.
+  // Con que interaccion esta confundido cada bloque. Al partir una replica, la
+  // columna de bloque COINCIDE con una columna de interaccion: esa interaccion
+  // deja de ser estimable y hay que decirlo, o el usuario creera que la tiene.
+  // Se busca sobre todos los ordenes, no solo hasta maxOrder: en un 2^4 en dos
+  // bloques la palabra es ABCD, que con orden 2 no esta en la lista de terminos.
+  const everyTerm = buildTerms(facNames, facNames.length);
+  const everyCol = everyTerm.map((t) => {
+    const col = termColumn(coded, t);
+    return cornerIdx.map((i) => col[i]);
+  });
+
+  const blockConfounded = blkTerms.map((_, bi) => {
+    const bc = cornerIdx.map((i) => blkCols[bi][i]);
+    for (let j = 0; j < everyTerm.length; j++) {
+      const col = everyCol[j];
+      let same = true;
+      let opp = true;
+      for (let i = 0; i < bc.length; i++) {
+        if (bc[i] !== col[i]) same = false;
+        if (bc[i] !== -col[i]) opp = false;
+        if (!same && !opp) break;
+      }
+      // El signo de la coincidencia no se rotula: lo confundido es el bloque
+      // con la interaccion en ambos casos, y solo cambiaria el signo de una
+      // estimacion que no se imprime. Escribirlo como resta contradice el pie
+      // de la tabla, que promete una suma.
+      if (same || opp) return { term: everyTerm[j].letters };
+    }
+    // Bloqueo por replica: cada bloque tiene todas las esquinas y no confunde.
+    return null;
+  });
+
+  // Lo confundido con un bloque no se lista dos veces: su sitio es la linea del
+  // bloque. Si ademas arrastraba alias propios, se llevan alli, porque todo lo
+  // de esa linea es indistinguible entre si.
+  const blockPartners = new Set(
+    blockConfounded.filter((c) => c !== null).map((c) => c!.term)
+  );
+  const aliasRest = aliasFac.filter((g) => !blockPartners.has(g.term));
   const aliases = useBlocks
     ? [
-        ...aliasFac.slice(0, 1),
-        ...blkTerms.map((t) => ({ term: t.letters, aliases: [] as string[] })),
-        ...aliasFac.slice(1),
+        ...aliasRest.slice(0, 1),
+        ...blkTerms.map((t, i) => {
+          const c = blockConfounded[i];
+          if (c === null) return { term: t.letters, aliases: [] as string[] };
+          const grp = aliasFac.find((g) => g.term === c.term);
+          return {
+            term: `${t.letters} + ${c.term}`,
+            aliases: grp ? [...grp.aliases] : [],
+          };
+        }),
+        ...aliasRest.slice(1),
       ]
     : aliasFac;
+
+  // Un bloque confundido con una interaccion es aliasing, y el cierre del
+  // informe no puede seguir diciendo que nada lo esta.
+  const cleanAliases =
+    aliasClean && blockConfounded.every((c) => c === null);
 
   return {
     ok: true,
@@ -598,6 +845,7 @@ export function computeDoeAnalyze(
     fit,
     rows,
     groups,
+    errorParts,
     modelDF: fit.regDF,
     modelSS: fit.regSS,
     modelMS: fit.regMS,
@@ -607,7 +855,10 @@ export function computeDoeAnalyze(
     unusual,
     leverageLimit,
     aliases,
-    aliasClean,
+    aliasClean: cleanAliases,
+    removedAliased,
+    droppedCtPt,
+    requestedTerms: requested.length,
     hasCenterPoints,
     nCenterPoints,
     centerFactors,
@@ -671,8 +922,8 @@ function buildAdvice(
       `the response is a plane between the levels.`
     : "";
   const blkNote = useBlocks
-    ? ` Neither are the block terms: they record how the experiment was actually ` +
-      `run, not a hypothesis about the process.`
+    ? ` The block terms are never proposed for removal either: they record how ` +
+      `the experiment was actually run, not a hypothesis about the process.`
     : "";
 
   if (worst && worst.p > alpha) {

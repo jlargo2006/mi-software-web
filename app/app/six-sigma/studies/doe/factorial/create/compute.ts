@@ -7,6 +7,8 @@ import {
   blockAssignment,
   blockOptions,
   mulberry32,
+  resolutionWithBlocksOf,
+  ROMAN,
   shuffle,
   splitBlocks,
   standardMatrix,
@@ -25,6 +27,16 @@ const num = (s: string): number => {
 };
 
 const fail = (error: string): DoeCreateResult => ({ ok: false, error });
+
+/**
+ * Orden canonico de terminos: primero por numero de letras, luego alfabetico.
+ *
+ * Es el criterio de Minitab, y no es cosmetico: el primer termino de cada
+ * renglon es el nombre con el que ese efecto aparece luego en la tabla de
+ * efectos, asi que ambas salidas tienen que coincidir.
+ */
+const byOrderThenAlpha = (a: string, b: string): number =>
+  a.length - b.length || a.localeCompare(b);
 
 /** Semilla por omision: fija, para que dos Run seguidos den lo mismo. */
 const DEFAULT_SEED = 20240101;
@@ -125,15 +137,13 @@ export function computeDoeCreate(
   // primera, y los puntos centrales van al final de cada bloque.
   const repsPerGroup = replicates / split.repGroups;
   const built: DesignRow[] = [];
-  let std = 0;
   for (let rep = 0; rep < replicates; rep++) {
     // Las replicas se reparten en grupos; dentro de cada grupo, la particion
     // por el signo de una interaccion completa el numero de bloques.
     const group = Math.floor(rep / repsPerGroup);
     for (let i = 0; i < matrix.length; i++) {
-      std++;
       built.push({
-        stdOrder: std,
+        stdOrder: 0,
         runOrder: 0,
         centerPt: 1,
         block: group * within + blockOf[i],
@@ -143,9 +153,8 @@ export function computeDoeCreate(
   }
   for (let b = 1; b <= blocks; b++) {
     for (let c = 0; c < centerPerBlock; c++) {
-      std++;
       built.push({
-        stdOrder: std,
+        stdOrder: 0,
         runOrder: 0,
         centerPt: 0,
         block: b,
@@ -154,6 +163,16 @@ export function computeDoeCreate(
     }
   }
 
+  // El StdOrder se numera con las filas YA agrupadas por bloque, no en orden
+  // de Yates: es lo que hace Minitab, y lo que permite que sin aleatorizar
+  // StdOrder y RunOrder coincidan. Numerar antes de reordenar dejaria una
+  // columna que no describe ningun orden real de la hoja.
+  const byBlock: DesignRow[] = [];
+  for (let b = 1; b <= blocks; b++) {
+    byBlock.push(...built.filter((r) => r.block === b));
+  }
+  const numbered = byBlock.map((r, i) => ({ ...r, stdOrder: i + 1 }));
+  
   // --- Aleatorizacion -------------------------------------------------------
   // Se aleatoriza DENTRO de cada bloque: mezclar entre bloques destruiria el
   // bloqueo, que existe justamente para agrupar corridas contiguas.
@@ -164,11 +183,11 @@ export function computeDoeCreate(
   if (params.randomize) {
     const rnd = mulberry32(seedUsed);
     for (let b = 1; b <= blocks; b++) {
-      ordered.push(...shuffle(built.filter((r) => r.block === b), rnd));
+      ordered.push(...shuffle(numbered.filter((r) => r.block === b), rnd));
     }
   } else {
     for (let b = 1; b <= blocks; b++) {
-      ordered.push(...built.filter((r) => r.block === b));
+      ordered.push(...numbered.filter((r) => r.block === b));
     }
   }
   ordered = ordered.map((r, i) => ({ ...r, runOrder: i + 1 }));
@@ -204,9 +223,43 @@ export function computeDoeCreate(
     ...r.coded.map((c, fi) => decode(fi, c)),
   ]);
 
-  const alias =
+  // --- Alias ----------------------------------------------------------------
+  const rawAlias =
     design.gens.length === 0 ? [] : aliasStructure(k, design.base, design.gens, 2);
 
+  // El generador produce los renglones en orden de Yates, que delata el
+  // algoritmo. Se reordena dentro de cada renglon y entre renglones.
+  const alias = rawAlias
+    .map((row) => {
+      if (row.term === "I") {
+        return { term: "I", aliases: [...row.aliases].sort(byOrderThenAlpha) };
+      }
+      const all = [row.term, ...row.aliases].sort(byOrderThenAlpha);
+      return { term: all[0], aliases: all.slice(1) };
+    })
+    // `I` encabeza siempre: es la relacion de definicion, no un efecto.
+    .sort((x, y) =>
+      x.term === "I" ? -1 : y.term === "I" ? 1 : byOrderThenAlpha(x.term, y.term)
+    );
+
+  // `gens` guarda solo la palabra ("AB"); la letra del factor generado es
+  // implicita por posicion, la misma convencion que usa definingWords.
+  const generators = design.gens
+    .map((g, i) => `${String.fromCharCode(65 + design.base + i)} = ${g}`)
+    .join("; ");
+
+  // Resolucion contando los bloques. Minitab la declara aparte porque puede
+  // ser distinta de la del diseno: trata el bloque como un factor mas, asi
+  // que Blk = ABCD es una palabra de longitud 5 y da resolucion V incluso en
+  // un factorial completo, que sin bloques no tiene resolucion finita.
+  //
+  // Vacia cuando no hay nada confundido: sin bloques, o con bloques que
+  // agrupan replicas enteras. En ese caso la linea no se imprime.
+  const resWithBlocks =
+    confounded.length === 0
+      ? 0
+      : resolutionWithBlocksOf(k, design.base, design.gens, confounded);
+  
   return {
     ok: true,
     numFactors: k,
@@ -214,6 +267,8 @@ export function computeDoeCreate(
     designLabel: design.label,
     notation: design.notation,
     resolutionLabel: design.resolutionLabel,
+    resolutionWithBlocks:
+      resWithBlocks === 0 ? "" : (ROMAN[resWithBlocks] ?? String(resWithBlocks)),    
     isFull: design.gens.length === 0,
     totalRuns: ordered.length,
     replicates,
@@ -227,6 +282,14 @@ export function computeDoeCreate(
     factors,
     rows: ordered,
     alias,
+    generators,
+    // "I = ABD = ACE = BCDE". Es el renglon de la identidad reescrito: define
+    // la fraccion por completo, mientras que "1/4, resolucion III" no dice
+    // cual de las fracciones posibles es.
+    definingRelation:
+      alias.length > 0 && alias[0].term === "I"
+        ? ["I", ...alias[0].aliases].join(" = ")
+        : "",
     blockConfounded: confounded,
     sheetHeaders,
     sheetRows,

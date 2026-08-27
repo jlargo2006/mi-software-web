@@ -278,3 +278,26 @@ function stdWithinPooled(data: number[], k: number): number {
   }
   return den > 0 ? Math.sqrt(num / den) : 0;
 }
+
+/**
+ * Redondeo bancario (half-to-even), el de Minitab y el de IEEE 754.
+ *
+ * toFixed no sirve: resuelve los empates segun el binario subyacente, asi que
+ * 1,7475 sube a 1,748 y 1,0005 baja a 1,000 sin regla que el usuario pueda
+ * anticipar. Aqui el empate va siempre a la cifra par, que ademas evita que
+ * una columna de valores redondeados acumule sesgo al sumarse.
+ *
+ * El desplazamiento se hace sobre la cadena exponencial, no multiplicando por
+ * 10^d: el producto introduce su propio error binario y volveria a desnivelar
+ * los empates, que es justo lo que se quiere evitar.
+ */
+export function roundHalfEven(x: number, digits: number): number {
+  if (!Number.isFinite(x)) return x;
+  const [mant, exp] = x.toExponential(20).split("e");
+  const shifted = Number(`${mant}e${Number(exp) + digits}`);
+  const fl = Math.floor(shifted);
+  const diff = shifted - fl;
+  const n = diff > 0.5 ? fl + 1 : diff < 0.5 ? fl : fl % 2 === 0 ? fl : fl + 1;
+  return Number(`${n}e${-digits}`);
+}
+

@@ -112,12 +112,12 @@ export default function HTPairedTResults({
       showlegend: false,
     },
   ];
-  const histLayout: Partial<Layout> = {
+  const histLayout = {
     margin: { l: 60, r: 30, t: 10, b: 40 },
     xaxis: { title: { text: "Differences" }, range: xRange },
     yaxis: { title: { text: "Frequency" } },
     bargap: 0.02,
-  };
+  } as  Partial<Layout>;
 
   // --- Individual value plot (jitter reproducible) ---
   const jitter = d.map((_, i) => {

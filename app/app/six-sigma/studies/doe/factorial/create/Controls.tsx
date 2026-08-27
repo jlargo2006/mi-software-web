@@ -65,7 +65,10 @@ export default function DoeCreateControls({
   // admite valores que no son potencia de dos, como 3 bloques con 3 replicas.
   const reps = Number(params.replicates);
   const repsOk = Number.isInteger(reps) && reps >= 1 && reps <= 10;
-  const blocksAvail = chosen && repsOk ? blockOptions(chosen.base, reps) : [1];
+  // blockOptions espera CORRIDAS base, no factores base: chosen.base es el
+  // log2 y dejaria el tope de particiones internas en base/2 en vez de
+  // runs/2, ocultando la mitad larga de las opciones.
+  const blocksAvail = chosen && repsOk ? blockOptions(chosen.runs, reps) : [1];
 
   /** Cambiar las replicas invalida la eleccion de bloques. */
   const changeReplicates = (txt: string) => {
@@ -79,7 +82,7 @@ export default function DoeCreateControls({
 
   const chosenSplit =
     chosen && repsOk
-      ? splitBlocks(chosen.base, reps, Number(params.blocks))
+      ? splitBlocks(chosen.runs, reps, Number(params.blocks))
       : null;
 
   return (
@@ -202,7 +205,7 @@ export default function DoeCreateControls({
           >
             {blocksAvail.map((b) => {
               // Si cada bloque cabe una replica entera, no se confunde nada.
-              const sp = chosen ? splitBlocks(chosen.base, reps, b) : null;
+              const sp = chosen ? splitBlocks(chosen.runs, reps, b) : null;
               const clean = sp !== null && sp.within === 1;
               return (
                 <option key={b} value={String(b)}>
