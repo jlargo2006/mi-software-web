@@ -374,7 +374,8 @@ export default function CapPoissonResults({
             <p className="mt-2">
               Note the direction. Sample{r.aboveUcl.length === 1 ? " " : "s "}
               <b>{r.aboveUcl.join(", ")}</b> sit above the upper limit, but{" "}
-              <b>{r.belowLcl.join(", ")}</b> fall <em>below</em> the lower one.
+              <b>{r.belowLcl.join(", ")}</b> fall
+              {r.belowLcl.length === 1 ? "s" : ""} <em>below</em> the lower one.
               A point under the LCL is not a problem to fix: it is a period that
               went better than the process can normally hold, and it is worth
               understanding for the opposite reason.
