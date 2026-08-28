@@ -7,6 +7,7 @@ import { capability } from "./capability/normal";
 import capBinomial from "./capability/binomial";
 import capPoisson from "./capability/poisson";
 import capSixpack from "./capability/sixpack";
+import iddist from "./capability/iddist";
 import capNonnormal from "./capability/nonnormal";
 import { descriptive } from "./descriptive";
 import graphicalSummary from "./graphicalSummary";
@@ -60,6 +61,7 @@ const ALL: ArtifactDefinition[] = [
   capBinomial,
   capSixpack,
   capPoisson,
+  iddist,
   capNonnormal,
   descriptive,
   graphicalSummary,
