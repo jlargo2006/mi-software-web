@@ -1,6 +1,7 @@
 // app/app/six-sigma/studies/capability/binomial/compute.ts
 import type { ColumnSnapshot } from "../../types";
 import { normInv } from "../../../lib/stats";
+import { logGamma } from "../../../lib/stats";
 import type {
   BinomialPoint,
   CapBinomialParams,
@@ -30,19 +31,6 @@ const fail = (error: string): CapBinomialResult => ({ ok: false, error });
 // --- Beta incompleta regularizada, por fraccion continua (Lentz) ------------
 // Necesaria para el intervalo exacto de Clopper-Pearson: la aproximacion
 // normal no reproduce los limites de Minitab y ademas se rompe con p pequeno.
-
-function logGamma(x: number): number {
-  const c = [
-    76.18009172947146, -86.50532032941677, 24.01409824083091,
-    -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5,
-  ];
-  let y = x;
-  let tmp = x + 5.5;
-  tmp -= (x + 0.5) * Math.log(tmp);
-  let ser = 1.000000000190015;
-  for (let j = 0; j < 6; j++) ser += c[j] / ++y;
-  return -tmp + Math.log((2.5066282746310005 * ser) / x);
-}
 
 function betaCF(a: number, b: number, x: number): number {
   const MAXIT = 300;
