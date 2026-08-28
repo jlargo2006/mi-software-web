@@ -301,3 +301,26 @@ export function roundHalfEven(x: number, digits: number): number {
   return Number(`${n}e${-digits}`);
 }
 
+/** log Γ(x), aproximacion de Lanczos. */
+export function logGamma(x: number): number {
+  const c = [
+    76.18009172947146, -86.50532032941677, 24.01409824083091,
+    -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5,
+  ];
+  let y = x;
+  let tmp = x + 5.5;
+  tmp -= (x + 0.5) * Math.log(tmp);
+  let ser = 1.000000000190015;
+  for (let j = 0; j < 6; j++) ser += c[j] / ++y;
+  return -tmp + Math.log((2.5066282746310005 * ser) / x);
+}
+
+/**
+ * Constante de no sesgo: si s es la desviacion muestral de m observaciones
+ * normales, E[s] = c4(m) · sigma. Siempre menor que 1, tiende a 1 con m.
+ */
+export function c4(m: number): number {
+  if (m < 2) return 1;
+  return Math.sqrt(2 / (m - 1)) * Math.exp(logGamma(m / 2) - logGamma((m - 1) / 2));
+}
+
