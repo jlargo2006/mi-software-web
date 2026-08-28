@@ -61,7 +61,7 @@ export default function CapSixpackResults({
     // La modebar en vertical libera la esquina superior derecha, que es donde
     // caen las anotaciones de UCL.
     modebar: { orientation: "v" },
-    margin: { l: 52, r: 78, t: 14, b: 36 },
+    margin: { l: 52, r: 104, t: 14, b: 36 },
   };
 
   /** Rango de eje con holgura: los limites nunca quedan pegados al borde. */
@@ -206,7 +206,7 @@ export default function CapSixpackResults({
 
   const histLayout: Partial<Layout> = {
     ...base,
-    margin: { l: 52, r: 86, t: 14, b: 36 },
+    margin: { l: 52, r: 112, t: 14, b: 36 },
     bargap: 0.02,
     xaxis: { range: [hx0, hx1], zeroline: false },
     yaxis: { title: { text: "Frequency" }, zeroline: false },
@@ -338,7 +338,7 @@ export default function CapSixpackResults({
 
   const probLayout: Partial<Layout> = {
     ...base,
-    margin: { l: 52, r: 24, t: 14, b: 36 },
+    margin: { l: 52, r: 50, t: 14, b: 36 },
     xaxis: { zeroline: false, range: padded([fitAt(-3.2), fitAt(3.2)], 0.04) },
     yaxis: { title: { text: "Normal score" }, zeroline: false, range: [-3.3, 3.3] },
     annotations: [
@@ -388,7 +388,7 @@ export default function CapSixpackResults({
 
   const lastLayout: Partial<Layout> = {
     ...base,
-    margin: { l: 52, r: 24, t: 14, b: 36 },
+    margin: { l: 52, r: 50, t: 14, b: 36 },
     xaxis: { title: { text: "Sample" }, zeroline: false },
     yaxis: { title: { text: "Values" }, zeroline: false },
   };
@@ -506,7 +506,7 @@ export default function CapSixpackResults({
 
   const capLayout: Partial<Layout> = {
     ...base,
-    margin: { l: 62, r: 24, t: 58, b: 36 },
+    margin: { l: 62, r: 30, t: 58, b: 36 },
     xaxis: { range: capRange, zeroline: false },
     yaxis: {
       range: [0.45, 3.55],
@@ -552,14 +552,6 @@ export default function CapSixpackResults({
     ],
   };
 
-  const statRow = (label: string, a: string, b: string): React.ReactElement => (
-    <tr key={label}>
-      <td className="py-0.5 pr-4 text-gray-600">{label}</td>
-      <td className="py-0.5 pr-4 text-right">{a}</td>
-      <td className="py-0.5 text-right">{b}</td>
-    </tr>
-  );
-
   const nonNormal = Number.isFinite(r.adPValue) && r.adPValue < 0.05;
   const unstable = r.xbarOut.length > 0 || r.spreadOut.length > 0;
 
@@ -588,28 +580,6 @@ export default function CapSixpackResults({
         <Panel title="Capability Plot" height={288}>
           <ResultChart data={capData} layout={{ autosize: true, ...capLayout }} />
         </Panel>
-      </div>
-
-      <div className="flex justify-center">
-        <div className="rounded border border-gray-200 px-6 py-3">
-          <table className="text-sm">
-            <thead>
-              <tr className="text-xs text-gray-500">
-                <th />
-                <th className="pr-4 text-right font-medium">Within</th>
-                <th className="text-right font-medium">Overall</th>
-              </tr>
-            </thead>
-            <tbody>
-              {statRow("StDev", fx(r.stdWithin), fx(r.stdOverall))}
-              {r.lsl !== null &&
-                r.usl !== null &&
-                statRow("Cp / Pp", fx(r.cp, 2), fx(r.pp, 2))}
-              {statRow("Cpk / Ppk", fx(r.cpk, 2), fx(r.ppk, 2))}
-              {statRow("PPM", fx(r.ppmWithin, 2), fx(r.ppmOverall, 2))}
-            </tbody>
-          </table>
-        </div>
       </div>
 
       <p className="text-center text-xs text-gray-500">
