@@ -3,7 +3,8 @@ import type { ArtifactDefinition } from "./types";
 import { fishbone } from "./fishbone";
 import { pareto } from "./pareto";
 import { normality } from "./normality";
-import { capability } from "./capability";
+import { capability } from "./capability/normal";
+import capBinomial from "./capability/binomial";
 import { descriptive } from "./descriptive";
 import graphicalSummary from "./graphicalSummary";
 import histogram from "./histogram";
@@ -53,6 +54,7 @@ const ALL: ArtifactDefinition[] = [
   pareto,
   normality,
   capability,
+  capBinomial,
   descriptive,
   graphicalSummary,
   histogram,
