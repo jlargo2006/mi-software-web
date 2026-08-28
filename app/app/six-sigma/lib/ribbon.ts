@@ -83,6 +83,7 @@ export const PHASES: RibbonPhase[] = [
           // p.590 | mtw: Cycletime_bankers.mtw  (Individual Distribution ID / Non-Normal)
           { id: "capNonnormal", label: "Non-Normal", tool: null, enabled: false },
           { id: "capBinomial", label: "Binomial", tool: "capBinomial", enabled: true },
+          { id: "capPoisson", label: "Poisson", tool: "capPoisson", enabled: true },
         ],
       },
 
