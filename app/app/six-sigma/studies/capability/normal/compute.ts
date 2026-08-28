@@ -1,7 +1,7 @@
-// studies/capability/compute.ts
+// studies/capability/normal/compute.ts
 import type { ColumnSnapshot } from "../../types";
 import type { CapabilityParams, CapabilityResult } from "./types";
-import { mean, std, normCDF, normInv, toNumericCells } from "../../../lib/stats";
+import { mean, std, normCDF, normInv, toNumericCells, c4 } from "../../../lib/stats";
 
 // --- StDev(Within), subgrupo = 1 -> rango movil / d2 (d2 = 1.128) ---
 function stdWithinMovingRange(data: number[]): number {
@@ -12,7 +12,7 @@ function stdWithinMovingRange(data: number[]): number {
   return mrBar / 1.128;
 }
 
-// --- StDev(Within), subgrupo > 1 -> pooled ---
+// --- StDev(Within), subgrupo > 1 -> pooled con correccion de sesgo ---
 function stdWithinPooled(data: number[], k: number): number {
   if (k < 2) return stdWithinMovingRange(data);
   let num = 0;
@@ -24,7 +24,11 @@ function stdWithinPooled(data: number[], k: number): number {
     num += ss;
     den += k - 1;
   }
-  return den > 0 ? Math.sqrt(num / den) : 0;
+  if (den <= 0) return 0;
+  // s_pooled estima sin sesgo la VARIANZA, pero su raiz subestima sigma:
+  // E[s] = c4 · sigma. Minitab corrige por defecto, con c4 evaluada en los
+  // grados de libertad mas uno. Sin esto Cp sale 0,79 donde Minitab da 0,78.
+  return Math.sqrt(num / den) / c4(den + 1);
 }
 
 const parseNum = (s: string): number | null => {
