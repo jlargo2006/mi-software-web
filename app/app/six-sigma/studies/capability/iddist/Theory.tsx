@@ -96,8 +96,8 @@ const ES = () => (
       </p>
       <p>
         Las posiciones de trazado son rangos medianos de Benard:{" "}
-        <V>p</V><Sub>i</Sub> = ({V ? "i" : "i"} {"\u2212"} 0,3) / (<V>n</V> +
-        0,4).<Cite>7</Cite>
+        <V>p</V><Sub>i</Sub> = (<V>i</V> {"\u2212"} 0,3) / (<V>n</V> + 0,4).
+        <Cite>7</Cite>
       </p>
       <Note>
         La <strong>gamma es la excepci&oacute;n</strong>: no es
