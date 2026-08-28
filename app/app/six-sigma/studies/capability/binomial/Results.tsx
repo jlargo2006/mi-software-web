@@ -261,10 +261,9 @@ export default function CapBinomialResults({
   const hLo = Math.min(...pcts);
   const hHi = Math.max(...pcts);
   // Regla de Sturges, redondeada a un ancho legible.
-  const rawW = (hHi - hLo) / Math.ceil(Math.log2(r.k) + 1) || 1;
-  const mag = Math.pow(10, Math.floor(Math.log10(rawW)));
-  const nw = rawW / mag;
-  const binW = (nw <= 1 ? 1 : nw <= 2 ? 2 : nw <= 5 ? 5 : 10) * mag;
+  // Regla de Rice: mas sensible que Sturges con pocos subgrupos.
+  const rawW = (hHi - hLo) / Math.ceil(2 * Math.pow(r.k, 1 / 3)) || 1;
+  const binW = rawW >= 1 ? Math.max(1, Math.round(rawW)) : rawW;
   const binStart = Math.floor(hLo / binW) * binW;
   
   const histChart: Data[] = [
