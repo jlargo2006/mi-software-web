@@ -306,7 +306,7 @@ const EN = () => (
 
     <Section title="Subgroup size is not in the data">
       <Warn>
-        It is an <strong>analyst's decision</strong>, and it drives the result
+        It is an <strong>analyst&apos;s decision</strong>, and it drives the result
         more than any computational detail.
       </Warn>
       <p>
