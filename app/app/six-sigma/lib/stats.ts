@@ -43,6 +43,17 @@ export function normCDF(z: number): number {
   return p;
 }
 
+/**
+ * Densidad Normal. Necesaria para superponer la curva ajustada sobre un
+ * histograma de frecuencias: hay que escalarla por n · anchura_de_clase,
+ * porque la densidad integra a 1 y el histograma cuenta observaciones.
+ */
+export function normPDF(x: number, mu = 0, sigma = 1): number {
+  if (!(sigma > 0)) return 0;
+  const z = (x - mu) / sigma;
+  return Math.exp(-0.5 * z * z) / (sigma * Math.sqrt(2 * Math.PI));
+}
+
 // --- Convierte una columna del grid en números válidos ---
 export function toNumericColumn(values: (string | number)[]): number[] {
   return values
