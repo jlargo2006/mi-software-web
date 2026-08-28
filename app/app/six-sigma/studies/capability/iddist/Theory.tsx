@@ -324,7 +324,8 @@ const EN = () => (
       <p>
         Johnson is more flexible: three families {"\u2014"} S<Sub>B</Sub> bounded,
         S<Sub>L</Sub> lognormal, S<Sub>U</Sub> unbounded {"\u2014"} selected by
-        Chou's procedure, sweeping a grid of <V>z</V> values and keeping the best
+        Chou{"\u2019"}s procedure, sweeping a grid of <V>z</V> values and keeping
+        the best
         AD.<Cite>5</Cite>
       </p>
       <Warn>
