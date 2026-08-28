@@ -84,6 +84,7 @@ export const PHASES: RibbonPhase[] = [
           { id: "capNonnormal", label: "Non-Normal", tool: null, enabled: false },
           { id: "capBinomial", label: "Binomial", tool: "capBinomial", enabled: true },
           { id: "capPoisson", label: "Poisson", tool: "capPoisson", enabled: true },
+          { id: "capSixpack", label: "Normal Sixpack", tool: "capSixpack", enabled: true },
         ],
       },
 
