@@ -1,7 +1,6 @@
 // app/app/six-sigma/studies/capability/binomial/compute.ts
 import type { ColumnSnapshot } from "../../types";
-import { normInv } from "../../../lib/stats";
-import { logGamma } from "../../../lib/stats";
+import { normInv, logGamma } from "../../../lib/stats";
 import type {
   BinomialPoint,
   CapBinomialParams,
