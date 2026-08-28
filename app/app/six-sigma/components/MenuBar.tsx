@@ -203,10 +203,17 @@ export default function MenuBar({
                   role="menu"
                   className="absolute left-0 top-full mt-1 w-48 bg-white rounded shadow-lg border border-gray-200 py-1 z-50"
                 >
-                  {t.children.map((c) => (
-                    <button
-                      key={c.id}
-                      onClick={() => handleChildClick(c)}
+                  {t.children.map((c) =>
+                    c.separator ? (
+                      <div
+                        key={c.id}
+                        className="my-1 border-t border-gray-200"
+                      />
+                    ) : (
+                      <button
+                        key={c.id}
+                        onClick={() => handleChildClick(c)}
+
                       disabled={!c.enabled}
                       className={`w-full text-left px-4 py-2 text-sm ${
                         c.enabled
@@ -215,9 +222,10 @@ export default function MenuBar({
                       }`}
                       title={c.enabled ? "" : "Coming soon"}
                     >
-                      {c.label}
-                    </button>
-                  ))}
+                        {c.label}
+                      </button>
+                    )
+                  )}
                 </div>
               )}
             </div>
