@@ -724,10 +724,10 @@ export function fitJohnson(x: number[]): JohnsonFit | null {
 
   for (let zi = 0; zi < 70; zi++) {
     const z = 0.25 + zi * 0.05;
-    const x3 = quant(normCDF(z));
-    const x1 = quant(normCDF(-z));
-    const x2 = quant(normCDF(z / 3));
-    const x0 = quant(normCDF(-z / 3));
+    const x3 = quant(normCDF(3 * z));
+    const x2 = quant(normCDF(z));
+    const x0 = quant(normCDF(-z));
+    const x1 = quant(normCDF(-3 * z));
 
     const m = x3 - x2;
     const nn = x0 - x1;
