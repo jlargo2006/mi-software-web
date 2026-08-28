@@ -24,11 +24,12 @@ export type ToolId =
 export interface RibbonTool {
   id: string;              // unique id
   label?: string;
-  tool?: ToolId;           // which real analysis it triggers (null = not implemented)
+  tool?: ToolId;            // which real analysis it triggers (null = not implemented)
   enabled?: boolean;       // false = greyed-out placeholder
   children?: RibbonTool[]; // for grouped items (Capability, Graphs, Regression...)
-  separator?: boolean;     // divisoria visual, sin accion
+  separator?: boolean;     // divisoria visual dentro de un submenu, sin accion
 }
+
 export interface RibbonPhase {
   name: string;
   tools: RibbonTool[];
