@@ -80,11 +80,11 @@ export const PHASES: RibbonPhase[] = [
         children: [
           // p.215-216 | mtw: Camshaft.mtw
           { id: "capNormal", label: "Normal", tool: "capability", enabled: true },
+          { id: "capSixpack", label: "Normal Sixpack", tool: "capSixpack", enabled: true },
           // p.590 | mtw: Cycletime_bankers.mtw  (Individual Distribution ID / Non-Normal)
           { id: "capNonnormal", label: "Non-Normal", tool: null, enabled: false },
           { id: "capBinomial", label: "Binomial", tool: "capBinomial", enabled: true },
           { id: "capPoisson", label: "Poisson", tool: "capPoisson", enabled: true },
-          { id: "capSixpack", label: "Normal Sixpack", tool: "capSixpack", enabled: true },
         ],
       },
 
