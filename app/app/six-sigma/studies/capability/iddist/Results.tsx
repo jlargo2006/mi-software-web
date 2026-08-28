@@ -49,7 +49,7 @@ function Panel({ fit, values }: { fit: FamilyFit; values: number[] }) {
   const px = values.map(fit.plotX).sort((a, b) => a - b);
   const pts = px.map((v, i) => ({ x: v, p: benard(i + 1, n) }));
 
-  const zOf = (p: number) => percentToZ(fit.kernel, p);
+  const zOf = (p: number) => percentToZ(fit.kernel, p * 100);
 
   // Recta o curva ajustada, y banda de confianza si la familia la admite.
   const ps: number[] = [];
@@ -124,6 +124,7 @@ function Panel({ fit, values }: { fit: FamilyFit; values: number[] }) {
     xaxis: {
       type: fit.logAxis ? "log" : "linear",
       range,
+      dtick: fit.logAxis ? 1 : undefined,   // solo decadas
       zeroline: false,
       tickfont: { size: 9 },
       title: fit.subNote
