@@ -257,10 +257,21 @@ export default function CapBinomialResults({
   };
 
   // --- 4 · Histogram -------------------------------------------------------
+  const pcts = r.points.map((p) => p.p * 100);
+  const hLo = Math.min(...pcts);
+  const hHi = Math.max(...pcts);
+  // Regla de Sturges, redondeada a un ancho legible.
+  const rawW = (hHi - hLo) / Math.ceil(Math.log2(r.k) + 1) || 1;
+  const mag = Math.pow(10, Math.floor(Math.log10(rawW)));
+  const nw = rawW / mag;
+  const binW = (nw <= 1 ? 1 : nw <= 2 ? 2 : nw <= 5 ? 5 : 10) * mag;
+  const binStart = Math.floor(hLo / binW) * binW;
+  
   const histChart: Data[] = [
     {
       x: r.points.map((p) => p.p * 100),
       type: "histogram",
+      xbins: { start: binStart, end: hHi + binW, size: binW },
       marker: { color: "#93c5fd", line: { color: "#1e3a8a", width: 1 } },
       hovertemplate: "%Defective: %{x}<br>Frequency: %{y}<extra></extra>",
     },
