@@ -325,6 +325,15 @@ export default function CapBinomialResults({
         </Panel>
       </div>
 
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Panel title="Cumulative %Defective">
+          <ResultChart data={cumChart} layout={{ autosize: true, ...cumLayout }} />
+        </Panel>
+        <Panel title="Histogram">
+          <ResultChart data={histChart} layout={{ autosize: true, ...histLayout }} />
+        </Panel>
+      </div>
+
       {/* Bloque de estadisticos, entre las dos filas de graficos */}
       <div className="flex justify-center">
         <div className="rounded border border-gray-200 px-6 py-3">
@@ -349,17 +358,8 @@ export default function CapBinomialResults({
             </tbody>
           </table>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Panel title="Cumulative %Defective">
-          <ResultChart data={cumChart} layout={{ autosize: true, ...cumLayout }} />
-        </Panel>
-        <Panel title="Histogram">
-          <ResultChart data={histChart} layout={{ autosize: true, ...histLayout }} />
-        </Panel>
-      </div>
-
+      </div>      
+      
       {/* --- Interpretacion --- */}
       {r.outOfControl.length > 0 ? (
         <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
