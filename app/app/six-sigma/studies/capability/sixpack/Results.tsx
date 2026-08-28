@@ -61,7 +61,7 @@ export default function CapSixpackResults({
     // La modebar en vertical libera la esquina superior derecha, que es donde
     // caen las anotaciones de UCL.
     modebar: { orientation: "v" },
-    margin: { l: 52, r: 104, t: 14, b: 36 },
+    margin: { l: 52, r: 124, t: 14, b: 36 },
   };
 
   /** Rango de eje con holgura: los limites nunca quedan pegados al borde. */
