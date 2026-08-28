@@ -55,10 +55,10 @@ const REFS = [
   "AIAG (2005). Statistical Process Control (SPC) Reference Manual (2nd ed.).",
 ];
 
-const Refs = () => (
+const Refs = ({ title }: { title: string }) => (
   <section className="space-y-2">
     <h3 className="font-bold text-base text-[#00674d] border-b border-gray-200 pb-1">
-      Bibliografía / References
+      {title}
     </h3>
     <ol className="list-decimal pl-5 space-y-1 text-xs text-gray-600">
       {REFS.map((s, i) => (
@@ -214,7 +214,7 @@ const ES = () => (
       </Note>
     </Section>
 
-    <Refs />
+    <Refs title="Bibliografía" />
   </div>
 );
 
@@ -354,7 +354,7 @@ const EN = () => (
       </Note>
     </Section>
 
-    <Refs />
+    <Refs title="References" />
   </div>
 );
 
