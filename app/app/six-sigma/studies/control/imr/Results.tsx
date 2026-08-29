@@ -263,7 +263,9 @@ export default function ImrResults({ result }: { result: ImrResult }) {
       </div>
 
       {/* --- Lecturas --- */}
-      {single && s0.iLCL < 0 && (
+      {/* Solo en unidades originales: una escala transformada puede ser
+          negativa legitimamente, y el aviso senalaria un problema inexistente. */}
+      {single && s0.iLCL < 0 && r.lambda === null && (
         <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           <p className="font-semibold">The lower control limit is negative</p>
           <p className="mt-1">
