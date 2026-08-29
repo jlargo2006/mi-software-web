@@ -255,7 +255,7 @@ const EN = () => (
 
     <Section title="The eight tests, and where they apply">
       <p>
-        Nelson's tests<Cite>2</Cite> divide the band into one-sigma zones and
+        Nelson{"\u2019"}s tests<Cite>2</Cite> divide the band into one-sigma zones and
         look for patterns chance would not readily produce. Test 1 catches large
         jumps; tests 2 and 6, small sustained shifts; test 3, drift; test 7, a
         variability that is <em>too small</em>, which almost always means badly
