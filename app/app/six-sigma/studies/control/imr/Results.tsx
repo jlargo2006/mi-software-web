@@ -20,7 +20,6 @@ function Chart({
   yTitle,
   y,
   stages,
-  stageOf,
   flagged,
   pick,
   height,
@@ -29,7 +28,6 @@ function Chart({
   yTitle: string;
   y: (number | null)[];
   stages: Stage[];
-  stageOf: number[];
   flagged: number[];
   pick: (s: Stage) => { cl: number; ucl: number; lcl: number };
   height: number;
@@ -196,7 +194,6 @@ export default function ImrResults({ result }: { result: ImrResult }) {
         yTitle="Individual Value"
         y={r.values}
         stages={r.stages}
-        stageOf={r.stageOf}
         flagged={r.iFlagged}
         pick={(s) => ({ cl: s.center, ucl: s.iUCL, lcl: s.iLCL })}
         height={260}
@@ -207,7 +204,6 @@ export default function ImrResults({ result }: { result: ImrResult }) {
         yTitle="Moving Range"
         y={r.mr}
         stages={r.stages}
-        stageOf={r.stageOf}
         flagged={r.mrFlagged}
         pick={(s) => ({ cl: s.mrCenter, ucl: s.mrUCL, lcl: s.mrLCL })}
         height={220}
