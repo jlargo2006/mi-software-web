@@ -254,7 +254,7 @@ export const PHASES: RibbonPhase[] = [
         enabled: true,
         children: [
           // p.652 | mtw: Individual Chart
-          { id: "imr", label: "I-MR Chart", tool: null, enabled: false },
+          { id: "imr", label: "I-MR Chart", tool: "imr", enabled: true },
           // p.656 | mtw: hole diameter.mtw
           { id: "xbarR", label: "Xbar-R Chart", tool: null, enabled: false },
           // (—) proposed – attribute control charts
