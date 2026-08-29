@@ -95,8 +95,12 @@ function optimalLambda(x: number[]): number {
   return (a + b) / 2;
 }
 
+// Forma potencia simple, W = Y^lambda, que es la que rotula el dialogo de
+// Minitab. La forma escalada (Y^lambda - 1)/lambda es igual de valida y da los
+// mismos tests, pero desplaza y escala los numeros en pantalla.
+// El caso lambda = 0 sigue siendo el logaritmo: la potencia es indefinida ahi.
 const applyBoxCox = (v: number, lam: number): number =>
-  Math.abs(lam) < 1e-10 ? Math.log(v) : (Math.pow(v, lam) - 1) / lam;
+  Math.abs(lam) < 1e-10 ? Math.log(v) : Math.pow(v, lam);
 
 export function computeImr(
   data: ColumnSnapshot,
