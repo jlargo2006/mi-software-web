@@ -117,7 +117,12 @@ function Chart({
     modebar: { orientation: "v" },
     margin: { l: 56, r: 96, t: 24, b: 34 },
     title: { text: title, font: { size: 11 }, x: 0.02, xanchor: "left" },
-    xaxis: { title: { text: "Observation", font: { size: 10 } }, zeroline: false },
+    xaxis: {
+      title: { text: "Observation", font: { size: 10 } },
+      zeroline: false,
+      tick0: 1,
+      dtick: 20,
+    },
     yaxis: { title: { text: yTitle, font: { size: 10 } }, zeroline: false },
     shapes,
     annotations: annots,
