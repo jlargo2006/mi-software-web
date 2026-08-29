@@ -256,7 +256,7 @@ export const PHASES: RibbonPhase[] = [
           // p.652 | mtw: Individual Chart
           { id: "imr", label: "I-MR Chart", tool: "imr", enabled: true },
           // p.656 | mtw: hole diameter.mtw
-          { id: "xbarR", label: "Xbar-R Chart", tool: null, enabled: false },
+          { id: "xbarr", label: "Xbar-R Chart", tool: "xbarr", enabled: true },
           // (—) proposed – attribute control charts
           { id: "pnpChart", label: "P / NP Chart", tool: null, enabled: false },
           { id: "cuChart", label: "C / U Chart", tool: null, enabled: false },
