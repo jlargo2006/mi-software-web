@@ -264,7 +264,7 @@ export default function ImrControls({
             onChange={(v) => set({ stageCol: v })}
             columns={columns}
             minWidth={180}
-            allowNone
+//            allowNone
           />
           <p className="text-xs text-gray-500">
             A new stage starts whenever the value changes. Each stage gets its
