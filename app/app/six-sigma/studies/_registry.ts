@@ -54,6 +54,7 @@ import doeCube from "./doe/factorial/cube";
 import doeContour from "./doe/factorial/contour";
 import imr from "./control/imr";
 import xbarr from "./control/xbarr";
+import pchart from "./control/pchart";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
@@ -110,6 +111,7 @@ const ALL: ArtifactDefinition[] = [
   doeContour,
   imr,
   xbarr,
+  pchart,
 ];
 
 export const REGISTRY: Record<string, ArtifactDefinition> = Object.fromEntries(
