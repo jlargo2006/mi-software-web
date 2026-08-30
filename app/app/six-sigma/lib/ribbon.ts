@@ -255,24 +255,35 @@ export const PHASES: RibbonPhase[] = [
         enabled: true,
         children: [
           {
-            label: "Control Chart (SPC)",
-            groups: [
-              { label: "Variables Charts for Subgroups", items: [
-                  // p.656 | mtw: hole diameter.mtw
-                  { id: "xbarr", label: "Xbar-R Chart", tool: "xbarr", enabled: true },
-              ]},
-              { label: "Variables Charts for Individuals", items: [
-                  // p.652 | mtw: Individual Chart
-                  { id: "imr", label: "I-MR Chart", tool: "imr", enabled: true },
-              ]},
-              { label: "Attributes Charts", items: [
-                  { id: "pchart", label: "P Chart", tool: "pchart", enabled: true },
-              ]},
+            id: "cc-subgroups",
+            label: "Variables Charts for Subgroups",
+            tool: null,
+            enabled: true,
+            children: [
+              // p.656 | mtw: hole diameter.mtw
+              { id: "xbarr", label: "Xbar-R Chart", tool: "xbarr", enabled: true },
             ],
-          }
-
-          
-        ],
+          },
+          {
+            id: "cc-individuals",
+            label: "Variables Charts for Individuals",
+            tool: null,
+            enabled: true,
+            children: [
+              // p.652 | mtw: Individual Chart
+              { id: "imr", label: "I-MR Chart", tool: "imr", enabled: true },
+            ],
+          },
+          {
+            id: "cc-attributes",
+            label: "Attributes Charts",
+            tool: null,
+            enabled: true,
+            children: [
+              { id: "pchart", label: "P Chart", tool: "pchart", enabled: true },
+            ],
+          },
+        ],          
       },
 
       // (—) proposed
