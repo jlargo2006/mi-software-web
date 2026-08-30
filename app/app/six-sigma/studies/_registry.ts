@@ -59,6 +59,7 @@ import pchart from "./control/pchart";
 import laneyp from "./control/laneyp";
 import npchart from "./control/npchart";
 import uchart from "./control/uchart";
+import laneyu from "./control/laneyu";
 import cchart from "./control/cchart";
 
 const ALL: ArtifactDefinition[] = [
@@ -121,6 +122,7 @@ const ALL: ArtifactDefinition[] = [
   laneyp,
   npchart,
   uchart,
+  laneyu,
   cchart,
 ];
 
