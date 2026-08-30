@@ -36,7 +36,7 @@ export default function LaneyPResults({ result }: { result: LaneyPResult }) {
       y: v,
       type: "scatter",
       mode: "lines",
-      line: { color, width: 1.2, dash },
+      line: { color, width: 1.2, dash, shape: step ? "hvh" : "linear" },
       hoverinfo: "skip",
     } as unknown as Data);
 
