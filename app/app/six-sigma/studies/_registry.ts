@@ -117,7 +117,7 @@ const ALL: ArtifactDefinition[] = [
   doeCube,
   doeContour,
   imr,
-  mr,
+  mrchart,
   xbarr,
   xbars,
   pchart,
