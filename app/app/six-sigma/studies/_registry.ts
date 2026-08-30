@@ -53,6 +53,7 @@ import doeOptimizer from "./doe/factorial/optimizer";
 import doeCube from "./doe/factorial/cube";
 import doeContour from "./doe/factorial/contour";
 import imr from "./control/imr";
+import mrchart from "./control/mrchart";
 import xbarr from "./control/xbarr";
 import xbars from "./control/xbars";
 import pchart from "./control/pchart";
@@ -116,6 +117,7 @@ const ALL: ArtifactDefinition[] = [
   doeCube,
   doeContour,
   imr,
+  mr,
   xbarr,
   xbars,
   pchart,
