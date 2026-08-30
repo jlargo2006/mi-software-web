@@ -198,34 +198,67 @@ export default function MenuBar({
               </button>
 
               {/* Sub-menu for grouped tools */}
+              {/* Sub-menu for grouped tools.
+                  Un hijo con children propios no es pulsable: se dibuja como
+                  titulo de seccion y sus hijos van indentados debajo. Es la
+                  estructura de Minitab, sin necesidad de un tercer nivel
+                  flotante. */}
               {t.children && openGroup === t.id && (
                 <div
                   role="menu"
-                  className="absolute left-0 top-full mt-1 w-48 bg-white rounded shadow-lg border border-gray-200 py-1 z-50"
+                  className="absolute left-0 top-full mt-1 w-64 bg-white rounded shadow-lg border border-gray-200 py-1 z-50"
                 >
-                  {t.children.map((c) =>
-                    c.separator ? (
-                      <div
-                        key={c.id}
-                        className="my-1 border-t border-gray-200"
-                      />
-                    ) : (
+                  {t.children.map((c) => {
+                    if (c.separator) {
+                      return (
+                        <div
+                          key={c.id}
+                          className="my-1 border-t border-gray-200"
+                        />
+                      );
+                    }
+
+                    if (c.children) {
+                      return (
+                        <div key={c.id}>
+                          <div className="px-4 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                            {c.label}
+                          </div>
+                          {c.children.map((g) => (
+                            <button
+                              key={g.id}
+                              onClick={() => handleChildClick(g)}
+                              disabled={!g.enabled}
+                              className={`w-full text-left pl-7 pr-4 py-1.5 text-sm ${
+                                g.enabled
+                                  ? "text-gray-700 hover:bg-gray-100"
+                                  : "text-gray-400 cursor-not-allowed"
+                              }`}
+                              title={g.enabled ? "" : "Coming soon"}
+                            >
+                              {g.label}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    }
+
+                    return (
                       <button
                         key={c.id}
                         onClick={() => handleChildClick(c)}
-
-                      disabled={!c.enabled}
-                      className={`w-full text-left px-4 py-2 text-sm ${
-                        c.enabled
-                          ? "text-gray-700 hover:bg-gray-100"
-                          : "text-gray-400 cursor-not-allowed"
-                      }`}
-                      title={c.enabled ? "" : "Coming soon"}
-                    >
+                        disabled={!c.enabled}
+                        className={`w-full text-left px-4 py-2 text-sm ${
+                          c.enabled
+                            ? "text-gray-700 hover:bg-gray-100"
+                            : "text-gray-400 cursor-not-allowed"
+                        }`}
+                        title={c.enabled ? "" : "Coming soon"}
+                      >
                         {c.label}
                       </button>
-                    )
-                  )}
+                    );
+                  })}
                 </div>
               )}
             </div>
