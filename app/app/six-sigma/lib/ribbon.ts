@@ -201,17 +201,18 @@ export const PHASES: RibbonPhase[] = [
         tool: null,
         enabled: true,
         children: [
+          // p.465 | mtw: Transform.MTW
+          { id: "boxCox", label: "Box-Cox Transformation", tool: "impBoxCox", enabled: true },
+          { id: "sep4", separator: true },  
           // p.452 | mtw: Concentrator.MTW
           { id: "regSimple", label: "Simple Linear", tool: "impRegression", enabled: true },
           // p.457 | mtw: Mailing Response vs. Discount.mtw
-//          { id: "regNonlinear", label: "Non-Linear", tool: "impRegression", enabled: true },
+//        { id: "regNonlinear", label: "Non-Linear", tool: "impRegression", enabled: true },
           // p.467 | mtw: Flight Regression MLR.mtw
-//          { id: "regMultiple", label: "Multiple Linear", tool: null, enabled: false },          
-            // p.465 | mtw: Transform.MTW
-            { id: "boxCox", label: "Box-Cox Transformation", tool: "impBoxCox", enabled: true },
-            { id: "matrixPlot", label: "Matrix Plot", tool: "impMatrixPlot", enabled: true },
-            { id: "bestSubsets", label: "Best Subsets Regression", tool: "impBestSubsets", enabled: true },
-            { id: "fitRegression", label: "Fit Regression Model", tool: "impFitRegression", enabled: true },          
+//        { id: "regMultiple", label: "Multiple Linear", tool: null, enabled: false },          
+          { id: "matrixPlot", label: "Matrix Plot", tool: "impMatrixPlot", enabled: true },
+          { id: "bestSubsets", label: "Best Subsets Regression", tool: "impBestSubsets", enabled: true },
+          { id: "fitRegression", label: "Fit Regression Model", tool: "impFitRegression", enabled: true },          
         ],
       },
      
@@ -253,8 +254,6 @@ export const PHASES: RibbonPhase[] = [
         tool: null,
         enabled: true,
         children: [
-          { id: "BoxCox", label: "Box-Cox Transformation", tool: "BoxCox", enabled: true },
-          { id: "sep5", separator: true },  
           {
             label: "Control Chart (SPC)",
             groups: [
