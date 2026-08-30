@@ -279,6 +279,7 @@ export const PHASES: RibbonPhase[] = [
             children: [
               { id: "pchart", label: "P Chart", tool: "pchart", enabled: true },
               { id: "npchart", label: "NP Chart", tool: "npchart", enabled: true },
+              { id: "uchart", label: "U Chart", tool: "uchart", enabled: true },
             ],
           },
         ],  
