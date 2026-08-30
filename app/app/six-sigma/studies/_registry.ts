@@ -56,6 +56,7 @@ import imr from "./control/imr";
 import xbarr from "./control/xbarr";
 import xbars from "./control/xbars";
 import pchart from "./control/pchart";
+import laneyp from "./control/laneyp";
 import npchart from "./control/npchart";
 import uchart from "./control/uchart";
 import cchart from "./control/cchart";
@@ -117,6 +118,7 @@ const ALL: ArtifactDefinition[] = [
   xbarr,
   xbars,
   pchart,
+  laneyp,
   npchart,
   uchart,
   cchart,
