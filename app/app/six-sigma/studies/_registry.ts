@@ -54,6 +54,7 @@ import doeCube from "./doe/factorial/cube";
 import doeContour from "./doe/factorial/contour";
 import imr from "./control/imr";
 import xbarr from "./control/xbarr";
+import xbars from "./control/xbars";
 import pchart from "./control/pchart";
 import npchart from "./control/npchart";
 import uchart from "./control/uchart";
@@ -114,6 +115,7 @@ const ALL: ArtifactDefinition[] = [
   doeContour,
   imr,
   xbarr,
+  xbars,
   pchart,
   npchart,
   uchart,
