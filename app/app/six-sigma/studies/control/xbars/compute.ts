@@ -366,6 +366,9 @@ export function computeXbarS(
     stageOf,
     on,
     k: kArr,
+    // Los ocho: la media de un subgrupo es aproximadamente normal por el TCL,
+    // asi que las zonas sigma de los tests 5 a 8 son validas aqui.
+    allowed: [1, 2, 3, 4, 5, 6, 7, 8],
   });
 
   // En la carta S solo se aplican los cuatro primeros. Los tests 5 a 8 leen
