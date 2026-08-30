@@ -30,6 +30,7 @@ export default function MenuBar({
   const [fileOpen, setFileOpen] = useState(false);
   const [activePhase, setActivePhase] = useState<string | null>(null);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const [openSub, setOpenSub] = useState<string | null>(null);
   const fileRef = useRef<HTMLDivElement>(null);
   const toolsRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -38,7 +39,11 @@ export default function MenuBar({
   const closeFile = useCallback(() => setFileOpen(false), []);
   useDismiss(fileRef, closeFile, fileOpen);
 
-  const closeGroup = useCallback(() => setOpenGroup(null), []);
+  const closeGroup = useCallback(() => {
+    setOpenGroup(null);
+    setOpenSub(null);
+  }, []);
+
   useDismiss(toolsRef, closeGroup, openGroup !== null);
 
   const togglePhase = (name: string) => {
@@ -197,27 +202,98 @@ export default function MenuBar({
                 {t.children ? " \u25BE" : ""}
               </button>
 
-              {/* Sub-menu for grouped tools */}
+              {/* Sub-menu for grouped tools.
+                  Un hijo con children propios abre un tercer nivel lateral al
+                  pasar por encima. El flyout es hijo del mismo <div> que lo
+                  dispara, asi que mover el raton hacia el no lo cierra. */}
               {t.children && openGroup === t.id && (
                 <div
                   role="menu"
-                  className="absolute left-0 top-full mt-1 w-48 bg-white rounded shadow-lg border border-gray-200 py-1 z-50"
+                  className="absolute left-0 top-full mt-1 w-60 bg-white rounded shadow-lg border border-gray-200 py-1 z-50"
                 >
-                  {t.children.map((c) => (
-                    <button
-                      key={c.id}
-                      onClick={() => handleChildClick(c)}
-                      disabled={!c.enabled}
-                      className={`w-full text-left px-4 py-2 text-sm ${
-                        c.enabled
-                          ? "text-gray-700 hover:bg-gray-100"
-                          : "text-gray-400 cursor-not-allowed"
-                      }`}
-                      title={c.enabled ? "" : "Coming soon"}
-                    >
-                      {c.label}
-                    </button>
-                  ))}
+                  {t.children.map((c) => {
+                    if (c.separator) {
+                      return (
+                        <div key={c.id} className="my-1 border-t border-gray-200" />
+                      );
+                    }
+
+                    if (c.children) {
+                      const open = openSub === c.id;
+                      return (
+                        <div
+                          key={c.id}
+                          className="relative"
+                          onMouseEnter={() => setOpenSub(c.id)}
+                          onMouseLeave={() => setOpenSub(null)}
+                        >
+                          <button
+                            type="button"
+                            aria-haspopup="menu"
+                            aria-expanded={open}
+                            onClick={() => setOpenSub(open ? null : c.id)}
+                            className={`flex w-full items-center justify-between px-4 py-2 text-left text-sm ${
+                              open
+                                ? "bg-gray-100 text-gray-800"
+                                : "text-gray-700 hover:bg-gray-100"
+                            }`}
+                          >
+                            <span>{c.label}</span>
+                            <span className="ml-3 text-gray-400">{"\u25B8"}</span>
+                          </button>
+
+                          {open && (
+                            <div
+                              role="menu"
+                              /* -mt-1 alinea el primer item del flyout con su
+                                 disparador; left-full lo saca por la derecha. */
+                              className="absolute left-full top-0 -mt-1 ml-0.5 w-56 rounded border border-gray-200 bg-white py-1 shadow-lg z-50"
+                            >
+                              {c.children.map((g) =>
+                                g.separator ? (
+                                  <div
+                                    key={g.id}
+                                    className="my-1 border-t border-gray-200"
+                                  />
+                                ) : (
+                                  <button
+                                    key={g.id}
+                                    onClick={() => handleChildClick(g)}
+                                    disabled={!g.enabled}
+                                    className={`w-full px-4 py-2 text-left text-sm ${
+                                      g.enabled
+                                        ? "text-gray-700 hover:bg-gray-100"
+                                        : "text-gray-400 cursor-not-allowed"
+                                    }`}
+                                    title={g.enabled ? "" : "Coming soon"}
+                                  >
+                                    {g.label}
+                                  </button>
+                                )
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <button
+                        key={c.id}
+                        onClick={() => handleChildClick(c)}
+                        onMouseEnter={() => setOpenSub(null)}
+                        disabled={!c.enabled}
+                        className={`w-full px-4 py-2 text-left text-sm ${
+                          c.enabled
+                            ? "text-gray-700 hover:bg-gray-100"
+                            : "text-gray-400 cursor-not-allowed"
+                        }`}
+                        title={c.enabled ? "" : "Coming soon"}
+                      >
+                        {c.label}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>

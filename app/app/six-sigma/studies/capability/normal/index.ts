@@ -1,5 +1,5 @@
 // studies/capability/index.ts
-import type { AnalysisDefinition } from "../types";
+import type { AnalysisDefinition } from "../../types";
 import type { CapabilityParams, CapabilityResult } from "./types";
 import { CAPABILITY_DEFAULT } from "./types";
 import { computeCapability } from "./compute";

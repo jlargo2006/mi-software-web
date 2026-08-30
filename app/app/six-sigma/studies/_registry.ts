@@ -3,7 +3,12 @@ import type { ArtifactDefinition } from "./types";
 import { fishbone } from "./fishbone";
 import { pareto } from "./pareto";
 import { normality } from "./normality";
-import { capability } from "./capability";
+import { capability } from "./capability/normal";
+import capBinomial from "./capability/binomial";
+import capPoisson from "./capability/poisson";
+import capSixpack from "./capability/sixpack";
+import iddist from "./capability/iddist";
+import capNonnormal from "./capability/nonnormal";
 import { descriptive } from "./descriptive";
 import graphicalSummary from "./graphicalSummary";
 import histogram from "./histogram";
@@ -47,12 +52,27 @@ import doeAnalyzeFactorial from "./doe/factorial/analyze";
 import doeOptimizer from "./doe/factorial/optimizer";
 import doeCube from "./doe/factorial/cube";
 import doeContour from "./doe/factorial/contour";
+import imr from "./control/imr";
+import mrchart from "./control/mrchart";
+import xbarr from "./control/xbarr";
+import xbars from "./control/xbars";
+import pchart from "./control/pchart";
+import laneyp from "./control/laneyp";
+import npchart from "./control/npchart";
+import uchart from "./control/uchart";
+import laneyu from "./control/laneyu";
+import cchart from "./control/cchart";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
   pareto,
   normality,
   capability,
+  capBinomial,
+  capSixpack,
+  capPoisson,
+  iddist,
+  capNonnormal,
   descriptive,
   graphicalSummary,
   histogram,
@@ -96,6 +116,16 @@ const ALL: ArtifactDefinition[] = [
   doeOptimizer,
   doeCube,
   doeContour,
+  imr,
+  mrchart,
+  xbarr,
+  xbars,
+  pchart,
+  laneyp,
+  npchart,
+  uchart,
+  laneyu,
+  cchart,
 ];
 
 export const REGISTRY: Record<string, ArtifactDefinition> = Object.fromEntries(

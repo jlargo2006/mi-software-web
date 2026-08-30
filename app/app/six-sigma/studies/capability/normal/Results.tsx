@@ -2,12 +2,12 @@
 "use client";
 import React from "react";
 import type { Data } from "plotly.js";
-import type { ColumnSnapshot } from "../types";
+import type { ColumnSnapshot } from "../../types";
 import type { CapabilityParams, CapabilityResult } from "./types";
 // ⚠️ AJUSTAR RUTAS igual que en Normality
-import ResultChart from "../../components/ResultChart";
-import ReportLayout from "../../components/ReportLayout";
-import StatBlock, { fmt, fmtPPM, StatSection } from "../../components/StatBlock";
+import ResultChart from "../../../components/ResultChart";
+import ReportLayout from "../../../components/ReportLayout";
+import StatBlock, { fmt, fmtPPM, StatSection } from "../../../components/StatBlock";
 
 export default function CapabilityResults({
   result,

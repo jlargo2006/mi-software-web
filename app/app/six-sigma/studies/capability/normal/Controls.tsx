@@ -1,8 +1,8 @@
 // studies/capability/Controls.tsx
 "use client";
 import React from "react";
-import type { ColumnInfo } from "../../lib/columns";
-import ColumnSelect from "../../components/ColumnSelect";
+import type { ColumnInfo } from "../../../lib/columns";
+import ColumnSelect from "../../../components/ColumnSelect";
 import type { CapabilityParams } from "./types";
 
 export default function CapabilityControls({

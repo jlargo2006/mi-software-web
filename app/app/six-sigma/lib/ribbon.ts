@@ -23,10 +23,11 @@ export type ToolId =
 
 export interface RibbonTool {
   id: string;              // unique id
-  label: string;
-  tool: ToolId;            // which real analysis it triggers (null = not implemented)
-  enabled: boolean;        // false = greyed-out placeholder
+  label?: string;
+  tool?: ToolId;            // which real analysis it triggers (null = not implemented)
+  enabled?: boolean;       // false = greyed-out placeholder
   children?: RibbonTool[]; // for grouped items (Capability, Graphs, Regression...)
+  separator?: boolean;     // divisoria visual dentro de un submenu, sin accion
 }
 
 export interface RibbonPhase {
@@ -79,9 +80,14 @@ export const PHASES: RibbonPhase[] = [
         enabled: true,
         children: [
           // p.215-216 | mtw: Camshaft.mtw
+          { id: "iddist", label: "Identification", tool: "iddist", enabled: true },
+          { id: "sep1", separator: true },          
           { id: "capNormal", label: "Normal", tool: "capability", enabled: true },
+          { id: "capSixpack", label: "Normal Sixpack", tool: "capSixpack", enabled: true },
+          { id: "capNonnormal", label: "Nonnormal", tool: "capNonnormal", enabled: true },
           // p.590 | mtw: Cycletime_bankers.mtw  (Individual Distribution ID / Non-Normal)
-          { id: "capNonnormal", label: "Non-Normal", tool: null, enabled: false },
+          { id: "capBinomial", label: "Binomial", tool: "capBinomial", enabled: true },
+          { id: "capPoisson", label: "Poisson", tool: "capPoisson", enabled: true },
         ],
       },
 
@@ -195,17 +201,18 @@ export const PHASES: RibbonPhase[] = [
         tool: null,
         enabled: true,
         children: [
+          // p.465 | mtw: Transform.MTW
+          { id: "boxCox", label: "Box-Cox Transformation", tool: "impBoxCox", enabled: true },
+          { id: "sep4", separator: true },  
           // p.452 | mtw: Concentrator.MTW
           { id: "regSimple", label: "Simple Linear", tool: "impRegression", enabled: true },
           // p.457 | mtw: Mailing Response vs. Discount.mtw
-//          { id: "regNonlinear", label: "Non-Linear", tool: "impRegression", enabled: true },
+//        { id: "regNonlinear", label: "Non-Linear", tool: "impRegression", enabled: true },
           // p.467 | mtw: Flight Regression MLR.mtw
-//          { id: "regMultiple", label: "Multiple Linear", tool: null, enabled: false },          
-            // p.465 | mtw: Transform.MTW
-            { id: "boxCox", label: "Box-Cox Transformation", tool: "impBoxCox", enabled: true },
-            { id: "matrixPlot", label: "Matrix Plot", tool: "impMatrixPlot", enabled: true },
-            { id: "bestSubsets", label: "Best Subsets Regression", tool: "impBestSubsets", enabled: true },
-            { id: "fitRegression", label: "Fit Regression Model", tool: "impFitRegression", enabled: true },          
+//        { id: "regMultiple", label: "Multiple Linear", tool: null, enabled: false },          
+          { id: "matrixPlot", label: "Matrix Plot", tool: "impMatrixPlot", enabled: true },
+          { id: "bestSubsets", label: "Best Subsets Regression", tool: "impBestSubsets", enabled: true },
+          { id: "fitRegression", label: "Fit Regression Model", tool: "impFitRegression", enabled: true },          
         ],
       },
      
@@ -247,14 +254,41 @@ export const PHASES: RibbonPhase[] = [
         tool: null,
         enabled: true,
         children: [
-          // p.652 | mtw: Individual Chart
-          { id: "imr", label: "I-MR Chart", tool: null, enabled: false },
-          // p.656 | mtw: hole diameter.mtw
-          { id: "xbarR", label: "Xbar-R Chart", tool: null, enabled: false },
-          // (—) proposed – attribute control charts
-          { id: "pnpChart", label: "P / NP Chart", tool: null, enabled: false },
-          { id: "cuChart", label: "C / U Chart", tool: null, enabled: false },
-        ],
+          {
+            id: "cc-subgroups",
+            label: "Variables Charts for Subgroups",
+            enabled: true,
+            children: [
+              // p.656 | mtw: hole diameter.mtw
+              { id: "xbarr", label: "Xbar-R Chart", tool: "xbarr", enabled: true },
+              { id: "xbars", label: "Xbar-S Chart", tool: "xbars", enabled: true },
+            ],
+          },
+          {
+            id: "cc-individuals",
+            label: "Variables Charts for Individuals",
+            enabled: true,
+            children: [
+              // p.652 | mtw: Individual Chart
+              { id: "imr", label: "I-MR Chart", tool: "imr", enabled: true },
+              { id: "mr", label: "Moving Range Chart", tool: "mr", enabled: true },
+            ],
+          },
+          {
+            id: "cc-attributes",
+            label: "Attributes Charts",
+            enabled: true,
+            children: [
+              { id: "pchart", label: "P Chart", tool: "pchart", enabled: true },
+              { id: "laneyp", label: "Laney P\u2032 Chart", tool: "laneyp", enabled: true },
+              { id: "npchart", label: "NP Chart", tool: "npchart", enabled: true },
+              { id: "sep5", separator: true },  
+              { id: "uchart", label: "U Chart", tool: "uchart", enabled: true },
+              { id: "laneyu", label: "Laney U\u2032 Chart", tool: "laneyu", enabled: true },
+              { id: "cchart", label: "C Chart", tool: "cchart", enabled: true },
+            ],
+          },
+        ],  
       },
 
       // (—) proposed
