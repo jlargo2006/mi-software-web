@@ -41,8 +41,8 @@ export default function LaneyPResults({ result }: { result: LaneyPResult }) {
     } as unknown as Data);
 
   const traces: Data[] = [
-    line(r.ucl, RED, "dash"),
-    line(r.lcl, RED, "dash"),
+    line(r.ucl, RED, "dash", true),
+    line(r.lcl, RED, "dash", true),
     line(r.cl, GREEN, "solid"),
     {
       x: xs,
