@@ -261,6 +261,7 @@ export const PHASES: RibbonPhase[] = [
             children: [
               // p.656 | mtw: hole diameter.mtw
               { id: "xbarr", label: "Xbar-R Chart", tool: "xbarr", enabled: true },
+              { id: "xbars", label: "Xbar-S Chart", tool: "xbars", enabled: true },
             ],
           },
           {
