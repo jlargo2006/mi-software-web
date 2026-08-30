@@ -257,7 +257,6 @@ export const PHASES: RibbonPhase[] = [
           {
             id: "cc-subgroups",
             label: "Variables Charts for Subgroups",
-            tool: null,
             enabled: true,
             children: [
               // p.656 | mtw: hole diameter.mtw
@@ -267,7 +266,6 @@ export const PHASES: RibbonPhase[] = [
           {
             id: "cc-individuals",
             label: "Variables Charts for Individuals",
-            tool: null,
             enabled: true,
             children: [
               // p.652 | mtw: Individual Chart
@@ -277,13 +275,12 @@ export const PHASES: RibbonPhase[] = [
           {
             id: "cc-attributes",
             label: "Attributes Charts",
-            tool: null,
             enabled: true,
             children: [
               { id: "pchart", label: "P Chart", tool: "pchart", enabled: true },
             ],
           },
-        ],          
+        ],  
       },
 
       // (—) proposed
