@@ -30,19 +30,28 @@ export default function LaneyUResults({ result }: { result: LaneyUResult }) {
   const flagSet = new Set(r.flagged);
   const fl = xs.filter((i) => flagSet.has(i));
 
-  const line = (v: number[], color: string, dash: "solid" | "dash"): Data =>
+  const line = (
+    v: number[],
+    color: string,
+    dash: "solid" | "dash",
+    step = false
+  ): Data =>
     ({
       x: xs,
       y: v,
       type: "scatter",
       mode: "lines",
-      line: { color, width: 1.2, dash },
+      // "hvh" escalona centrado en cada muestra: tramo horizontal sobre el
+      // punto y salto vertical en el punto medio. Los limites no interpolan
+      // entre subgrupos, porque cada uno tiene el suyo propio: unirlos en
+      // diagonal sugeriria un valor intermedio que no existe.
+      line: { color, width: 1.2, dash, shape: step ? "hvh" : "linear" },
       hoverinfo: "skip",
     } as unknown as Data);
 
   const traces: Data[] = [
-    line(r.ucl, RED, "dash"),
-    line(r.lcl, RED, "dash"),
+    line(r.ucl, RED, "dash", true),
+    line(r.lcl, RED, "dash", true),
     line(r.cl, GREEN, "solid"),
     {
       x: xs,
