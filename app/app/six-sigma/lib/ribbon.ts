@@ -271,6 +271,7 @@ export const PHASES: RibbonPhase[] = [
             children: [
               // p.652 | mtw: Individual Chart
               { id: "imr", label: "I-MR Chart", tool: "imr", enabled: true },
+              { id: "mr", label: "Moving Range Chart", tool: "mr", enabled: true },
             ],
           },
           {
