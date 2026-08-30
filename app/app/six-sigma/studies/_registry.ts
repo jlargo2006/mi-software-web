@@ -56,6 +56,7 @@ import imr from "./control/imr";
 import xbarr from "./control/xbarr";
 import pchart from "./control/pchart";
 import npchart from "./control/npchart";
+import uchart from "./control/uchart";
 
 const ALL: ArtifactDefinition[] = [
   fishbone,
@@ -114,6 +115,7 @@ const ALL: ArtifactDefinition[] = [
   xbarr,
   pchart,
   npchart,
+  uchart,
 ];
 
 export const REGISTRY: Record<string, ArtifactDefinition> = Object.fromEntries(
