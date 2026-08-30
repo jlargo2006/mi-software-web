@@ -253,13 +253,26 @@ export const PHASES: RibbonPhase[] = [
         tool: null,
         enabled: true,
         children: [
-          // p.652 | mtw: Individual Chart
-          { id: "imr", label: "I-MR Chart", tool: "imr", enabled: true },
-          // p.656 | mtw: hole diameter.mtw
-          { id: "xbarr", label: "Xbar-R Chart", tool: "xbarr", enabled: true },
-          // (—) proposed – attribute control charts
-          { id: "pnpChart", label: "P / NP Chart", tool: null, enabled: false },
-          { id: "cuChart", label: "C / U Chart", tool: null, enabled: false },
+          { id: "BoxCox", label: "Box-Cox Transformation", tool: "BoxCox", enabled: true },
+          { id: "sep5", separator: true },  
+          {
+            label: "Control Chart (SPC)",
+            groups: [
+              { label: "Variables Charts for Subgroups", items: [
+                  // p.656 | mtw: hole diameter.mtw
+                  { id: "xbarr", label: "Xbar-R Chart", tool: "xbarr", enabled: true },
+              ]},
+              { label: "Variables Charts for Individuals", items: [
+                  // p.652 | mtw: Individual Chart
+                  { id: "imr", label: "I-MR Chart", tool: "imr", enabled: true },
+              ]},
+              { label: "Attributes Charts", items: [
+                  { id: "pchart", label: "P Chart", tool: "pchart", enabled: true },
+              ]},
+            ],
+          }
+
+          
         ],
       },
 
