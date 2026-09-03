@@ -3,8 +3,17 @@
 
 import React, { useRef, useState } from "react";
 import { useWorkbook } from "./hooks/useWorkbook";
-import { readExcelFile, writeExcelFile } from "./lib/excel";
-import { exportProject, importProject } from "./lib/project";
+import { readExcelFile, buildExcelBlob } from "./lib/excel";
+import { buildProjectBlob, importProject, defaultProjectFileName } from "./lib/project";
+import {
+  saveBlobAs,
+  openFileWithPicker,
+  hasFileSystemAccess,
+  stripExtension,
+  EXCEL_TYPE,
+  PROJECT_TYPE,
+  PICKER_ID,
+} from "./lib/file-dialogs";
 import { ToolId } from "./lib/ribbon";
 import type { SavedStudy, SaveStudyInput } from "./lib/studies";
 import MenuBar from "./components/MenuBar";
@@ -52,9 +61,43 @@ export default function SixSigmaAnalyzer({
   const projectInputRef = useRef<HTMLInputElement>(null);
   const sidebar = useSidebar();
 
-  // --- Project: export / import everything (declared first: used by handleImport/handleNew) ---
-  const handleExportProject = () => {
-    exportProject(wb.data, wb.order, studies);
+  // El nombre del proyecto ES el nombre del fichero. Se fija al abrir y al
+  // guardar, y es lo que se propone la siguiente vez.
+  const [projectName, setProjectName] = useState<string>(defaultProjectFileName);
+  // Handle del .sixsigma abierto o guardado: permite que "Save" escriba encima
+  // sin volver a preguntar. Se pierde al recargar la pagina, y es lo correcto:
+  // tras un refresco vuelve a pedir destino.
+  const projectHandleRef = useRef<FileSystemFileHandle | null>(null);
+
+  // --- Project: save / open everything (declared first: used by handleImport/handleNew) ---
+
+  /** Save as… : siempre abre el dialogo, con carpeta y nombre recordados. */
+  const handleSaveProjectAs = async (): Promise<void> => {
+    const res = await saveBlobAs({
+      blob: buildProjectBlob(wb.data, wb.order, studies),
+      suggestedName: projectName,
+      extension: ".sixsigma",
+      type: PROJECT_TYPE,
+      pickerId: PICKER_ID.project,
+    });
+    if (!res.saved) return; // el usuario cancelo: no se toca nada
+    if (res.baseName) setProjectName(res.baseName);
+    projectHandleRef.current = res.handle ?? null;
+  };
+
+  /** Save : escribe sobre el fichero abierto. Si no hay, se comporta como Save as. */
+  const handleSaveProject = async (): Promise<void> => {
+    const res = await saveBlobAs({
+      blob: buildProjectBlob(wb.data, wb.order, studies),
+      suggestedName: projectName,
+      extension: ".sixsigma",
+      type: PROJECT_TYPE,
+      pickerId: PICKER_ID.project,
+      existingHandle: projectHandleRef.current,
+    });
+    if (!res.saved) return;
+    if (res.baseName) setProjectName(res.baseName);
+    projectHandleRef.current = res.handle ?? null;
   };
   
   // Nada que perder: libro recien abierto y sin estudios. En ese caso no se
@@ -70,24 +113,27 @@ export default function SixSigmaAnalyzer({
    * no "no hagas nada". Si en el futuro quieres una tercera salida, hace falta
    * un modal propio en lugar de window.confirm.
    */
-  const offerExportFirst = (message: string): void => {
+  const offerExportFirst = async (message: string): Promise<void> => {
     if (nothingToLose) return;
     const exportFirst = window.confirm(
-      `${message}\n\nDo you want to export your current project first?` +
-        `\n\nOK = export first, Cancel = discard.`
+      `${message}\n\nDo you want to save your current project first?` +
+        `\n\nOK = save first, Cancel = discard.`
     );
-    if (exportFirst) handleExportProject();
+    // Sin await, la accion destructiva se ejecutaba MIENTRAS el dialogo seguia
+    // abierto: el trabajo se perdia antes de llegar a guardarse.
+    if (exportFirst) await handleSaveProjectAs();
   };
 
-
   const handleImportProject = async (file: File) => {
-    offerExportFirst("Opening a project will discard your current work.");
+    await offerExportFirst("Opening a project will discard your current work.");
     try {
       const project = await importProject(file);
       wb.loadWorkbook(project.workbook.data, project.workbook.order);
       setStudies(project.studies ?? []);
       setActiveTool(null);
       setViewingId(null);
+      // El nombre del fichero pasa a ser el nombre del proyecto.
+      setProjectName(stripExtension(file.name));      
       // Sin aviso de exito: los estudios aparecen en la barra lateral y los
       // datos en la rejilla. Confirmar lo que ya se ve solo estorba.
     } catch (err) {
@@ -96,7 +142,7 @@ export default function SixSigmaAnalyzer({
   };
 
   const handleImport = async (file: File) => {
-    offerExportFirst(
+    await offerExportFirst(
       "Opening an Excel file will discard your current work (including saved studies)."
     );
     try {
@@ -105,27 +151,40 @@ export default function SixSigmaAnalyzer({
       setStudies([]);
       setActiveTool(null);
       setViewingId(null);
+      // Un .xlsx da nombre al proyecto, pero no es un proyecto guardado:
+      // el siguiente Save tiene que preguntar destino.
+      setProjectName(stripExtension(file.name));
+      projectHandleRef.current = null;      
     } catch (err) {
       alert("Could not read file: " + (err as Error).message);
     }
   };
 
-  const handleExport = () => writeExcelFile(wb.data, wb.order);
+  const handleExport = async (): Promise<void> => {
+    await saveBlobAs({
+      blob: buildExcelBlob(wb.data, wb.order),
+      suggestedName: projectName, // mismo nombre que el proyecto
+      extension: ".xlsx",
+      type: EXCEL_TYPE,
+      pickerId: PICKER_ID.excel,  // carpeta recordada aparte de la del proyecto
+    });
+    // Exportar a Excel no renombra el proyecto: es una salida, no el documento.
+  };
 
-  const handleNew = () => {
+  const handleNew = async () => {
     if (nothingToLose) {
-      // Sin datos ni estudios no hay nada que preguntar, pero si el usuario
-      // ha creado hojas vacias hay que dejar el libro en su estado inicial.
       wb.resetWorkbook();
       setActiveTool(null);
       setViewingId(null);
       return;
     }
-    offerExportFirst("This will clear the current project.");
+    await offerExportFirst("This will clear the current project.");
     wb.resetWorkbook();
     setStudies([]);
     setActiveTool(null);
     setViewingId(null);
+    setProjectName(defaultProjectFileName());
+    projectHandleRef.current = null;
   };
 
   /**
@@ -243,15 +302,43 @@ export default function SixSigmaAnalyzer({
     setSelRows(new Set());
   };
 
+  /**
+   * El <input type="file"> oculto no puede recordar carpeta: es una limitacion
+   * del navegador, no algo configurable. Por eso se usa el picker cuando existe
+   * y solo se cae al input en Firefox y Safari.
+   */
+  const openProject = async () => {
+    if (hasFileSystemAccess()) {
+      const picked = await openFileWithPicker(PROJECT_TYPE, PICKER_ID.project);
+      if (picked) {
+        await handleImportProject(picked.file);
+        projectHandleRef.current = picked.handle ?? null;
+      }
+      return; // cancelar es cancelar: no se abre un segundo dialogo
+    }
+    projectInputRef.current?.click();
+  };
+
+  const openExcel = async () => {
+    if (hasFileSystemAccess()) {
+      const picked = await openFileWithPicker(EXCEL_TYPE, PICKER_ID.excel);
+      if (picked) await handleImport(picked.file);
+      return;
+    }
+    fileInputRef.current?.click();
+  };
+  
   return (
       <div className="flex flex-col h-full w-full bg-white">
       <MenuBar
         userEmail={userEmail}
+        projectName={projectName}
         onNew={handleNew}
-        onOpen={() => fileInputRef.current?.click()}
+        onOpen={openExcel}
         onSave={handleExport}
-        onExportProject={handleExportProject}
-        onImportProject={() => projectInputRef.current?.click()}
+        onSaveProject={handleSaveProject}
+        onExportProject={handleSaveProjectAs}
+        onImportProject={openProject}
         onSignOut={onSignOut}
         onSelectTool={(tool) => {
           setActiveTool(tool);
@@ -264,6 +351,7 @@ export default function SixSigmaAnalyzer({
           if (view === "grid") setView("split");
         }}
       />
+
 
       {/* Hidden file input for "Open Excel" */}
       <input
