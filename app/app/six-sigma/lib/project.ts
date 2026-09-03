@@ -83,11 +83,30 @@ function sanitizeStudies(raw: unknown): SavedStudy[] {
   return out;
 }
 
-export function exportProject(
+/**
+ * Nombre por omision cuando el proyecto todavia no tiene uno: sello de fecha y
+ * hora, como hasta ahora. En cuanto el usuario guarda o abre un fichero, manda
+ * el nombre de ese fichero y esto deja de usarse.
+ */
+export function defaultProjectFileName(): string {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `project_${d.getFullYear()}${p(d.getMonth() + 1)}${p(
+    d.getDate()
+  )}_${p(d.getHours())}${p(d.getMinutes())}`;
+}
+
+/**
+ * Serializa el proyecto y devuelve el Blob, SIN descargarlo.
+ *
+ * Separado de exportProject para que quien llama pueda decidir el destino:
+ * diálogo nativo con carpeta y nombre, o descarga clásica.
+ */
+export function buildProjectBlob(
   data: WorkbookData,
   order: string[],
   studies: SavedStudy[]
-) {
+): Blob {
   const project: ProjectFile = {
     app: "mi-software-web",
     kind: "sixsigma-project",
@@ -97,22 +116,37 @@ export function exportProject(
     studies,
   };
 
-  const blob = new Blob([JSON.stringify(project, null, 2)], {
+  return new Blob([JSON.stringify(project, null, 2)], {
     type: "application/json",
   });
+}
+
+/**
+ * Exporta con descarga directa a la carpeta de Descargas.
+ *
+ * Se mantiene como camino de respaldo para navegadores sin File System Access
+ * API. El camino normal es buildProjectBlob + saveBlobAs.
+ */
+export function exportProject(
+  data: WorkbookData,
+  order: string[],
+  studies: SavedStudy[],
+  baseName: string = defaultProjectFileName()
+) {
+  const blob = buildProjectBlob(data, order, studies);
   const url = URL.createObjectURL(blob);
 
-  const d = new Date();
-  const p = (n: number) => String(n).padStart(2, "0");
-  const fname = `project_${d.getFullYear()}${p(d.getMonth() + 1)}${p(
-    d.getDate()
-  )}_${p(d.getHours())}${p(d.getMinutes())}.sixsigma`;
+  const fname = baseName.toLowerCase().endsWith(".sixsigma")
+    ? baseName
+    : `${baseName}.sixsigma`;
 
   const a = document.createElement("a");
   a.href = url;
   a.download = fname;
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
 
