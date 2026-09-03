@@ -50,12 +50,17 @@ export async function readExcelFile(
   return { data, order };
 }
 
-// Exporta nuestro WorkbookData a un archivo .xlsx descargable
-export function writeExcelFile(
-  data: WorkbookData,
-  order: string[],
-  filename = "six-sigma-export.xlsx"
-): void {
+export const XLSX_MIME =
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+/**
+ * Construye el .xlsx en memoria y devuelve el Blob, SIN descargarlo.
+ *
+ * Se separa de writeExcelFile porque XLSX.writeFile dispara la descarga por su
+ * cuenta y no deja interceptar el guardado. Teniendo el Blob, quien llama
+ * decide dónde va: diálogo nativo, descarga clásica o cualquier otra cosa.
+ */
+export function buildExcelBlob(data: WorkbookData, order: string[]): Blob {
   const wb = XLSX.utils.book_new();
   order.forEach((name) => {
     const sheet = data[name] ?? { headers: [], rows: [] };
@@ -63,7 +68,32 @@ export function writeExcelFile(
     const ws = XLSX.utils.aoa_to_sheet(aoa);
     XLSX.utils.book_append_sheet(wb, ws, name);
   });
-  XLSX.writeFile(wb, filename);
+
+  const out = XLSX.write(wb, { bookType: "xlsx", type: "array" }) as ArrayBuffer;
+  return new Blob([out], { type: XLSX_MIME });
+}
+
+/**
+ * Exporta a .xlsx con descarga directa a la carpeta de Descargas.
+ *
+ * Se mantiene por compatibilidad y como camino de respaldo en navegadores sin
+ * File System Access API. El camino normal es buildExcelBlob + saveBlobAs.
+ */
+export function writeExcelFile(
+  data: WorkbookData,
+  order: string[],
+  filename = "six-sigma-export.xlsx"
+): void {
+  const blob = buildExcelBlob(data, order);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  // Revocar de inmediato aborta la descarga en algunos navegadores.
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
 // Crea una hoja vacía con dimensiones por defecto
