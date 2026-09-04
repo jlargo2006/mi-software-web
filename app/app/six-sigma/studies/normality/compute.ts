@@ -5,17 +5,21 @@ import type { NormalityParams, NormalityResult } from "./types";
 import { mean, std, normCDF, normInv, toNumericCells } from "../../lib/stats";
 
 // --- Especifico de normalidad: p-valor a partir del AD ajustado ---
-function adPValue(ad: number): number {
-  if (ad >= 0.6) {
-    return Math.exp(1.2937 - 5.709 * ad + 0.0186 * ad * ad);
-  } else if (ad >= 0.34) {
-    return Math.exp(0.9177 - 4.279 * ad - 1.38 * ad * ad);
-  } else if (ad >= 0.2) {
-    return 1 - Math.exp(-8.318 + 42.796 * ad - 59.938 * ad * ad);
+// --- Especifico de normalidad: p-valor a partir del AD AJUSTADO (A*) ---
+// Las cuatro ramas estan calibradas contra A* = A2*(1+0.75/n+2.25/n^2),
+// no contra A2 crudo. Pasar A2 aqui da p-valores optimistas con n pequeno.
+function adPValue(aStar: number): number {
+  if (aStar >= 0.6) {
+    return Math.exp(1.2937 - 5.709 * aStar + 0.0186 * aStar * aStar);
+  } else if (aStar >= 0.34) {
+    return Math.exp(0.9177 - 4.279 * aStar - 1.38 * aStar * aStar);
+  } else if (aStar >= 0.2) {
+    return 1 - Math.exp(-8.318 + 42.796 * aStar - 59.938 * aStar * aStar);
   } else {
-    return 1 - Math.exp(-13.436 + 101.14 * ad - 223.73 * ad * ad);
+    return 1 - Math.exp(-13.436 + 101.14 * aStar - 223.73 * aStar * aStar);
   }
 }
+
 
 export function computeNormality(
   data: ColumnSnapshot,
@@ -32,6 +36,7 @@ export function computeNormality(
 
   // --- Anderson-Darling ---
   let adStatistic = 0;
+  let adStar = 0;
   let pValue = 1;
   if (n >= 3 && s > 0) {
     let sum = 0;
@@ -43,10 +48,13 @@ export function computeNormality(
       const b = Math.max(1 - cdfComp, 1e-12);
       sum += (2 * (i + 1) - 1) * (Math.log(a) + Math.log(b));
     }
-    const aSquared = -n - sum / n;
-    adStatistic = aSquared * (1 + 0.75 / n + 2.25 / (n * n));
-    pValue = adPValue(adStatistic);
+    // A2 crudo: es el estadistico que se reporta (Minitab lo llama AD).
+    adStatistic = -n - sum / n;
+    // A* solo sirve para entrar en las formulas del p-valor. No se muestra.
+    adStar = adStatistic * (1 + 0.75 / n + 2.25 / (n * n));
+    pValue = adPValue(adStar);
   }
+
 
   // --- Datos del probability plot ---
   const tickPercents = [
@@ -80,6 +88,7 @@ export function computeNormality(
     mean: m,
     std: s,
     adStatistic,
+    adStar,
     pValue,
     isNormal: pValue > 0.05,
     pointsX,
