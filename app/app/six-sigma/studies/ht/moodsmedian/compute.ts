@@ -9,14 +9,9 @@ const num = (s: string): number => {
   return t === "" ? NaN : Number(t);
 };
 
-const EMPTY = (msg: string): HTMoodsMedianResult =>
-  moodsMedian({
-    responseColumn: "",
-    factorColumn: "",
-    rawResponse: [],
-    rawFactor: [],
-    confLevel: NaN,
-  });
+/** Resultado vacio con mensaje propio: el de moodsMedian habla de
+ *  "grouping column", que en unstacked no existe. */
+const EMPTY = (error: string): HTMoodsMedianResult => ({ ok: false, error });
 
 export function computeHTMoodsMedian(
   data: ColumnSnapshot,
@@ -29,7 +24,9 @@ export function computeHTMoodsMedian(
   // moodsMedian sin cambios: mismo calculo, mismos CI, mismos graficos.
   if (params.format === "unstacked") {
     const cols = params.sampleColumns.filter((c) => c && data[c]);
-    if (cols.length < 2) return EMPTY("");
+    if (cols.length < 2) {
+      return EMPTY("Select at least two sample columns to run the analysis.");
+    }
 
     const rawResponse: Cell[] = [];
     const rawFactor: Cell[] = [];
