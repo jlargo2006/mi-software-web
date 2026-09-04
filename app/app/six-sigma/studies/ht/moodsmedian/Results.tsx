@@ -87,7 +87,10 @@ export default function HTMoodsMedianResults({
     return (
       <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
         {result.error ??
-          "Selecciona una respuesta y un factor para ejecutar el an\u00e1lisis."}
+        {result.error ??
+          (params.format === "unstacked"
+            ? "Select at least two sample columns to run the analysis."
+            : "Select a response and a factor column to run the analysis.")}
       </div>
     );
   }
@@ -174,7 +177,7 @@ export default function HTMoodsMedianResults({
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className="border-b border-gray-300 text-left text-gray-600">
-                  <th className="py-1 pr-4">{r.factorColumn}</th>
+                  <th className="py-1 pr-4">{r.factorColumn || "Sample"}</th>
                   <th className="py-1 pr-4">Median</th>
                   <th className="py-1 pr-4">N {"\u2264"} Overall Median</th>
                   <th className="py-1 pr-4">N &gt; Overall Median</th>
@@ -261,7 +264,9 @@ export default function HTMoodsMedianResults({
           {params.showBoxplot && (
             <section className="mb-6">
               <h3 className="mb-2 text-sm font-semibold text-gray-800">
-                Boxplot of {r.responseColumn} by {r.factorColumn}
+                {r.factorColumn
+                  ? `Boxplot of ${r.responseColumn} by ${r.factorColumn}`
+                  : `Boxplot of ${r.responseColumn}`}
               </h3>
               <Chart
                 traces={boxData}
@@ -274,7 +279,9 @@ export default function HTMoodsMedianResults({
           {params.showIndividualValue && (
             <section className="mb-6">
               <h3 className="mb-2 text-sm font-semibold text-gray-800">
-                Individual Value Plot of {r.responseColumn} by {r.factorColumn}
+                {r.factorColumn
+                  ? `Individual Value Plot of ${r.responseColumn} by ${r.factorColumn}`
+                  : `Individual Value Plot of ${r.responseColumn}`}
               </h3>
               <Chart
                 traces={ivpData}
