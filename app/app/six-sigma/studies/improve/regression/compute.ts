@@ -15,6 +15,8 @@ import {
   type CurvePoint,
   type ImpRegParams,
   type ImpRegResult,
+  type RefLineInfo,
+  type RefPoint,
   type SeqRow,
 } from "./types";
 
@@ -47,6 +49,17 @@ function buildEquation(coefs: number[], yName: string, xName: string): string {
   }
   return out;
 }
+
+/** Series dibujables de la curva, y su rotulo en el hover. */
+type SeriesKey = "fit" | "ciLow" | "ciHigh" | "piLow" | "piHigh";
+
+const SERIES_LABEL: Record<SeriesKey, string> = {
+  fit: "Fitted",
+  ciLow: "CI Lower",
+  ciHigh: "CI Upper",
+  piLow: "PI Lower",
+  piHigh: "PI Upper",
+};
 
 export function computeImpReg(
   data: ColumnSnapshot,
@@ -202,6 +215,77 @@ export function computeImpReg(
     };
   }
 
+  // --- 6b. Linea de referencia --------------------------------------------
+  let refLine: RefLineInfo | null = null;
+  const rvText = params.refValue.trim();
+  if (params.refLine !== "none" && rvText !== "") {
+    const v = num(rvText);
+    if (!Number.isFinite(v)) {
+      return fail("The reference line value must be a number.");
+    }
+
+    // Solo se cortan las curvas visibles: sin banda dibujada no hay
+    // interseccion que mostrar.
+    const keys: SeriesKey[] = ["fit"];
+    if (params.showCI) keys.push("ciLow", "ciHigh");
+    if (params.showPI) keys.push("piLow", "piHigh");
+
+    const points: RefPoint[] = [];
+
+    if (params.refLine === "vertical") {
+      // Una interseccion por serie como mucho, y se calcula con el modelo,
+      // no interpolando la poligonal: es exacta, igual que Predict at X.
+      // Fuera del rango observado no se dibuja nada, asi que tampoco se
+      // marcan cortes que no se verian.
+      if (v >= xMin && v <= xMax) {
+        const { fit: yh, seFit } = predictAt(fit, v);
+        const sePred = Math.sqrt(fit.mse + seFit * seFit);
+        const at: Record<SeriesKey, number> = {
+          fit: yh,
+          ciLow: yh - tc * seFit,
+          ciHigh: yh + tc * seFit,
+          piLow: yh - tc * sePred,
+          piHigh: yh + tc * sePred,
+        };
+        for (const k of keys) {
+          points.push({ series: SERIES_LABEL[k], x: v, y: at[k] });
+        }
+      }
+    } else {
+      // Horizontal: puede cortar cada serie mas de una vez con grado 2 o 3,
+      // o ninguna. Se busca cambio de signo sobre los puntos de la curva y
+      // se interpola dentro del segmento.
+      for (const k of keys) {
+        for (let i = 1; i < curve.length; i++) {
+          const a = curve[i - 1];
+          const b = curve[i];
+          const da = a[k] - v;
+          const db = b[k] - v;
+          if (da === 0) {
+            points.push({ series: SERIES_LABEL[k], x: a.x, y: v });
+            continue;
+          }
+          if (da * db < 0) {
+            const t = da / (da - db);
+            points.push({
+              series: SERIES_LABEL[k],
+              x: a.x + t * (b.x - a.x),
+              y: v,
+            });
+          }
+        }
+        // El ultimo punto no lo cubre el bucle: se comprueba aparte para no
+        // perder un corte que caiga justo en el extremo derecho.
+        const last = curve[curve.length - 1];
+        if (last[k] === v) {
+          points.push({ series: SERIES_LABEL[k], x: last.x, y: v });
+        }
+      }
+    }
+
+    refLine = { mode: params.refLine, value: v, points };
+  }
+  
   // --- 7. Residuos tipificados --------------------------------------------
   // La palanca h mide cuanto pesa cada punto en su propio ajuste. Sale de
   // la varianza del valor ajustado, ya calculada por predictAt.
@@ -258,6 +342,7 @@ export function computeImpReg(
     order_: pts.map((p) => p.k),
     curve,
     prediction,
+    refLine,
   };
 }
 
