@@ -1,7 +1,11 @@
 // studies/graphicalSummary/compute.ts
 import type { ColumnSnapshot } from "../types";
 import type { Cell } from "../../lib/types";
-import type { GraphicalSummaryParams, GraphicalSummaryResult } from "./types";
+import type {
+  GraphicalSummaryParams,
+  GraphicalSummaryPanel,
+  GraphicalSummaryResult,
+} from "./types";
 import {
   buildContext,
   stDev,
@@ -14,6 +18,10 @@ import {
 } from "../../lib/statistics";
 import { tInv, chi2Inv, binomCdf } from "../../lib/distributions";
 import { andersonDarlingNormal } from "../../lib/anderson-darling";
+// Mismo agrupador que usan One-way ANOVA y Test for Equal Variances: empareja
+// fila a fila, descarta la fila si falta valor o nivel, y ordena los niveles
+// con orden natural. NO reimplementar aqui.
+import { groupsFromStacked } from "../../lib/anova1way";
 
 function trimTrailingEmpty(col: Cell[]): Cell[] {
   let last = col.length - 1;
@@ -21,8 +29,10 @@ function trimTrailingEmpty(col: Cell[]): Cell[] {
   return col.slice(0, last + 1);
 }
 
-const EMPTY: GraphicalSummaryResult = {
+const EMPTY_PANEL: GraphicalSummaryPanel = {
   colName: "",
+  level: null,
+  values: [],
   n: 0,
   nMissing: 0,
   aSquared: NaN,
@@ -44,19 +54,65 @@ const EMPTY: GraphicalSummaryResult = {
   ciStDev: [NaN, NaN],
 };
 
+const EMPTY: GraphicalSummaryResult = { byName: null, panels: [] };
+
 export function computeGraphicalSummary(
   data: ColumnSnapshot,
   params: GraphicalSummaryParams
 ): GraphicalSummaryResult {
   const name = params.col;
   if (!name || !data[name]) return EMPTY;
+  const colName = data[name].name;
 
-  const raw = trimTrailingEmpty(data[name].values);
-  const ctx = buildContext(raw);
+  // --- Sin By variable: un solo panel, comportamiento de siempre ---
+  if (!params.byCol || !data[params.byCol] || params.byCol === name) {
+    const raw = trimTrailingEmpty(data[name].values);
+    return {
+      byName: null,
+      panels: [computePanel(toNumbers(raw), colName, null, params.confidence)],
+    };
+  }
+
+  // --- Con By variable: un panel por nivel, en orden natural ---
+  const groups = groupsFromStacked(
+    data[name].values,
+    data[params.byCol].values
+  );
+  return {
+    byName: data[params.byCol].name,
+    panels: groups.map((g) =>
+      computePanel(g.values, colName, g.name, params.confidence)
+    ),
+  };
+}
+
+function toNumbers(cells: Cell[]): number[] {
+  return cells
+    .map((v) => Number(String(v ?? "").trim().replace(",", ".")))
+    .filter((v) => Number.isFinite(v));
+}
+
+/**
+ * Un panel. Es el cuerpo original de computeGraphicalSummary, sin cambios de
+ * calculo: solo recibe ya los numeros filtrados en vez de leer la hoja.
+ *
+ * El guard n < 4 es POR PANEL: un nivel con pocos datos degrada solo su
+ * propio panel, no tumba el estudio entero.
+ */
+function computePanel(
+  values: number[],
+  colName: string,
+  level: string | null,
+  confidence: number
+): GraphicalSummaryPanel {
+  const ctx = buildContext(values);
   const n = ctx.n;
-  if (n < 4) return { ...EMPTY, colName: data[name].name, n, nMissing: ctx.nMissing };
+  if (n < 4) {
+    return { ...EMPTY_PANEL, colName, level, values, n, nMissing: ctx.nMissing };
+  }
 
-  const conf = (params.confidence ?? 95) / 100;
+  const conf = (confidence ?? 95) / 100;
+
   const alpha = 1 - conf;
 
   const mean = ctx.mean;
@@ -86,7 +142,9 @@ export function computeGraphicalSummary(
   const ciMedian = medianCI_HS(s, alpha);
 
   return {
-    colName: data[name].name,
+    colName,
+    level,
+    values,
     n,
     nMissing: ctx.nMissing,
     aSquared: ad.aSquared,
