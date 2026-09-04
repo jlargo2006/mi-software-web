@@ -14,7 +14,10 @@ export interface GraphicalSummaryResult {
   n: number;
   nMissing: number;
   // Anderson-Darling
-  aSquared: number; // A²* ajustado
+  /** A² crudo, el que se muestra. */
+  aSquared: number;
+  /** A² corregido. Solo para el p-valor; no se muestra. */
+  aStar: number;
   pValue: number;
   // descriptivos
   mean: number;
