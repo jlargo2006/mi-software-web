@@ -146,6 +146,55 @@ export default function ImpRegResults({
     } as unknown as Data);
   }
 
+  // --- Linea de referencia y sus cortes ------------------------------------
+  const refShapes: Partial<Shape>[] = [];
+  if (r.refLine) {
+    refShapes.push(
+      r.refLine.mode === "vertical"
+        ? {
+            type: "line",
+            x0: r.refLine.value,
+            x1: r.refLine.value,
+            yref: "paper",
+            y0: 0,
+            y1: 1,
+            line: { color: "#0f766e", width: 1.5, dash: "dot" },
+          }
+        : {
+            type: "line",
+            xref: "paper",
+            x0: 0,
+            x1: 1,
+            y0: r.refLine.value,
+            y1: r.refLine.value,
+            line: { color: "#0f766e", width: 1.5, dash: "dot" },
+          }
+    );
+
+    if (r.refLine.points.length) {
+      // Una sola traza con todos los cortes: el rotulo de cada serie viaja
+      // en `text` y sale en el hover.
+      fitTraces.push({
+        type: "scatter",
+        mode: "markers",
+        x: r.refLine.points.map((p) => p.x),
+        y: r.refLine.points.map((p) => p.y),
+        marker: {
+          color: "#0f766e",
+          size: 11,
+          symbol: "x-thin",
+          line: { color: "#0f766e", width: 2.5 },
+        },
+        name: "Intersection",
+        showlegend: false,
+        text: r.refLine.points.map((p) => p.series),
+        hovertemplate:
+          `<b>%{text}</b><br>${r.xTitle}: %{x:.4f}` +
+          `<br>${r.yTitle}: %{y:.4f}<extra></extra>`,
+      } as unknown as Data);
+    }
+  }
+  
   const showLegend = params.showCI || params.showPI;
   const fitLayout: Partial<Layout> = {
     margin: { l: 70, r: 150, t: 10, b: 55 },
@@ -178,19 +227,22 @@ export default function ImpRegResults({
           `R-Sq(adj)  ${fx(r.r2adj, 1)}%`,
       },
     ],
-    shapes: r.prediction
-      ? [
-          {
-            type: "line",
-            x0: r.prediction.x,
-            x1: r.prediction.x,
-            yref: "paper",
-            y0: 0,
-            y1: 1,
-            line: { color: "#f59e0b", width: 1.5, dash: "dash" },
-          },
-        ]
-      : undefined,
+    shapes: [
+      ...(r.prediction
+        ? [
+            {
+              type: "line" as const,
+              x0: r.prediction.x,
+              x1: r.prediction.x,
+              yref: "paper" as const,
+              y0: 0,
+              y1: 1,
+              line: { color: "#f59e0b", width: 1.5, dash: "dash" as const },
+            },
+          ]
+        : []),
+      ...refShapes,
+    ],
   };
 
   // --- Cuatro graficos de residuos ---------------------------------------
