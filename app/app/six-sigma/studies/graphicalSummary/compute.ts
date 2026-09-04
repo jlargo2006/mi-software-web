@@ -12,7 +12,8 @@ import {
   median,
   percentile,
 } from "../../lib/statistics";
-import { normCdf, tInv, chi2Inv, binomCdf } from "../../lib/distributions";
+import { tInv, chi2Inv, binomCdf } from "../../lib/distributions";
+import { andersonDarlingNormal } from "../../lib/anderson-darling";
 
 function trimTrailingEmpty(col: Cell[]): Cell[] {
   let last = col.length - 1;
@@ -25,6 +26,7 @@ const EMPTY: GraphicalSummaryResult = {
   n: 0,
   nMissing: 0,
   aSquared: NaN,
+  aStar: NaN,  
   pValue: NaN,
   mean: NaN,
   stDev: NaN,
@@ -61,28 +63,11 @@ export function computeGraphicalSummary(
   const sd = stDev(ctx);
   const s = ctx.sorted;
 
-  // ---------- Anderson-Darling (con A²* ajustado) ----------
-  let acc = 0;
-  for (let i = 0; i < n; i++) {
-    const Fi = normCdf((s[i] - mean) / sd);
-    const Fni = normCdf((s[n - 1 - i] - mean) / sd);
-    // clamp para evitar log(0)
-    const lo = Math.min(Math.max(Fi, 1e-15), 1 - 1e-15);
-    const hi = Math.min(Math.max(1 - Fni, 1e-15), 1 - 1e-15);
-    acc += (2 * (i + 1) - 1) * (Math.log(lo) + Math.log(hi));
-  }
-  const A2 = -n - acc / n;
-  const A2star = A2 * (1 + 0.75 / n + 2.25 / (n * n));
-  let pValue: number;
-  if (A2star < 0.2)
-    pValue = 1 - Math.exp(-13.436 + 101.14 * A2star - 223.73 * A2star ** 2);
-  else if (A2star < 0.34)
-    pValue = 1 - Math.exp(-8.318 + 42.796 * A2star - 59.938 * A2star ** 2);
-  else if (A2star < 0.6)
-    pValue = Math.exp(0.9177 - 4.279 * A2star - 1.38 * A2star ** 2);
-  else if (A2star < 10)
-    pValue = Math.exp(1.2937 - 5.709 * A2star + 0.0186 * A2star ** 2);
-  else pValue = 0;
+  // ---------- Anderson-Darling ----------
+  // Se reporta A² crudo. A* (corrección de muestra pequeña) solo alimenta el
+  // p-valor: mostrarlo bajo la etiqueta "A-Squared" era incorrecto.
+  const ad = andersonDarlingNormal(s, { mean, sd });
+  const pValue = ad.pValue;
 
   // ---------- CI media (t) ----------
   const tcrit = tInv(1 - alpha / 2, n - 1);
@@ -104,7 +89,8 @@ export function computeGraphicalSummary(
     colName: data[name].name,
     n,
     nMissing: ctx.nMissing,
-    aSquared: A2star,
+    aSquared: ad.aSquared,
+    aStar: ad.aStar,
     pValue,
     mean,
     stDev: sd,
