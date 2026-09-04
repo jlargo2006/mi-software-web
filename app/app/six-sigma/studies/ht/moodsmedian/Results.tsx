@@ -86,11 +86,7 @@ export default function HTMoodsMedianResults({
   if (!result.ok) {
     return (
       <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-        {result.error ??
-        {result.error ??
-          (params.format === "unstacked"
-            ? "Select at least two sample columns to run the analysis."
-            : "Select a response and a factor column to run the analysis.")}
+        {result.error}
       </div>
     );
   }
