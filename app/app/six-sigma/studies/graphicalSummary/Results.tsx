@@ -2,8 +2,7 @@
 "use client";
 import React from "react";
 import type { Data } from "plotly.js";
-import type { ColumnSnapshot } from "../types";
-import type { GraphicalSummaryParams, GraphicalSummaryResult } from "./types";
+import type { GraphicalSummaryPanel, GraphicalSummaryResult } from "./types";
 import ResultChart from "../../components/ResultChart";
 import ReportLayout from "../../components/ReportLayout";
 import StatBlock, { fmt, StatSection } from "../../components/StatBlock";
