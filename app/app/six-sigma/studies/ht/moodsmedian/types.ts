@@ -1,10 +1,23 @@
 // app/app/six-sigma/studies/ht/moodsmedian/types.ts
 
+/**
+ * Disposicion de los datos:
+ *   "stacked"   -> una columna de respuesta + una de factor (lo de siempre)
+ *   "unstacked" -> una columna por muestra, sin columna de factor
+ */
+export type MoodDataFormat = "stacked" | "unstacked";
+
 export interface HTMoodsMedianParams {
-  /** Columna numerica con la respuesta. */
+  format: MoodDataFormat;
+  /** Columna numerica con la respuesta. Solo en formato stacked. */
   responseColumn: string;
-  /** Columna con el factor de agrupacion. Puede ser texto. */
+  /** Columna con el factor de agrupacion. Puede ser texto. Solo stacked. */
   factorColumn: string;
+  /**
+   * Una columna por muestra. Solo en formato unstacked. El nombre de cada
+   * columna hace de nivel; las columnas pueden tener distinta longitud.
+   */
+  sampleColumns: string[];
   /** Nivel de confianza en porcentaje. Cadena: admite coma decimal. */
   confidenceLevel: string;
   showBoxplot: boolean;
@@ -12,8 +25,12 @@ export interface HTMoodsMedianParams {
 }
 
 export const HTMOODSMEDIAN_DEFAULT: HTMoodsMedianParams = {
+  format: "stacked",
   responseColumn: "",
   factorColumn: "",
+  // Dos huecos vacios de partida: es el minimo del test y evita que el
+  // usuario tenga que pulsar "Add sample" antes de poder elegir nada.
+  sampleColumns: ["", ""],
   confidenceLevel: "95",
   showBoxplot: false,
   showIndividualValue: false,
