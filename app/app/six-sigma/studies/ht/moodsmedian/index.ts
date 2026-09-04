@@ -23,8 +23,13 @@ const htMoodsMedian: AnalysisDefinition<
   Controls,
   Results,
   Theory,
+  // Sin las sampleColumns aqui, editar una columna de muestra no recalcula
+  // el estudio en modo unstacked.
   referencedColumns: (p) =>
-    [p.responseColumn, p.factorColumn].filter((c): c is string => Boolean(c)),
+    (p.format === "unstacked"
+      ? p.sampleColumns
+      : [p.responseColumn, p.factorColumn]
+    ).filter((c): c is string => Boolean(c)),
 };
 
 export default htMoodsMedian;
