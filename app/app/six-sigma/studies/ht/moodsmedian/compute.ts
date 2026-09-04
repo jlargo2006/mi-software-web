@@ -23,7 +23,7 @@ export function computeHTMoodsMedian(
   // Se sintetizan los arrays apilados que espera el motor y se reutiliza
   // moodsMedian sin cambios: mismo calculo, mismos CI, mismos graficos.
   if (params.format === "unstacked") {
-    const cols = params.sampleColumns.filter((c) => c && data[c]);
+    const cols = [...new Set(params.sampleColumns.filter((c) => c && data[c]))];
     if (cols.length < 2) {
       return EMPTY("Select at least two sample columns to run the analysis.");
     }
