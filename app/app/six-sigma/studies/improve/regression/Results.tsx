@@ -149,9 +149,6 @@ export default function ImpRegResults({
   const showLegend = params.showCI || params.showPI;
   const fitLayout: Partial<Layout> = {
     margin: { l: 70, r: 150, t: 10, b: 55 },
-    // Barra de herramientas en vertical: en horizontal ocupa toda la esquina
-    // superior derecha y se solapa con la leyenda, anclada en x=1.01, y=1.
-    modebar: { orientation: "v" },
     xaxis: { title: { text: r.xTitle }, zeroline: false },
     yaxis: { title: { text: r.yTitle }, zeroline: false },
     hovermode: "closest",
