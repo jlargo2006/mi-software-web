@@ -12,7 +12,10 @@ export interface NormalityResult {
   n: number;
   mean: number;
   std: number;
+  /** A2 crudo, el que se reporta como "AD". */
   adStatistic: number;
+  /** A2 con correccion de muestra pequena. Solo para el p-valor. */
+  adStar: number;
   pValue: number;
   isNormal: boolean;
 
