@@ -105,7 +105,7 @@ export const PHASES: RibbonPhase[] = [
           // p.161-162 | mtw: Glucose Level / Graphing Data.mtw
           { id: "boxplot", label: "Boxplot", tool: "boxplot", enabled: true },
           // p.163-165 | mpj: Measure Data Sets.mpj | mtw: Graphing Data.mtw (jitter/ANOVA options)
-          { id: "ivp", label: "Individual Value Plot", tool: null, enabled: false },
+//          { id: "ivp", label: "Individual Value Plot", tool: null, enabled: false },
           // p.166-167 | mtw: Graphing Data.mtw  (Lowess smoother is an option)
           { id: "timeseries", label: "Time Series Plot", tool: "timeseries", enabled: true },
         ],
@@ -203,7 +203,7 @@ export const PHASES: RibbonPhase[] = [
         children: [
           // p.465 | mtw: Transform.MTW
           { id: "boxCox", label: "Box-Cox Transformation", tool: "impBoxCox", enabled: true },
-          { id: "sep4", separator: true },  
+          { id: "sep4_1", separator: true },  
           // p.452 | mtw: Concentrator.MTW
           { id: "regSimple", label: "Simple Linear", tool: "impRegression", enabled: true },
           // p.457 | mtw: Mailing Response vs. Discount.mtw
@@ -226,6 +226,7 @@ export const PHASES: RibbonPhase[] = [
           { id: "createFactorial", label: "Create Factorial Design", tool: "doeCreateFactorial", enabled: true },
           { id: "analyzeFactorial", label: "Analyze Factorial Design", tool: "doeAnalyzeFactorial", enabled: true },
           { id: "responseOptimizer", label: "Response Optimizer", tool: "doeOptimizer", enabled: true },
+          { id: "sep4_2", separator: true },     
           // p.482 | mtw: Catapult.mtw
 //          { id: "doeFull", label: "Full Factorial", tool: null, enabled: false },
           // p.522 | mtw: Panel Cleaning.MTW
