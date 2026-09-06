@@ -97,7 +97,7 @@ const SCREENSHOTS = [
     text: 'Cp, Cpk, Pp, Ppk, PPM and sigma level, with within and overall variation shown against your specification limits.',
   },
   {
-    src: '/images/pareto.png',
+    src: '/images/pareto1.png',
     title: 'Pareto Chart',
     text: 'Rank defect categories by frequency with cumulative percentage line to isolate the vital few causes.',
   },
