@@ -10,7 +10,7 @@ import Link from 'next/link'
 const BRAND = '#00674d'
 const BRAND_DARK = '#00513d'
 const BRAND_SOFT = '#e6f2ee'
-const PRODUCT_NAME = 'Six Sigma Macro Tools'
+const PRODUCT_NAME = 'Six Sigma Analyzer'
 
 // ---------------------------------------------------------------------------
 //  DMAIC phases — kept in sync with lib/ribbon.ts
