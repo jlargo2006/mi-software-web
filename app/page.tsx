@@ -97,9 +97,9 @@ const SCREENSHOTS = [
     text: 'Cp, Cpk, Pp, Ppk, PPM and sigma level, with within and overall variation shown against your specification limits.',
   },
   {
-    src: '/images/pareto.png',
-    title: 'Pareto Chart',
-    text: 'Rank defect categories by frequency with cumulative percentage line to isolate the vital few causes.',
+    src: '/images/DOE.png',
+    title: 'Design of Experiments (DOE)',
+    text: 'Full and fractional factorial designs with main effects, interaction plots, and ANOVA to pinpoint the factors that truly drive your response.',
   },
   {
     src: '/images/power-2-sample-t-test.png',
