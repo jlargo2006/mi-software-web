@@ -87,22 +87,22 @@ const PHASES = [
 // ---------------------------------------------------------------------------
 const SCREENSHOTS = [
   {
-    src: '/images/graphical-summary1.png',
+    src: '/images/graphical-summary.png',
     title: 'Graphical Summary',
     text: 'Histogram with fitted curve, boxplot, confidence intervals for mean and median, and Anderson-Darling normality test in a single output.',
   },
   {
-    src: '/images/capability-test1.png',
+    src: '/images/capability-test.png',
     title: 'Process Capability',
     text: 'Cp, Cpk, Pp, Ppk, PPM and sigma level, with within and overall variation shown against your specification limits.',
   },
   {
-    src: '/images/pareto1.png',
+    src: '/images/pareto.png',
     title: 'Pareto Chart',
     text: 'Rank defect categories by frequency with cumulative percentage line to isolate the vital few causes.',
   },
   {
-    src: '/images/one-way-anova.png',
+    src: '/images/power-2-sample-t-test.png',
     title: 'Hypothesis Testing',
     text: 'Full battery of parametric and non-parametric tests, with assumption checks and plain-language conclusions.',
   },
@@ -112,7 +112,7 @@ const SCREENSHOTS = [
     text: 'I-MR, Xbar-R, Xbar-S and attribute charts with Nelson rules applied automatically to flag special causes.',
   },
   {
-    src: '/images/normality-test1.png',
+    src: '/images/normality-test.png',
     title: 'Normality Test',
     text: 'Probability plot with Anderson-Darling statistic and p-value, so you know which test is valid before you run it.',
   },
