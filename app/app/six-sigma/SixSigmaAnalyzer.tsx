@@ -457,6 +457,27 @@ export default function SixSigmaAnalyzer({
                 className="overflow-auto bg-white border-b border-gray-200"
                 style={{ height: view === "split" ? `${topPercent}%` : "100%" }}
               >
+                {activeAnalysisDef && viewingStudy && (
+                  <div className="flex items-center gap-2 border-b border-gray-200 bg-gray-50 px-3 py-1.5 text-xs">
+                    <span className="font-medium text-gray-700">{viewingStudy.name}</span>
+                    <span className="text-gray-400">·</span>
+                    <span className="text-gray-500">
+                      Source sheet:{" "}
+                      <span className="font-medium text-[#00674d]">
+                        {viewingStudy.snapshot.sheetName}
+                      </span>
+                    </span>
+                    {!wb.data[viewingStudy.snapshot.sheetName] && (
+                      <span
+                        className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-800"
+                        title="The source sheet no longer exists. The study keeps its own copy of the data."
+                      >
+                        ⚠ sheet deleted
+                      </span>
+                    )}
+                  </div>
+                )}
+
                 {activeAnalysisDef && (
                   /* Motor genérico: cualquier estudio del REGISTRY */
                   <AnalysisRunner
