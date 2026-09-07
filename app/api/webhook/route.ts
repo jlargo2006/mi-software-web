@@ -55,27 +55,22 @@ export async function POST(request: Request) {
 
       // Enviar email con la licencia
       await resend.emails.send({
-        from: 'support@sixsigmamacrotools.com',
+        from: 'support@sixsigmaanalyzer.com',
         to: email,
-        subject: '🎉 Tu licencia de 6 Sigma Macro Tools',
+        subject: '🎉 Tu licencia de 6 Sigma Analyzer',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h1 style="color: #000;">¡Gracias por tu compra!</h1>
-            <p>Tu licencia de <strong>6 Sigma Macro Tools</strong> está activa.</p>
+            <p>Tu licencia de <strong>6 Sigma Analyzer</strong> está activa.</p>
             <p>Tu clave de licencia es:</p>
             <div style="background: #f4f4f4; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
               <code style="font-size: 18px; font-weight: bold; letter-spacing: 2px;">${license_key}</code>
             </div>
             <p><strong>Cómo activar:</strong></p>
-            <ol>
-              <li>Abre Excel con 6 Sigma Macro Tools instalado</li>
-              <li>En el ribbon, haz click en <strong>"Activar Licencia"</strong></li>
-              <li>Introduce la clave de licencia</li>
-            </ol>
             <p style="color: #666;">Tu licencia expira el: <strong>${expiresAt.toLocaleDateString('es-ES')}</strong></p>
             <hr/>
             <p style="color: #999; font-size: 12px;">
-              Si tienes algún problema, contacta con nosotros en support@sixsigmamacrotools.com
+              Si tienes algún problema, contacta con nosotros en support@sixsigmaanalyzer.com
             </p>
           </div>
         `
