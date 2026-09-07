@@ -548,9 +548,6 @@ export default function Home() {
             </Link>
 
             <div className="flex flex-wrap justify-center gap-8 text-sm">
-              <a href="#studies" className="hover:text-white transition">Studies</a>
-              <a href="#preview" className="hover:text-white transition">Preview</a>
-              <a href="#access" className="hover:text-white transition">Access</a>
               <Link href="/contact" className="hover:text-white transition">Contact</Link>
               <Link href="/privacy" className="hover:text-white transition">Privacy</Link>
               <Link href="/terms" className="hover:text-white transition">Terms</Link>
