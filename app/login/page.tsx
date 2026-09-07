@@ -155,7 +155,7 @@ export default function LoginPage() {
             </div>
             <div>
               <div className="font-bold text-lg leading-none">6 Sigma Analyzer</div>
-              <div className="text-xs text-gray-500">Statistical Excel Automation</div>
+              <div className="text-xs text-gray-500">Six Sigma studies in your browser</div>
             </div>
           </Link>
         </div>
