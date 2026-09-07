@@ -8,7 +8,7 @@ import Link from 'next/link'
 
 const BRAND = '#00674d'
 const PRODUCT_NAME = 'Six Sigma Analyzer'
-const CONTACT_EMAIL = 'support@sixsigmamacrotools.com'
+const CONTACT_EMAIL = 'support@sixsigmaanalyzer.com'
 
 export default function TermsPage() {
   return (
