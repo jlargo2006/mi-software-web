@@ -11,6 +11,7 @@ interface DataGridProps {
   onPaste: (startRow: number, startCol: number, matrix: Cell[][]) => void;
   onAddRow: () => void;
   selRows: Set<number>;
+  onSort: (col: number, dir: "asc" | "desc") => void;
   selCols: Set<number>;
   setSelRows: (s: Set<number>) => void;
   setSelCols: (s: Set<number>) => void;
@@ -39,6 +40,7 @@ export default function DataGrid({
   onHeaderChange,
   onPaste,
   onAddRow,
+  onSort,
   selRows,
   selCols,
   setSelRows,
@@ -47,7 +49,10 @@ export default function DataGrid({
   const [active, setActive] = useState<{ r: number; c: number } | null>(null);
   const [colWidths, setColWidths] = useState<Record<number, number>>({});
   const [range, setRange] = useState<RangeSel | null>(null);
-
+  // Columna y sentido del ultimo orden aplicado: solo para pintar la flecha
+  // activa. No condiciona los datos, que ya quedaron ordenados.
+  const [sortedBy, setSortedBy] = useState<{ col: number; dir: "asc" | "desc" } | null>(null);
+  
   const resizeRef = useRef<{ col: number; startX: number; startW: number } | null>(null);
   const dragRef = useRef<{ mode: DragMode; anchor: number } | null>(null);
   const anchorRef = useRef<{ r: number; c: number } | null>(null);
@@ -413,6 +418,17 @@ export default function DataGrid({
     }
   };
 
+  const handleSort = (c: number, dir: "asc" | "desc") => {
+    // Toda seleccion apunta a indices de fila que dejan de significar lo
+    // mismo tras reordenar: se limpia antes de tocar los datos.
+    clearRange();
+    clearSelection();
+    setActive(null);
+    setSortedBy({ col: c, dir });
+    onSort(c, dir);
+  };
+
+  
   const displayCell = (v: Cell): string => (v === "" ? "" : String(v));
 
   return (
@@ -454,14 +470,46 @@ export default function DataGrid({
                 }`}
                 style={{ width: widthOf(c), minWidth: widthOf(c) }}
               >
-                <input
-                  value={sheet.headers[c] ?? ""}
-                  onChange={(e) => onHeaderChange(c, e.target.value)}
-                  onPaste={(e) => handleHeaderPaste(e, c)}
-                  onKeyDown={(e) => handleHeaderKeyDown(e, c)}
-                  placeholder={colLabel(c)}
-                  className="w-full bg-transparent px-1 py-0.5 text-xs font-semibold text-[#00513d] placeholder-[#8bbcab] outline-none"
-                />
+                <div className="flex items-center">
+                  <input
+                    value={sheet.headers[c] ?? ""}
+                    onChange={(e) => onHeaderChange(c, e.target.value)}
+                    onPaste={(e) => handleHeaderPaste(e, c)}
+                    onKeyDown={(e) => handleHeaderKeyDown(e, c)}
+                    placeholder={colLabel(c)}
+                    className="min-w-0 flex-1 bg-transparent px-1 py-0.5 text-xs font-semibold text-[#00513d] placeholder-[#8bbcab] outline-none"
+                  />
+                  <span className="flex shrink-0 flex-col pr-0.5 leading-none">
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleSort(c, "asc")}
+                      className={`text-[7px] leading-none ${
+                        sortedBy?.col === c && sortedBy.dir === "asc"
+                          ? "text-[#00674d]"
+                          : "text-[#8bbcab] hover:text-[#00674d]"
+                      }`}
+                      title={`Sort by ${sheet.headers[c] || colLabel(c)} ascending`}
+                      aria-label="Sort ascending"
+                    >
+                      {"\u25B2"}
+                    </button>
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleSort(c, "desc")}
+                      className={`text-[7px] leading-none ${
+                        sortedBy?.col === c && sortedBy.dir === "desc"
+                          ? "text-[#00674d]"
+                          : "text-[#8bbcab] hover:text-[#00674d]"
+                      }`}
+                      title={`Sort by ${sheet.headers[c] || colLabel(c)} descending`}
+                      aria-label="Sort descending"
+                    >
+                      {"\u25BC"}
+                    </button>
+                  </span>
+                </div>
               </td>
             ))}
           </tr>
