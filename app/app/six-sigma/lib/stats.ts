@@ -1,4 +1,4 @@
-// lib/stats.ts
+//app/app/sixsigma/lib/stats.ts
 import type { NormalityResult, CapabilityResult, Cell } from "./types";
 
 export function toNumericCells(values: Cell[]): number[] {
@@ -335,3 +335,41 @@ export function c4(m: number): number {
   return Math.sqrt(2 / (m - 1)) * Math.exp(logGamma(m / 2) - logGamma((m - 1) / 2));
 }
 
+export interface AndersonDarling {
+  /** A2 crudo. Es el estadistico que se reporta (Minitab lo llama AD / A-Squared). */
+  aSquared: number;
+  /** A2 con la correccion de muestra pequena de D'Agostino & Stephens.
+   *  Solo sirve para entrar en las formulas del p-valor: NO se muestra. */
+  aStar: number;
+  pValue: number;
+}
+
+/** p-valor a partir del AD AJUSTADO. Las cuatro ramas estan calibradas
+ *  contra A*, no contra A2. Pasar A2 aqui da p-valores optimistas. */
+function adPValueFromStar(a: number): number {
+  if (a >= 0.6)  return Math.exp(1.2937 - 5.709 * a + 0.0186 * a * a);
+  if (a >= 0.34) return Math.exp(0.9177 - 4.279 * a - 1.38 * a * a);
+  if (a >= 0.2)  return 1 - Math.exp(-8.318 + 42.796 * a - 59.938 * a * a);
+  return 1 - Math.exp(-13.436 + 101.14 * a - 223.73 * a * a);
+}
+
+/** Test de Anderson-Darling para normalidad. `values` no necesita venir ordenado. */
+export function andersonDarlingNormal(values: number[]): AndersonDarling {
+  const sorted = [...values].sort((a, b) => a - b);
+  const n = sorted.length;
+  const m = mean(sorted);
+  const s = std(sorted); // desviacion muestral, n-1
+
+  if (n < 3 || !(s > 0)) return { aSquared: 0, aStar: 0, pValue: 1 };
+
+  let sum = 0;
+  for (let i = 0; i < n; i++) {
+    const lo = Math.max(normCDF((sorted[i] - m) / s), 1e-12);
+    const hi = Math.max(1 - normCDF((sorted[n - 1 - i] - m) / s), 1e-12);
+    sum += (2 * (i + 1) - 1) * (Math.log(lo) + Math.log(hi));
+  }
+
+  const aSquared = -n - sum / n;
+  const aStar = aSquared * (1 + 0.75 / n + 2.25 / (n * n));
+  return { aSquared, aStar, pValue: adPValueFromStar(aStar) };
+}

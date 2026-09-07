@@ -2,8 +2,7 @@
 "use client";
 import React from "react";
 import type { Data } from "plotly.js";
-import type { ColumnSnapshot } from "../types";
-import type { GraphicalSummaryParams, GraphicalSummaryResult } from "./types";
+import type { GraphicalSummaryPanel, GraphicalSummaryResult } from "./types";
 import ResultChart from "../../components/ResultChart";
 import ReportLayout from "../../components/ReportLayout";
 import StatBlock, { fmt, StatSection } from "../../components/StatBlock";
@@ -12,16 +11,11 @@ import { normPdf } from "../../lib/distributions";
 const BRAND = "#00674d";
 
 export default function GraphicalSummaryResults({
-  data,
-  params,
   result,
 }: {
-  data: ColumnSnapshot;
-  params: GraphicalSummaryParams;
   result: GraphicalSummaryResult;
 }) {
-  const r = result;
-  if (!r || !Number.isFinite(r.mean)) {
+  if (!result || result.panels.length === 0) {
     return (
       <div className="p-4 text-sm text-gray-500">
         Select a numeric column to see the graphical summary.
@@ -29,10 +23,32 @@ export default function GraphicalSummaryResults({
     );
   }
 
-  const name = params.col!;
-  const values = data[name].values
-    .map((v) => Number(v))
-    .filter((v) => Number.isFinite(v));
+  return (
+    <div className="space-y-8">
+      {result.panels.map((p, i) => (
+        <div key={p.level ?? i}>
+          {result.byName && (
+            <h3 className="mb-2 font-semibold text-gray-800">
+              {`Results for ${result.byName} = ${p.level}`}
+            </h3>
+          )}
+          <Panel r={p} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Panel({ r }: { r: GraphicalSummaryPanel }) {
+  if (!Number.isFinite(r.mean)) {
+    return (
+      <div className="p-4 text-sm text-gray-500">
+        {`Not enough data (N = ${r.n}); at least 4 values are required.`}
+      </div>
+    );
+  }
+
+  const values = r.values;
 
   // ---- histograma: bins tipo Minitab (√n) ----
   const nbins = Math.max(5, Math.round(Math.sqrt(r.n)));
@@ -197,7 +213,11 @@ export default function GraphicalSummaryResults({
                 data={histogram}
                 layout={{
                   autosize: true,
-                  title: { text: `Summary Report for ${r.colName}` },
+                  title: {
+                    text: r.level
+                      ? `Summary Report for ${r.colName} (${r.level})`
+                      : `Summary Report for ${r.colName}`,
+                  },
                   showlegend: false,
                   margin: { l: 40, r: 10, t: 40, b: 30 },
                   bargap: 0.02,

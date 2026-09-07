@@ -4,8 +4,10 @@ import React from "react";
 import type { ColumnInfo } from "../../../lib/columns";
 import {
   DEGREE_LABEL,
+  REFLINE_LABEL,
   RESIDUAL_LABEL,
   type ImpRegParams,
+  type RefLineMode,
   type RegDegree,
   type ResidualType,
 } from "./types";
@@ -134,6 +136,46 @@ export default function ImpRegControls({
         </p>
       </div>
 
+      <div className="border-t border-gray-200 pt-4">
+        <span className={label}>Reference line (optional)</span>
+        <div className="space-y-2">
+          {(Object.keys(REFLINE_LABEL) as RefLineMode[]).map((k) => (
+            <label
+              key={k}
+              className="flex items-center gap-2 text-sm text-gray-700"
+            >
+              <input
+                type="radio"
+                name="reg-refline"
+                className={radio}
+                checked={params.refLine === k}
+                onChange={() => set("refLine", k)}
+              />
+              {REFLINE_LABEL[k]}
+            </label>
+          ))}
+        </div>
+
+        {params.refLine !== "none" && (
+          <div className="mt-3">
+            <label className={label}>
+              {params.refLine === "vertical" ? "X value" : "Y value"}
+            </label>
+            <input
+              className={field}
+              value={params.refValue}
+              onChange={(e) => set("refValue", e.target.value)}
+              placeholder="e.g. 250"
+              inputMode="decimal"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Marks where the line crosses the fitted curve and any interval
+              band you are displaying. Hover a marker to read its coordinates.
+            </p>
+          </div>
+        )}
+      </div>
+      
       <div className="border-t border-gray-200 pt-4 space-y-3">
         <label className="flex items-center gap-2 text-sm text-gray-700">
           <input

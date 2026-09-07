@@ -159,15 +159,6 @@ export default function EqVarResults({
       hoverinfo: "skip",
       showlegend: false,
     });
-    ivData.push({
-      type: "scatter",
-      mode: "markers",
-      x: [g.stdev],
-      y: [y],
-      marker: { color: GREEN, size: 9, symbol: "circle" },
-      hovertemplate: `${g.name}<br>StDev = %{x:.5f}<extra></extra>`,
-      showlegend: false,
-    });
   });
 
   const ivLayout: Partial<Layout> = {
@@ -300,7 +291,8 @@ export default function EqVarResults({
             {`If intervals do not overlap, the corresponding standard deviations ` +
               `are significantly different (${SIGMA}\u1d62 ${NE} ${SIGMA}\u2c7c). ` +
               `These intervals are NOT the Bonferroni intervals shown in the table: ` +
-              `they are built so that overlap matches the test decision.`}
+              `they are multiple comparison intervals, and overlap approximates ` +
+              `the test decision.`}
           </p>
         </section>
       )}

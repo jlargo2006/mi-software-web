@@ -34,6 +34,31 @@ export default function GraphicalSummaryControls({
       </div>
 
       <div>
+        <div className="mb-1 text-xs text-gray-600">
+          By variable (optional)
+        </div>
+        <select
+          value={params.byCol ?? ""}
+          onChange={(e) =>
+            onChange({ ...params, byCol: e.target.value || null })
+          }
+          className="w-full rounded border border-gray-300 px-2 py-1 text-sm"
+        >
+          <option value="">— None —</option>
+          {columns
+            .filter((c) => c.name !== params.col)
+            .map((c) => (
+              <option key={c.index} value={c.name}>
+                {c.name}
+              </option>
+            ))}
+        </select>
+        <p className="mt-1 text-xs text-gray-500">
+          One summary per level, as in Minitab.
+        </p>
+      </div>
+      
+      <div>
         <div className="mb-1 text-xs text-gray-600">Confidence level (%)</div>
         <input
           type="number"

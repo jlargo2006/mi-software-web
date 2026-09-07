@@ -58,7 +58,7 @@ export default function ContactPage() {
               6σ
             </div>
             <div>
-              <div className="font-bold text-lg leading-none">Six Sigma Macro Tools</div>
+              <div className="font-bold text-lg leading-none">Six Sigma Analyzer</div>
               <div className="text-xs text-gray-500">Six Sigma studies in your browser</div>
             </div>
           </Link>

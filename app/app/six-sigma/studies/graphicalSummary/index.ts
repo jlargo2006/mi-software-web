@@ -21,7 +21,9 @@ const graphicalSummary: AnalysisDefinition<
   compute: computeGraphicalSummary,
   Controls,
   Results,
-  referencedColumns: (params) => (params.col ? [params.col] : []),
+  // Sin la By variable aqui, editar la columna Location no recalcula el estudio.
+  referencedColumns: (params) =>
+    [params.col, params.byCol].filter((c): c is string => !!c),
 };
 
 export default graphicalSummary;

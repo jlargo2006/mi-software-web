@@ -1,7 +1,11 @@
 // studies/graphicalSummary/compute.ts
 import type { ColumnSnapshot } from "../types";
 import type { Cell } from "../../lib/types";
-import type { GraphicalSummaryParams, GraphicalSummaryResult } from "./types";
+import type {
+  GraphicalSummaryParams,
+  GraphicalSummaryPanel,
+  GraphicalSummaryResult,
+} from "./types";
 import {
   buildContext,
   stDev,
@@ -12,7 +16,12 @@ import {
   median,
   percentile,
 } from "../../lib/statistics";
-import { normCdf, tInv, chi2Inv, binomCdf } from "../../lib/distributions";
+import { tInv, chi2Inv, binomCdf } from "../../lib/distributions";
+import { andersonDarlingNormal } from "../../lib/anderson-darling";
+// Mismo agrupador que usan One-way ANOVA y Test for Equal Variances: empareja
+// fila a fila, descarta la fila si falta valor o nivel, y ordena los niveles
+// con orden natural. NO reimplementar aqui.
+import { groupsFromStacked } from "../../lib/anova1way";
 
 function trimTrailingEmpty(col: Cell[]): Cell[] {
   let last = col.length - 1;
@@ -20,11 +29,14 @@ function trimTrailingEmpty(col: Cell[]): Cell[] {
   return col.slice(0, last + 1);
 }
 
-const EMPTY: GraphicalSummaryResult = {
+const EMPTY_PANEL: GraphicalSummaryPanel = {
   colName: "",
+  level: null,
+  values: [],
   n: 0,
   nMissing: 0,
   aSquared: NaN,
+  aStar: NaN,  
   pValue: NaN,
   mean: NaN,
   stDev: NaN,
@@ -42,47 +54,76 @@ const EMPTY: GraphicalSummaryResult = {
   ciStDev: [NaN, NaN],
 };
 
+const EMPTY: GraphicalSummaryResult = { byName: null, panels: [] };
+
 export function computeGraphicalSummary(
   data: ColumnSnapshot,
   params: GraphicalSummaryParams
 ): GraphicalSummaryResult {
   const name = params.col;
   if (!name || !data[name]) return EMPTY;
+  const colName = data[name].name;
 
-  const raw = trimTrailingEmpty(data[name].values);
-  const ctx = buildContext(raw);
+  // --- Sin By variable: un solo panel, comportamiento de siempre ---
+  if (!params.byCol || !data[params.byCol] || params.byCol === name) {
+    const raw = trimTrailingEmpty(data[name].values);
+    return {
+      byName: null,
+      panels: [computePanel(toNumbers(raw), colName, null, params.confidence)],
+    };
+  }
+
+  // --- Con By variable: un panel por nivel, en orden natural ---
+  const groups = groupsFromStacked(
+    data[name].values,
+    data[params.byCol].values
+  );
+  return {
+    byName: data[params.byCol].name,
+    panels: groups.map((g) =>
+      computePanel(g.values, colName, g.name, params.confidence)
+    ),
+  };
+}
+
+function toNumbers(cells: Cell[]): number[] {
+  return cells
+    .map((v) => Number(String(v ?? "").trim().replace(",", ".")))
+    .filter((v) => Number.isFinite(v));
+}
+
+/**
+ * Un panel. Es el cuerpo original de computeGraphicalSummary, sin cambios de
+ * calculo: solo recibe ya los numeros filtrados en vez de leer la hoja.
+ *
+ * El guard n < 4 es POR PANEL: un nivel con pocos datos degrada solo su
+ * propio panel, no tumba el estudio entero.
+ */
+function computePanel(
+  values: number[],
+  colName: string,
+  level: string | null,
+  confidence: number
+): GraphicalSummaryPanel {
+  const ctx = buildContext(values);
   const n = ctx.n;
-  if (n < 4) return { ...EMPTY, colName: data[name].name, n, nMissing: ctx.nMissing };
+  if (n < 4) {
+    return { ...EMPTY_PANEL, colName, level, values, n, nMissing: ctx.nMissing };
+  }
 
-  const conf = (params.confidence ?? 95) / 100;
+  const conf = (confidence ?? 95) / 100;
+
   const alpha = 1 - conf;
 
   const mean = ctx.mean;
   const sd = stDev(ctx);
   const s = ctx.sorted;
 
-  // ---------- Anderson-Darling (con A²* ajustado) ----------
-  let acc = 0;
-  for (let i = 0; i < n; i++) {
-    const Fi = normCdf((s[i] - mean) / sd);
-    const Fni = normCdf((s[n - 1 - i] - mean) / sd);
-    // clamp para evitar log(0)
-    const lo = Math.min(Math.max(Fi, 1e-15), 1 - 1e-15);
-    const hi = Math.min(Math.max(1 - Fni, 1e-15), 1 - 1e-15);
-    acc += (2 * (i + 1) - 1) * (Math.log(lo) + Math.log(hi));
-  }
-  const A2 = -n - acc / n;
-  const A2star = A2 * (1 + 0.75 / n + 2.25 / (n * n));
-  let pValue: number;
-  if (A2star < 0.2)
-    pValue = 1 - Math.exp(-13.436 + 101.14 * A2star - 223.73 * A2star ** 2);
-  else if (A2star < 0.34)
-    pValue = 1 - Math.exp(-8.318 + 42.796 * A2star - 59.938 * A2star ** 2);
-  else if (A2star < 0.6)
-    pValue = Math.exp(0.9177 - 4.279 * A2star - 1.38 * A2star ** 2);
-  else if (A2star < 10)
-    pValue = Math.exp(1.2937 - 5.709 * A2star + 0.0186 * A2star ** 2);
-  else pValue = 0;
+  // ---------- Anderson-Darling ----------
+  // Se reporta A² crudo. A* (corrección de muestra pequeña) solo alimenta el
+  // p-valor: mostrarlo bajo la etiqueta "A-Squared" era incorrecto.
+  const ad = andersonDarlingNormal(s, { mean, sd });
+  const pValue = ad.pValue;
 
   // ---------- CI media (t) ----------
   const tcrit = tInv(1 - alpha / 2, n - 1);
@@ -101,10 +142,13 @@ export function computeGraphicalSummary(
   const ciMedian = medianCI_HS(s, alpha);
 
   return {
-    colName: data[name].name,
+    colName,
+    level,
+    values,
     n,
     nMissing: ctx.nMissing,
-    aSquared: A2star,
+    aSquared: ad.aSquared,
+    aStar: ad.aStar,
     pValue,
     mean,
     stDev: sd,

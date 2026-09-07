@@ -29,6 +29,34 @@ export const RESIDUAL_AXIS: Record<ResidualType, string> = {
   deleted: "Deleted Residual",
 };
 
+/** Linea de referencia sobre el grafico ajustado. */
+export type RefLineMode = "none" | "vertical" | "horizontal";
+
+export const REFLINE_LABEL: Record<RefLineMode, string> = {
+  none: "None",
+  vertical: "Vertical (at a value of X)",
+  horizontal: "Horizontal (at a value of Y)",
+};
+
+/** Un corte de la linea de referencia con una de las curvas dibujadas. */
+export interface RefPoint {
+  /** Rotulo de la serie cortada: Fitted, CI Lower, PI Upper... */
+  series: string;
+  x: number;
+  y: number;
+}
+
+export interface RefLineInfo {
+  mode: Exclude<RefLineMode, "none">;
+  value: number;
+  /**
+   * Cortes encontrados. Vacio si la linea no cruza nada visible: una
+   * horizontal fuera del recorrido de la curva, o una vertical fuera del
+   * rango observado.
+   */
+  points: RefPoint[];
+}
+
 export interface ImpRegParams {
   yColumn: string;
   xColumn: string;
@@ -39,6 +67,10 @@ export interface ImpRegParams {
   confidenceLevel: string;
   /** Prediccion en un valor concreto de X. Vacio: no se calcula. */
   predictX: string;
+  /** Linea de referencia sobre el grafico ajustado. */
+  refLine: RefLineMode;
+  /** Valor de la linea: X si es vertical, Y si es horizontal. */
+  refValue: string;
   showResidualPlots: boolean;
   /**
    * Tipo de residuo de los graficos. No altera el ajuste ni las tablas: solo
@@ -55,6 +87,8 @@ export const IMPREG_DEFAULT: ImpRegParams = {
   showPI: false,
   confidenceLevel: "95",
   predictX: "",
+  refLine: "none",
+  refValue: "",
   showResidualPlots: true,
   residualType: "regular",
 };
@@ -139,6 +173,7 @@ export interface ImpRegModel {
 
   curve: CurvePoint[];
   prediction: RegPrediction | null;
+  refLine: RefLineInfo | null;
 }
 
 export type ImpRegResult =

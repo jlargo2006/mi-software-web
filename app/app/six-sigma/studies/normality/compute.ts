@@ -3,19 +3,7 @@ import type { ColumnSnapshot } from "../types";
 import type { NormalityParams, NormalityResult } from "./types";
 // Genericos: se quedan en lib/stats
 import { mean, std, normCDF, normInv, toNumericCells } from "../../lib/stats";
-
-// --- Especifico de normalidad: p-valor a partir del AD ajustado ---
-function adPValue(ad: number): number {
-  if (ad >= 0.6) {
-    return Math.exp(1.2937 - 5.709 * ad + 0.0186 * ad * ad);
-  } else if (ad >= 0.34) {
-    return Math.exp(0.9177 - 4.279 * ad - 1.38 * ad * ad);
-  } else if (ad >= 0.2) {
-    return 1 - Math.exp(-8.318 + 42.796 * ad - 59.938 * ad * ad);
-  } else {
-    return 1 - Math.exp(-13.436 + 101.14 * ad - 223.73 * ad * ad);
-  }
-}
+import { andersonDarlingNormal } from "../../lib/anderson-darling";
 
 export function computeNormality(
   data: ColumnSnapshot,
@@ -31,22 +19,11 @@ export function computeNormality(
   const s = std(sorted);
 
   // --- Anderson-Darling ---
-  let adStatistic = 0;
-  let pValue = 1;
-  if (n >= 3 && s > 0) {
-    let sum = 0;
-    for (let i = 0; i < n; i++) {
-      const zi = (sorted[i] - m) / s;
-      const cdf = normCDF(zi);
-      const cdfComp = normCDF((sorted[n - 1 - i] - m) / s);
-      const a = Math.max(cdf, 1e-12);
-      const b = Math.max(1 - cdfComp, 1e-12);
-      sum += (2 * (i + 1) - 1) * (Math.log(a) + Math.log(b));
-    }
-    const aSquared = -n - sum / n;
-    adStatistic = aSquared * (1 + 0.75 / n + 2.25 / (n * n));
-    pValue = adPValue(adStatistic);
-  }
+  // Se reporta A² crudo (adStatistic). A* solo alimenta el p-valor.
+  const ad = andersonDarlingNormal(sorted, { mean: m, sd: s });
+  const adStatistic = Number.isFinite(ad.aSquared) ? ad.aSquared : 0;
+  const adStar = Number.isFinite(ad.aStar) ? ad.aStar : 0;
+  const pValue = Number.isFinite(ad.pValue) ? ad.pValue : 1;
 
   // --- Datos del probability plot ---
   const tickPercents = [
@@ -80,6 +57,7 @@ export function computeNormality(
     mean: m,
     std: s,
     adStatistic,
+    adStar,
     pValue,
     isNormal: pValue > 0.05,
     pointsX,

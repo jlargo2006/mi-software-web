@@ -10,7 +10,7 @@ import Link from 'next/link'
 const BRAND = '#00674d'
 const BRAND_DARK = '#00513d'
 const BRAND_SOFT = '#e6f2ee'
-const PRODUCT_NAME = 'Six Sigma Macro Tools'
+const PRODUCT_NAME = 'Six Sigma Analyzer'
 
 // ---------------------------------------------------------------------------
 //  DMAIC phases — kept in sync with lib/ribbon.ts
@@ -97,12 +97,12 @@ const SCREENSHOTS = [
     text: 'Cp, Cpk, Pp, Ppk, PPM and sigma level, with within and overall variation shown against your specification limits.',
   },
   {
-    src: '/images/pareto.png',
-    title: 'Pareto Chart',
-    text: 'Rank defect categories by frequency with cumulative percentage line to isolate the vital few causes.',
+    src: '/images/DOE.png',
+    title: 'Design of Experiments (DOE)',
+    text: 'Full and fractional factorial designs with main effects, interaction plots, and ANOVA to pinpoint the factors that truly drive your response.',
   },
   {
-    src: '/images/two-sample-t-test.png',
+    src: '/images/power-2-sample-t-test.png',
     title: 'Hypothesis Testing',
     text: 'Full battery of parametric and non-parametric tests, with assumption checks and plain-language conclusions.',
   },

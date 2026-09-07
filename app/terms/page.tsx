@@ -1,13 +1,13 @@
 export const metadata = {
-  title: 'Terms of Service · Six Sigma Macro Tools',
+  title: 'Terms of Service · Six Sigma Analyzer',
   description:
-    'Terms governing the use of Six Sigma Macro Tools, a browser-based statistical analysis tool for DMAIC projects.',
+    'Terms governing the use of Six Sigma Analyzer, a browser-based statistical analysis tool for DMAIC projects.',
 }
 
 import Link from 'next/link'
 
 const BRAND = '#00674d'
-const PRODUCT_NAME = 'Six Sigma Macro Tools'
+const PRODUCT_NAME = 'Six Sigma Analyzer'
 const CONTACT_EMAIL = 'support@sixsigmamacrotools.com'
 
 export default function TermsPage() {

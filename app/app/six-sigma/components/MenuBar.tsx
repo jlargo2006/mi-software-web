@@ -8,9 +8,11 @@ import { useDismiss } from "../hooks/useDismiss";
 
 interface MenuBarProps {
   userEmail?: string;
+  projectName?: string;        // ← nueva
   onNew: () => void;
   onOpen: () => void;
   onSave: () => void;
+  onSaveProject?: () => void;  // ← nueva
   onExportProject: () => void;
   onImportProject: () => void;
   onSignOut: () => void;

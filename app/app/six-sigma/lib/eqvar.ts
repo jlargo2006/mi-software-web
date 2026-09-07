@@ -268,6 +268,83 @@ function studentizedRangeSF(q: number, k: number): number {
 }
 
 /**
+ * Cuantil q_{alpha,k}: percentil superior alpha del rango de k normales
+ * estandar. Es la constante de multiplicidad de Nakayama (2009) que sustituye
+ * a Bonferroni en el procedimiento grafico.
+ *
+ * Con k = 2 hay forma cerrada: el rango de dos normales es |Z1-Z2| ~ N(0,2),
+ * luego q_{alpha,2} = sqrt(2)*z_{alpha/2}. Se usa el atajo para no depender de
+ * la cuadratura en el caso mas frecuente.
+ */
+function rangeQuantile(alpha: number, k: number): number {
+  if (k <= 2) return Math.SQRT2 * normQuantile(1 - alpha / 2);
+  let lo = 0.1;
+  let hi = 14;
+  for (let i = 0; i < 200; i++) {
+    const mid = (lo + hi) / 2;
+    // studentizedRangeSF es decreciente en q.
+    if (studentizedRangeSF(mid, k) > alpha) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+/**
+ * Matriz b_ij de Banga & Fox (2013), CON la raiz cuadrada:
+ *
+ *   b_ij = sqrt( (g4_ij - k_i)/(n_i - 1) + (g4_ij - k_j)/(n_j - 1) )
+ *
+ * OJO: la version anterior de bonettMCMultiGroups guardaba el valor SIN raiz.
+ * Ver la nota del bloque (3): para k = 3 da igual por algebra, para k >= 4 no.
+ */
+function bonettBMatrix(groups: number[][]): number[][] {
+  const k = groups.length;
+  const n = groups.map((g) => g.length);
+  const b: number[][] = Array.from({ length: k }, () => new Array(k).fill(0));
+  for (let i = 0; i < k; i++) {
+    for (let j = i + 1; j < k; j++) {
+      const g4 = pooledKurtosis(groups[i], groups[j]);
+      const v =
+        (g4 - (n[i] - 3) / n[i]) / (n[i] - 1) +
+        (g4 - (n[j] - 3) / n[j]) / (n[j] - 1);
+      b[i][j] = Math.sqrt(v);
+      b[j][i] = b[i][j];
+    }
+  }
+  return b;
+}
+
+/**
+ * V_i de Hochberg et al. (1982): minimiza sum (V_i + V_j - b_ij)^2.
+ *
+ * Con k = 2 el minimizador NO es unico (una sola ecuacion, dos incognitas).
+ * Minitab elige el reparto proporcional a u_i, que es lo que documenta en
+ * Methods & Formulas y lo que se reproduce aqui. Ese reparto cumple
+ * V_1 + V_2 = b_12, igual que el caso general.
+ */
+function hochbergV(groups: number[][], b: number[][]): number[] {
+  const k = groups.length;
+
+  if (k === 2) {
+    const n = groups.map((g) => g.length);
+    const g4 = pooledKurtosis(groups[0], groups[1]);
+    const u = n.map((ni) => Math.sqrt((g4 - (ni - 3) / ni) / (ni - 1)));
+    const sum = u[0] + u[1];
+    return sum > 0 ? u.map((ui) => (ui / sum) * b[0][1]) : [0, 0];
+  }
+
+  let total = 0;
+  for (let i = 0; i < k; i++) {
+    for (let j = i + 1; j < k; j++) total += b[i][j];
+  }
+  return b.map((row, i) => {
+    let rowSum = 0;
+    for (let j = 0; j < k; j++) if (j !== i) rowSum += row[j];
+    return ((k - 1) * rowSum - total) / ((k - 1) * (k - 2));
+  });
+}
+
+/**
  * Media recortada con proporcion FRACCIONARIA e interpolada.
  * Recorta k = prop*n observaciones por cola; la parte fraccionaria se aplica
  * como peso parcial a las observaciones de los extremos del nucleo.
@@ -490,27 +567,11 @@ function bonettMCMultiGroups(groups: number[][]): { p: number; stat: number } {
   const n = groups.map((g) => g.length);
   const s2 = groups.map((g) => variance(g));
 
-  // b_ij simetrica
-  const b: number[][] = Array.from({ length: k }, () => new Array(k).fill(0));
-  let total = 0;
-  for (let i = 0; i < k; i++) {
-    for (let j = i + 1; j < k; j++) {
-      const g4 = pooledKurtosis(groups[i], groups[j]);
-      const v =
-        (g4 - (n[i] - 3) / n[i]) / (n[i] - 1) +
-        (g4 - (n[j] - 3) / n[j]) / (n[j] - 1);
-      b[i][j] = v;
-      b[j][i] = v;
-      total += v;
-    }
-  }
-
-  const V = new Array(k).fill(0);
-  for (let i = 0; i < k; i++) {
-    let rowSum = 0;
-    for (let j = 0; j < k; j++) if (j !== i) rowSum += b[i][j];
-    V[i] = ((k - 1) * rowSum - total) / ((k - 1) * (k - 2));
-  }
+  // b_ij y V_i del paper (b CON raiz). El p-valor y los intervalos del grafico
+  // comparten ahora las mismas V_i: es lo que garantiza que el test rechace si
+  // y solo si algun par de intervalos no se solapa.
+  const b = bonettBMatrix(groups);
+  const V = hochbergV(groups, b);
 
   let best = 1;
   let bestStat = NaN;
@@ -518,7 +579,8 @@ function bonettMCMultiGroups(groups: number[][]): { p: number; stat: number } {
     for (let j = i + 1; j < k; j++) {
       const den = V[i] + V[j];
       if (!(den > 0)) continue;
-      const z = (Math.log(s2[i]) - Math.log(s2[j])) / Math.sqrt(den);
+      // Paper, seccion 3.2: se = V_i + V_j (no sqrt(V_i + V_j)).
+      const z = (Math.log(s2[i]) - Math.log(s2[j])) / den;
       const p = studentizedRangeSF(Math.SQRT2 * Math.abs(z), k);
       if (p < best) {
         best = p;
@@ -582,27 +644,30 @@ export function computeEqVar(
   const mc = multipleComparisons(groups.map((g) => g.values));
   const lev = leveneTest(groups.map((g) => g.values));
 
-  // --- Intervalos de comparacion multiple, para el grafico ---
-  // Construidos por EQUIVALENCIA con el test: las semianchuras h_i en escala
-  // log-varianza cumplen sum(h_i) = z * sqrt(sum a_iÂ²), con a_i = c_i*sqrt(v_i),
-  // de modo que dos intervalos se solapan si y solo si el par no es
-  // significativo a alpha. Es la propiedad que anuncia el pie de la grafica.
-  // El reparto interno es proporcional a a_i (recalibrado con k = 3, ppm
-  // defective); solo afecta al aspecto visual, no al criterio.
-  const zMC = normQuantile(1 - opts.alpha / 2);
-  const vAll = parts.map((p) => bonettVar(p.n, p.g4));
-  const cAll = parts.map((p) => p.n / (p.n - zMC));
-
-  const aAll = parts.map((_, i) => cAll[i] * Math.sqrt(vAll[i]));
-  const hTotal = zMC * Math.sqrt(aAll.reduce((s, v) => s + v * v, 0));
-  const wAll = aAll;
-  const wSum = wAll.reduce((s, v) => s + v, 0);
-
+  // --- Intervalos de comparacion multiple (Banga & Fox 2013, seccion 2) ---
+  //   IC_i = S_i*sqrt(c_i) * exp( +- q_{alpha,k} * V_i / (2*sqrt2) )
+  //   c_i  = n_i / (n_i - q_{alpha,k}/sqrt2)
+  //
+  // DOS DETALLES QUE NO SE ADIVINAN:
+  //  1) c_i usa q/sqrt2, NO z_{alpha/2}. Con k=2 coinciden (q = sqrt2*z), con
+  //     k=3 no: 1,30611 frente a 1,24378. Ese factor era el que faltaba.
+  //  2) El /2 del exponente pasa de log-varianza a sigma.
+  //
+  // VERIFICADO contra el ejemplo publicado del paper (hornos, k=3, n=10):
+  //   (0,896; 2,377) (1,072; 2,760) (4,366; 12,787)
+  //   publicado      (0,896; 2,378) (1,072; 2,760) (4,366; 12,787)
+  // y contra la captura de Minitab con CallsperWk (k=2, n=22/105):
+  //   (89,82; 281,06) y (161,13; 268,43).
+  const values = groups.map((g) => g.values);
+  const qMC = rangeQuantile(opts.alpha, k);
+  const vMC = hochbergV(values, bonettBMatrix(values));
+  const cMC = parts.map((p) => p.n / (p.n - qMC / Math.SQRT2));
   const out: EqVarGroupResult[] = groups.map((g, i) => {
     const p = parts[i];
     const ci = bonettCI(g.values, individualLevel);
-    const center = Math.log(cAll[i] * p.s2);
-    const h = wSum > 0 ? (hTotal * wAll[i]) / wSum : 0;
+    const center = Math.log(cMC[i] * p.s2);
+    // h en escala log-varianza: el sqrt(exp(...)) de abajo aporta el /2.
+    const h = (qMC * vMC[i]) / Math.SQRT2;
     return {
       name: g.name,
       n: p.n,
