@@ -87,11 +87,11 @@ export default function ContactPage() {
           Send a message and we will get back to you as soon as we can. You can also
           write directly to{" "}
           <a
-            href="mailto:support@sixsigmamacrotools.com"
+            href="mailto:support@sixsigmaanalyzer.com"
             className="underline hover:no-underline"
             style={{ color: BRAND }}
           >
-            support@sixsigmamacrotools.com
+            support@sixsigmaanalyzer.com
           </a>
           .
         </p>
