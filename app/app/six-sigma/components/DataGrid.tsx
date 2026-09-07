@@ -288,24 +288,29 @@ export default function DataGrid({
 
   
   // ---------- Redimensionar columnas ----------
-  const startResize = (col: number, e: React.MouseEvent) => {
+  // Con Pointer Events y setPointerCapture el propio elemento recibe todos los
+  // move y el up, sin listeners en window: no hay referencias que dejen de
+  // coincidir entre renders, que es lo que rompia el arrastre.
+  const startResize = (col: number, e: React.PointerEvent) => {
     e.preventDefault();
-    e.stopPropagation();
+    e.stopPropagation(); // que el th no interprete el clic como "seleccionar columna"
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     resizeRef.current = { col, startX: e.clientX, startW: widthOf(col) };
-    window.addEventListener("mousemove", onResizeMove);
-    window.addEventListener("mouseup", stopResize);
   };
-  const onResizeMove = (e: MouseEvent) => {
+
+  const onResizeMove = (e: React.PointerEvent) => {
     if (!resizeRef.current) return;
     const { col, startX, startW } = resizeRef.current;
     const w = Math.max(MIN_COL_WIDTH, startW + (e.clientX - startX));
     setColWidths((prev) => ({ ...prev, [col]: w }));
   };
-  const stopResize = () => {
+
+  const stopResize = (e: React.PointerEvent) => {
+    if (!resizeRef.current) return;
     resizeRef.current = null;
-    window.removeEventListener("mousemove", onResizeMove);
-    window.removeEventListener("mouseup", stopResize);
+    (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
   };
+
 
   // ---------- Pegado ----------
   const textToMatrix = (text: string): string[][] =>
@@ -450,8 +455,21 @@ export default function DataGrid({
               >
                 {colLabel(c)}
                 <span
-                  onMouseDown={(e) => startResize(c, e)}
-                  className="absolute top-0 right-0 h-full w-1 cursor-col-resize hover:bg-emerald-400"
+                  onPointerDown={(e) => startResize(c, e)}
+                  onPointerMove={onResizeMove}
+                  onPointerUp={stopResize}
+                  onPointerCancel={stopResize}
+                  onDoubleClick={(e) => {
+                    // Doble clic devuelve la columna a su ancho por defecto,
+                    // como el doble clic del splitter lateral.
+                    e.stopPropagation();
+                    setColWidths((prev) => {
+                      const next = { ...prev };
+                      delete next[c];
+                      return next;
+                    });
+                  }}
+                  className="absolute top-0 right-0 h-full w-1.5 cursor-col-resize touch-none hover:bg-emerald-400"
                 />
               </th>
             ))}
