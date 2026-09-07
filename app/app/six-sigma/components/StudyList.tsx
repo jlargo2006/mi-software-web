@@ -134,12 +134,9 @@ export default function StudyList({
                 onClick={() => onSelect(s)}
                 onDoubleClick={() => startRename(s)}
                 className="flex-1 min-w-0 text-left px-2 py-1.5 pr-12"
-                title={`${s.name}\nDouble-click to rename`}
+                title={`${s.name}\n${formatStudyDate(s.createdAt)}\nDouble-click to rename`}
               >
                 <div className="text-sm text-gray-700 truncate">{s.name}</div>
-                <div className="text-[11px] text-gray-400">
-                  {formatStudyDate(s.createdAt)}
-                </div>
               </button>
 
               {/* Los controles solo aparecen al pasar por encima, para que la
