@@ -101,6 +101,44 @@ export function useWorkbook() {
     [activeSheet]
   );
 
+  /**
+   * Ordena las filas de datos por una columna.
+   *
+   * Reordena los DATOS, no una vista: los estudios guardados llevan su propia
+   * copia, asi que no se rompe nada, y una vista ordenada obligaria a traducir
+   * indices en cada insercion, borrado o pegado.
+   */
+  const sortRowsBy = useCallback(
+    (col: number, dir: "asc" | "desc") => {
+      setData((prev) => {
+        const sheet = prev[activeSheet];
+        if (!sheet) return prev;
+        const sign = dir === "asc" ? 1 : -1;
+        const rows = [...sheet.rows].sort((a, b) => {
+          const va = a[col] ?? "";
+          const vb = b[col] ?? "";
+          // Los vacios van siempre al final, en los dos sentidos: si se
+          // ordenaran, en descendente saldrian primero y taparian los datos.
+          if (va === "" && vb === "") return 0;
+          if (va === "") return 1;
+          if (vb === "") return -1;
+          const na = typeof va === "number" ? va : Number(va);
+          const nb = typeof vb === "number" ? vb : Number(vb);
+          // Numerico cuando ambos lo son: si no, "10" iria antes que "9".
+          if (!Number.isNaN(na) && !Number.isNaN(nb)) return (na - nb) * sign;
+          return (
+            String(va).localeCompare(String(vb), undefined, {
+              numeric: true,
+              sensitivity: "base",
+            }) * sign
+          );
+        });
+        return { ...prev, [activeSheet]: { ...sheet, rows } };
+      });
+    },
+    [activeSheet]
+  );
+  
   // ---- Columnas ----
   const addColumn = useCallback(() => {
     setData((prev) => {
@@ -150,25 +188,44 @@ export function useWorkbook() {
   // ---- Hojas ----
   const addSheet = useCallback(() => {
     setOrder((prevOrder) => {
-      let i = prevOrder.length + 1;
-      let name = `Sheet${i}`;
-      while (prevOrder.includes(name)) name = `Sheet${++i}`;
+      // El sufijo se calcula como "el mayor Sheet-N existente + 1", no como
+      // "numero de hojas + 1": al insertar en medio, contar hojas repetiria
+      // nombres ya usados (Sheet1, Sheet2, borras Sheet1 -> Sheet2 otra vez).
+      let maxN = 0;
+      for (const n of prevOrder) {
+        const m = /^Sheet(\d+)$/.exec(n);
+        if (m) maxN = Math.max(maxN, Number(m[1]));
+      }
+      let name = `Sheet${maxN + 1}`;
+      let bump = maxN + 1;
+      while (prevOrder.includes(name)) name = `Sheet${++bump}`;
+
       setData((prev) => ({ ...prev, [name]: createEmptySheet() }));
       setActiveSheet(name);
-      return [...prevOrder, name];
+
+      // Se inserta a la derecha de la hoja activa, como Excel. Si la activa
+      // no esta en la lista (no deberia pasar), cae al final.
+      const idx = prevOrder.indexOf(activeSheet);
+      const next = [...prevOrder];
+      next.splice(idx < 0 ? prevOrder.length : idx + 1, 0, name);
+      return next;
     });
-  }, []);
+  }, [activeSheet]);
 
   const deleteSheet = useCallback((name: string) => {
     setOrder((prevOrder) => {
       if (prevOrder.length <= 1) return prevOrder;
+      const idx = prevOrder.indexOf(name);
       const newOrder = prevOrder.filter((n) => n !== name);
       setData((prev) => {
         const copy = { ...prev };
         delete copy[name];
         return copy;
       });
-      setActiveSheet((curr) => (curr === name ? newOrder[0] : curr));
+      // Se queda la hoja que ocupa ahora esa posicion (la posterior); si
+      // borraste la ultima, la anterior. Es el comportamiento de Excel.
+      const fallback = newOrder[Math.min(idx, newOrder.length - 1)];
+      setActiveSheet((curr) => (curr === name ? fallback : curr));
       return newOrder;
     });
   }, []);
@@ -324,6 +381,7 @@ export function useWorkbook() {
     addRow,
     deleteRow,
     deleteRowsAt,
+    sortRowsBy,
     addColumn,
     deleteColumn,
     deleteColumnsAt,
