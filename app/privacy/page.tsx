@@ -1,14 +1,14 @@
 export const metadata = {
-  title: 'Privacy Policy · Six Sigma Macro Tools',
+  title: 'Privacy Policy · Six Sigma Analyzer',
   description:
-    'How Six Sigma Macro Tools handles account data. Datasets are never stored on our servers.',
+    'How Six Sigma Analyzer handles account data. Datasets are never stored on our servers.',
 }
 
 import Link from 'next/link'
 
 const BRAND = '#00674d'
-const PRODUCT_NAME = 'Six Sigma Macro Tools'
-const CONTACT_EMAIL = 'support@sixsigmamacrotools.com'
+const PRODUCT_NAME = 'Six Sigma Analyzer'
+const CONTACT_EMAIL = 'support@sixsigmaanalyzer.com'
 
 export default function PrivacyPage() {
   return (
