@@ -7,7 +7,7 @@ export default function SuccessPage() {
         <div className="text-5xl mb-6">🎉</div>
         <h1 className="text-3xl font-bold mb-4">¡Pago completado!</h1>
         <p className="text-gray-600 mb-8">
-          Gracias por suscribirte a 6 Sigma Macro Tools. En breve recibirás un email con las instrucciones de acceso.
+          Gracias por suscribirte a 6 Sigma Analyzer. En breve recibirás un email con las instrucciones de acceso.
         </p>
         <Link
           href="/"
