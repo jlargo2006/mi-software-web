@@ -52,6 +52,11 @@ export default function DataGrid({
   // Columna y sentido del ultimo orden aplicado: solo para pintar la flecha
   // activa. No condiciona los datos, que ya quedaron ordenados.
   const [sortedBy, setSortedBy] = useState<{ col: number; dir: "asc" | "desc" } | null>(null);
+
+  // Mismo patron que useSidebar: el arrastre es un ESTADO, y un useEffect
+  // monta y limpia los listeners. Añadirlos dentro del manejador dejaba
+  // referencias descolgadas entre renders.
+  const [resizing, setResizing] = useState(false);
   
   const resizeRef = useRef<{ col: number; startX: number; startW: number } | null>(null);
   const dragRef = useRef<{ mode: DragMode; anchor: number } | null>(null);
@@ -283,34 +288,44 @@ export default function DataGrid({
       clearSelectedContent();
     }
   };
-
-
-
   
   // ---------- Redimensionar columnas ----------
-  // Con Pointer Events y setPointerCapture el propio elemento recibe todos los
-  // move y el up, sin listeners en window: no hay referencias que dejen de
-  // coincidir entre renders, que es lo que rompia el arrastre.
   const startResize = (col: number, e: React.PointerEvent) => {
     e.preventDefault();
-    e.stopPropagation(); // que el th no interprete el clic como "seleccionar columna"
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    e.stopPropagation(); // que el th no lo tome como "seleccionar columna"
     resizeRef.current = { col, startX: e.clientX, startW: widthOf(col) };
+    setResizing(true);
   };
 
-  const onResizeMove = (e: React.PointerEvent) => {
-    if (!resizeRef.current) return;
-    const { col, startX, startW } = resizeRef.current;
-    const w = Math.max(MIN_COL_WIDTH, startW + (e.clientX - startX));
-    setColWidths((prev) => ({ ...prev, [col]: w }));
-  };
+  useEffect(() => {
+    if (!resizing) return;
 
-  const stopResize = (e: React.PointerEvent) => {
-    if (!resizeRef.current) return;
-    resizeRef.current = null;
-    (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-  };
+    const onMove = (e: PointerEvent) => {
+      const r = resizeRef.current;
+      if (!r) return;
+      const w = Math.max(MIN_COL_WIDTH, r.startW + (e.clientX - r.startX));
+      setColWidths((prev) => ({ ...prev, [r.col]: w }));
+    };
+    const onUp = () => {
+      resizeRef.current = null;
+      setResizing(false);
+    };
 
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+    // Sin esto el cursor parpadea y se selecciona texto al arrastrar.
+    const prevCursor = document.body.style.cursor;
+    const prevSelect = document.body.style.userSelect;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+
+    return () => {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      document.body.style.cursor = prevCursor;
+      document.body.style.userSelect = prevSelect;
+    };
+  }, [resizing]);
 
   // ---------- Pegado ----------
   const textToMatrix = (text: string): string[][] =>
@@ -456,9 +471,6 @@ export default function DataGrid({
                 {colLabel(c)}
                 <span
                   onPointerDown={(e) => startResize(c, e)}
-                  onPointerMove={onResizeMove}
-                  onPointerUp={stopResize}
-                  onPointerCancel={stopResize}
                   onDoubleClick={(e) => {
                     // Doble clic devuelve la columna a su ancho por defecto,
                     // como el doble clic del splitter lateral.
