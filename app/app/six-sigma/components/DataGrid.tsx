@@ -49,9 +49,6 @@ export default function DataGrid({
   const [active, setActive] = useState<{ r: number; c: number } | null>(null);
   const [colWidths, setColWidths] = useState<Record<number, number>>({});
   const [range, setRange] = useState<RangeSel | null>(null);
-  // Columna y sentido del ultimo orden aplicado: solo para pintar la flecha
-  // activa. No condiciona los datos, que ya quedaron ordenados.
-  const [sortedBy, setSortedBy] = useState<{ col: number; dir: "asc" | "desc" } | null>(null);
   // Mismo patron que useSidebar, que si funciona: el arrastre es un ESTADO y
   // un useEffect monta los listeners en document. Con setPointerCapture sobre
   // un <th> sticky el navegador no entrega los move de forma fiable.
