@@ -17,6 +17,8 @@ interface MenuBarProps {
   onImportProject: () => void;
   onSignOut: () => void;
   onSelectTool: (tool: ToolId) => void;
+  onSortData: () => void;
+  onCalculator: () => void;
 }
 
 export default function MenuBar({
@@ -28,18 +30,25 @@ export default function MenuBar({
   onImportProject,
   onSignOut,
   onSelectTool,
+  onSortData,
+  onCalculator,
 }: MenuBarProps) {
   const [fileOpen, setFileOpen] = useState(false);
+  const [dataOpen, setDataOpen] = useState(false);
   const [activePhase, setActivePhase] = useState<string | null>(null);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const [openSub, setOpenSub] = useState<string | null>(null);
   const fileRef = useRef<HTMLDivElement>(null);
+  const dataRef = useRef<HTMLDivElement>(null);
   const toolsRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   // Cada menu flotante se cierra al pulsar fuera o con Escape.
   const closeFile = useCallback(() => setFileOpen(false), []);
   useDismiss(fileRef, closeFile, fileOpen);
+
+  const closeData = useCallback(() => setDataOpen(false), []);
+  useDismiss(dataRef, closeData, dataOpen);
 
   const closeGroup = useCallback(() => {
     setOpenGroup(null);
@@ -51,9 +60,10 @@ export default function MenuBar({
   const togglePhase = (name: string) => {
     setActivePhase((prev) => (prev === name ? null : name));
     setOpenGroup(null);
-    // Abrir una fase cierra el menu File: son dos menus del mismo nivel y no
-    // deben quedar los dos desplegados.
+    // Abrir una fase cierra los menus de primer nivel: son del mismo rango y
+    // no deben quedar varios desplegados.
     setFileOpen(false);
+    setDataOpen(false);
   };
 
   const phaseTools = PHASES.find((p) => p.name === activePhase)?.tools ?? [];
@@ -82,6 +92,11 @@ export default function MenuBar({
     action();
   };
 
+  const runData = (action: () => void) => () => {
+    setDataOpen(false);
+    action();
+  };
+  
   const fileItem =
     "w-full text-left px-4 py-2 text-sm hover:bg-gray-100 text-gray-700";
 
@@ -92,7 +107,10 @@ export default function MenuBar({
         {/* File menu */}
         <div className="relative" ref={fileRef}>
           <button
-            onClick={() => setFileOpen((o) => !o)}
+            onClick={() => {
+              setDataOpen(false);
+              setFileOpen((o) => !o);
+            }}
             aria-haspopup="menu"
             aria-expanded={fileOpen}
             className="px-3 py-1.5 rounded text-sm font-medium hover:bg-white/15"
@@ -130,6 +148,35 @@ export default function MenuBar({
                 onClick={runFile(onSignOut)}
               >
                 Sign out
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Menu Data: operaciones sobre la hoja activa. No va en la cinta
+            DMAIC porque no pertenece a ninguna fase: se usa en todas. */}
+        <div className="relative" ref={dataRef}>
+          <button
+            onClick={() => {
+              setFileOpen(false);
+              setDataOpen((o) => !o);
+            }}
+            aria-haspopup="menu"
+            aria-expanded={dataOpen}
+            className="px-3 py-1.5 rounded text-sm font-medium hover:bg-white/15"
+          >
+            Data {"\u25BE"}
+          </button>
+          {dataOpen && (
+            <div
+              role="menu"
+              className="absolute left-0 top-full mt-1 w-56 bg-white rounded shadow-lg border border-gray-200 py-1 z-50"
+            >
+              <button className={fileItem} onClick={runData(onSortData)}>
+                Sort rows{"\u2026"}
+              </button>
+              <button className={fileItem} onClick={runData(onCalculator)}>
+                Calculator{"\u2026"}
               </button>
             </div>
           )}
