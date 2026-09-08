@@ -52,7 +52,12 @@ export default function DataGrid({
   // Columna y sentido del ultimo orden aplicado: solo para pintar la flecha
   // activa. No condiciona los datos, que ya quedaron ordenados.
   const [sortedBy, setSortedBy] = useState<{ col: number; dir: "asc" | "desc" } | null>(null);
+  // Mismo patron que useSidebar, que si funciona: el arrastre es un ESTADO y
+  // un useEffect monta los listeners en document. Con setPointerCapture sobre
+  // un <th> sticky el navegador no entrega los move de forma fiable.
+  const [resizing, setResizing] = useState(false);
 
+  
   // Mismo patron que useSidebar: el arrastre es un ESTADO, y un useEffect
   // monta y limpia los listeners. Añadirlos dentro del manejador dejaba
   // referencias descolgadas entre renders.
@@ -291,7 +296,6 @@ export default function DataGrid({
   
   // ---------- Redimensionar columnas ----------
   const startResize = (col: number, e: React.PointerEvent) => {
-    console.log("resize", col);
     e.preventDefault();
     e.stopPropagation(); // que el th no lo tome como "seleccionar columna"
     resizeRef.current = { col, startX: e.clientX, startW: widthOf(col) };
@@ -314,7 +318,6 @@ export default function DataGrid({
 
     document.addEventListener("pointermove", onMove);
     document.addEventListener("pointerup", onUp);
-    // Sin esto el cursor parpadea y se selecciona texto al arrastrar.
     const prevCursor = document.body.style.cursor;
     const prevSelect = document.body.style.userSelect;
     document.body.style.cursor = "col-resize";
