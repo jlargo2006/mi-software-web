@@ -138,6 +138,28 @@ export function useWorkbook() {
     },
     [activeSheet]
   );
+
+  /**
+   * Escribe una columna entera de golpe (calculadora de columnas).
+   * En un solo setData: hacerlo con setCell fila a fila encadenaria un
+   * render por celda y con 500 filas se nota.
+   */
+  const setColumnValues = useCallback(
+    (col: number, values: Cell[]) => {
+      setData((prev) => {
+        const sheet = prev[activeSheet];
+        if (!sheet) return prev;
+        const rows = sheet.rows.map((r) => [...r]);
+        values.forEach((v, i) => {
+          if (i >= rows.length) return;
+          while (rows[i].length <= col) rows[i].push("");
+          rows[i][col] = v;
+        });
+        return { ...prev, [activeSheet]: { ...sheet, rows } };
+      });
+    },
+    [activeSheet]
+  );
   
   // ---- Columnas ----
   const addColumn = useCallback(() => {
@@ -382,6 +404,7 @@ export function useWorkbook() {
     deleteRow,
     deleteRowsAt,
     sortRowsBy,
+    setColumnValues,    
     addColumn,
     deleteColumn,
     deleteColumnsAt,
