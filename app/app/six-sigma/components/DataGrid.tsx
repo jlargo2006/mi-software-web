@@ -184,6 +184,7 @@ export default function DataGrid({
   // Fin de cualquier arrastre (selección de fila/col/rango)
   useEffect(() => {
     const up = () => {
+      if (resizeRef.current) return; // el resize gestiona su propio fin
       dragRef.current = null;
       selectingRef.current = false;
     };
@@ -289,9 +290,12 @@ export default function DataGrid({
   };
   
   // ---------- Redimensionar columnas ----------
-  const startResize = (col: number, e: React.PointerEvent) => {
+  // Todo con eventos de RATON, coherente con el resto del grid: mezclar
+  // pointerdown con el onMouseDown del <th> hacia que stopPropagation no
+  // sirviera de nada y el <th> iniciara a la vez una seleccion de columna.
+  const startResize = (col: number, e: React.MouseEvent) => {
     e.preventDefault();
-    e.stopPropagation(); // que el th no lo tome como "seleccionar columna"
+    e.stopPropagation();
     resizeRef.current = { col, startX: e.clientX, startW: widthOf(col) };
     setResizing(true);
   };
@@ -299,7 +303,7 @@ export default function DataGrid({
   useEffect(() => {
     if (!resizing) return;
 
-    const onMove = (e: PointerEvent) => {
+    const onMove = (e: MouseEvent) => {
       const r = resizeRef.current;
       if (!r) return;
       const w = Math.max(MIN_COL_WIDTH, r.startW + (e.clientX - r.startX));
@@ -310,20 +314,18 @@ export default function DataGrid({
       setResizing(false);
     };
 
-    document.addEventListener("pointermove", onMove);
-    document.addEventListener("pointerup", onUp);
-    const prevCursor = document.body.style.cursor;
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
     const prevSelect = document.body.style.userSelect;
-    document.body.style.cursor = "col-resize";
     document.body.style.userSelect = "none";
 
     return () => {
-      document.removeEventListener("pointermove", onMove);
-      document.removeEventListener("pointerup", onUp);
-      document.body.style.cursor = prevCursor;
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
       document.body.style.userSelect = prevSelect;
     };
   }, [resizing]);
+
 
   // ---------- Pegado ----------
   const textToMatrix = (text: string): string[][] =>
@@ -452,6 +454,16 @@ export default function DataGrid({
   return (
     <div className="overflow-auto h-full" onCopy={handleGridCopy} onKeyDown={handleGridKeyDown} tabIndex={0}>
       <table className="border-collapse select-none" style={{ tableLayout: "fixed" }}>
+        {/* Con table-layout:fixed el ancho se declara UNA vez. Repartirlo por
+            el style de cada fila deja al navegador arbitrando entre valores
+            que pueden no coincidir con el contenido minimo de las celdas. */}
+        <colgroup>
+          <col style={{ width: 48 }} />
+          {Array.from({ length: numCols }, (_, c) => (
+            <col key={c} style={{ width: widthOf(c) }} />
+          ))}
+        </colgroup>
+        
         <thead>
           {/* Letras de columna (A..Z) */}
           <tr>
@@ -464,11 +476,10 @@ export default function DataGrid({
                 className={`sticky top-0 z-10 border border-gray-300 text-xs font-semibold text-gray-600 cursor-pointer relative ${
                   selCols.has(c) ? "bg-emerald-200" : "bg-gray-100 hover:bg-gray-200"
                 }`}
-                style={{ width: widthOf(c), minWidth: widthOf(c) }}
               >
                 {colLabel(c)}
                 <span
-                  onPointerDown={(e) => startResize(c, e)}
+                  onMouseDown={(e) => startResize(c, e)}
                   onDoubleClick={(e) => {
                     // Doble clic devuelve la columna a su ancho por defecto,
                     // como el doble clic del splitter lateral.
@@ -479,7 +490,6 @@ export default function DataGrid({
                       return next;
                     });
                   }}
-                  className="absolute top-0 right-0 h-full w-1.5 cursor-col-resize touch-none hover:bg-emerald-400"
                 />
               </th>
             ))}
@@ -496,18 +506,17 @@ export default function DataGrid({
                 className={`border border-[#00513d] p-0 ${
                   selCols.has(c) ? "bg-emerald-100" : "bg-[#e6f2ee]"
                 }`}
-                style={{ width: widthOf(c), minWidth: widthOf(c) }}
               >
-                <div className="flex items-center">
+                <div className="relative flex items-center">
                   <input
                     value={sheet.headers[c] ?? ""}
                     onChange={(e) => onHeaderChange(c, e.target.value)}
                     onPaste={(e) => handleHeaderPaste(e, c)}
                     onKeyDown={(e) => handleHeaderKeyDown(e, c)}
                     placeholder={colLabel(c)}
-                    className="min-w-0 flex-1 bg-transparent px-1 py-0.5 text-xs font-semibold text-[#00513d] placeholder-[#8bbcab] outline-none"
+                    className="min-w-0 flex-1 bg-transparent px-1 py-0.5 pr-3 text-xs font-semibold text-[#00513d] placeholder-[#8bbcab] outline-none"
                   />
-                  <span className="flex shrink-0 flex-col pr-0.5 leading-none">
+                  <span className="absolute right-0.5 top-0 flex flex-col leading-none opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
                     <button
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
@@ -568,7 +577,6 @@ export default function DataGrid({
                     className={`border border-gray-200 p-0 ${
                       highlighted ? "bg-emerald-50" : "bg-white"
                     }`}
-                    style={{ width: widthOf(c), minWidth: widthOf(c) }}
                   >
                     <input
                       id={`dg-cell-${r}-${c}`}
