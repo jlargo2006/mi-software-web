@@ -291,7 +291,7 @@ export default function DataGrid({
   
   // ---------- Redimensionar columnas ----------
   const startResize = (col: number, e: React.PointerEvent) => {
-    console.log("resize", c);
+    console.log("resize", col);
     e.preventDefault();
     e.stopPropagation(); // que el th no lo tome como "seleccionar columna"
     resizeRef.current = { col, startX: e.clientX, startW: widthOf(col) };
