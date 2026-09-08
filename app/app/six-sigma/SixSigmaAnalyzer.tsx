@@ -26,6 +26,9 @@ import AnalysisRunner from "./components/AnalysisRunner";
 import StudyList from "./components/StudyList";
 import { useSidebar } from "./hooks/useSidebar";
 import SidebarSplitter from "./components/SidebarSplitter";
+import SortDialog from "./components/SortDialog";
+import CalculatorDialog from "./components/CalculatorDialog";
+
 
 type ViewMode = "split" | "grid" | "graphics";
 
@@ -56,6 +59,8 @@ export default function SixSigmaAnalyzer({
   const [selRows, setSelRows] = useState<Set<number>>(new Set());
   const [selCols, setSelCols] = useState<Set<number>>(new Set());
   const [warning, setWarning] = useState<string | null>(null);
+  // Un solo estado para los dos dialogos de Data: son mutuamente excluyentes.
+  const [dataDialog, setDataDialog] = useState<"sort" | "calc" | null>(null);
   const splitRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const projectInputRef = useRef<HTMLInputElement>(null);
@@ -350,8 +355,14 @@ export default function SixSigmaAnalyzer({
           }
           if (view === "grid") setView("split");
         }}
+        onSortData={() => {
+          // Ordenar reordena las filas: cualquier seleccion apunta a indices
+          // que dejan de significar lo mismo, asi que se limpia antes.
+          setSelRows(new Set());
+          setDataDialog("sort");
+        }}
+        onCalculator={() => setDataDialog("calc")}
       />
-
 
       {/* Hidden file input for "Open Excel" */}
       <input
@@ -605,6 +616,26 @@ export default function SixSigmaAnalyzer({
           </div>
         </div>
       )}
+
+      {/* Dialogos del menu Data. Fuera de la rejilla a proposito: meter estos
+          controles en las cabeceras interferia con el redimensionado. */}
+      {dataDialog === "sort" && (
+        <SortDialog
+          sheet={wb.data[wb.activeSheet] ?? EMPTY_SHEET}
+          initialCol={selCols.size > 0 ? Math.min(...selCols) : 0}
+          onSort={wb.sortRowsBy}
+          onClose={() => setDataDialog(null)}
+        />
+      )}
+
+      {dataDialog === "calc" && (
+        <CalculatorDialog
+          sheet={wb.data[wb.activeSheet] ?? EMPTY_SHEET}
+          onApply={wb.setColumnValues}
+          onClose={() => setDataDialog(null)}
+        />
+      )}
     </div>
   );
 }
+
