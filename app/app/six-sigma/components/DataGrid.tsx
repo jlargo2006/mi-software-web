@@ -53,12 +53,6 @@ export default function DataGrid({
   // un useEffect monta los listeners en document. Con setPointerCapture sobre
   // un <th> sticky el navegador no entrega los move de forma fiable.
   const [resizing, setResizing] = useState(false);
-
-  
-  // Mismo patron que useSidebar: el arrastre es un ESTADO, y un useEffect
-  // monta y limpia los listeners. Añadirlos dentro del manejador dejaba
-  // referencias descolgadas entre renders.
-  const [resizing, setResizing] = useState(false);
   
   const resizeRef = useRef<{ col: number; startX: number; startW: number } | null>(null);
   const dragRef = useRef<{ mode: DragMode; anchor: number } | null>(null);
