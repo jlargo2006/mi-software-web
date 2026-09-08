@@ -515,7 +515,6 @@ export default function SixSigmaAnalyzer({
                     onHeaderChange={wb.setHeader}
                     onPaste={wb.pasteData}
                     onAddRow={wb.addRow}
-                    onSort={wb.sortRowsBy}
                     selRows={selRows}
                     selCols={selCols}
                     setSelRows={setSelRows}
