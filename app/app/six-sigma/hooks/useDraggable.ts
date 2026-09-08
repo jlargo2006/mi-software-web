@@ -23,7 +23,14 @@ export function useDraggable() {
   const boxRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ dx: number; dy: number; w: number; h: number } | null>(null);
 
-  const onMove = useCallback((e: MouseEvent) => {
+  // Los manejadores viven en refs, no en useCallback: stop tiene que poder
+  // desregistrarse a si mismo, y una funcion no puede referenciarse dentro de
+  // su propia definicion. Ademas garantiza que se quita EXACTAMENTE la misma
+  // referencia que se anadio, sin depender de que el callback no se recree.
+  const onMoveRef = useRef<(e: MouseEvent) => void>(() => {});
+  const stopRef = useRef<() => void>(() => {});
+
+  onMoveRef.current = (e: MouseEvent) => {
     const d = dragRef.current;
     if (!d) return;
     // Se deja siempre un trozo visible: si la ventana sale entera de la
@@ -34,14 +41,18 @@ export function useDraggable() {
       x: Math.min(Math.max(e.clientX - d.dx, 80 - d.w), maxX),
       y: Math.min(Math.max(e.clientY - d.dy, 0), maxY),
     });
-  }, []);
+  };
+
+  const onMove = useCallback((e: MouseEvent) => onMoveRef.current(e), []);
 
   const stop = useCallback(() => {
     dragRef.current = null;
     window.removeEventListener("mousemove", onMove);
-    window.removeEventListener("mouseup", stop);
+    window.removeEventListener("mouseup", stopRef.current);
     document.body.style.userSelect = "";
   }, [onMove]);
+
+  stopRef.current = stop;
 
   const onMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -65,7 +76,7 @@ export function useDraggable() {
       e.preventDefault();
       document.body.style.userSelect = "none";
       window.addEventListener("mousemove", onMove);
-      window.addEventListener("mouseup", stop);
+      window.addEventListener("mouseup", stopRef.current);
     },
     [onMove, stop]
   );
